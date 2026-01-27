@@ -195,9 +195,7 @@ class Command(BaseCommand):
                             has_exam_slot=False,
                             slot_assigned_at=None,
                             slot_consumed_at=None,
-                            slot_assigned_by=None,
-                            exam_slot_from=None,
-                            exam_slot_to=None
+                            slot_assigned_by=None
                         )
                         self.stdout.write(self.style.SUCCESS(f"✅ Reset {candidates_with_slots} exam slots"))
                         self.log_debug(f"Reset exam slots for {candidates_with_slots} candidates", debug)

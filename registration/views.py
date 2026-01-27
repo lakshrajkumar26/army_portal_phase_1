@@ -243,11 +243,11 @@ def exam_interface(request):
                 session.completed_at = timezone.now()
                 session.save(update_fields=["completed_at"])
                 
-                # CRITICAL: Clear exam slot on submission/termination
+                # CRITICAL: Mark exam slot as consumed on submission/termination
                 # This prevents the candidate from retaking the exam
-                candidate.exam_slot_from = None
-                candidate.exam_slot_to = None
-                candidate.save(update_fields=['exam_slot_from', 'exam_slot_to'])
+                if not candidate.slot_consumed_at:  # Only set if not already consumed
+                    candidate.slot_consumed_at = timezone.now()
+                    candidate.save(update_fields=['slot_consumed_at'])
                 
                 # Log termination if applicable
                 if exam_terminated:

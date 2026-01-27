@@ -7,6 +7,8 @@ from .models import (
     Question,
     QuestionUpload,
     GlobalPaperTypeControl,
+    ActivateSets,
+    QuestionSetActivation,
 )
 from .forms import QuestionUploadForm
 
@@ -20,6 +22,8 @@ class QuestionAdmin(admin.ModelAdmin):
         "id",
         "part",
         "short_text",
+        "formatted_options",
+        "correct_answer_display",
         "trade",
         "paper_type",
         "question_set",
@@ -27,7 +31,7 @@ class QuestionAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("paper_type", "is_active", "trade", "part", "question_set")
-    search_fields = ("text",)
+    search_fields = ("text", "option_a", "option_b", "option_c", "option_d")
     ordering = ("-created_at",)
     list_per_page = 50
     
@@ -49,9 +53,43 @@ class QuestionAdmin(admin.ModelAdmin):
     )
 
     def short_text(self, obj):
-        return obj.text[:80]
+        return obj.text[:80] + "..." if len(obj.text) > 80 else obj.text
+    short_text.short_description = "Question Text"
 
-    short_text.short_description = "Question"
+    def formatted_options(self, obj):
+        """Display options in a clean format"""
+        if obj.part not in ['A', 'B']:  # Only show options for MCQ questions
+            return "-"
+        
+        options = []
+        if obj.option_a:
+            options.append(f"A: {obj.option_a[:30]}...")
+        if obj.option_b:
+            options.append(f"B: {obj.option_b[:30]}...")
+        if obj.option_c:
+            options.append(f"C: {obj.option_c[:30]}...")
+        if obj.option_d:
+            options.append(f"D: {obj.option_d[:30]}...")
+        
+        if options:
+            return " | ".join(options)
+        elif obj.options:
+            return f"Legacy: {str(obj.options)[:50]}..."
+        else:
+            return "No options"
+    formatted_options.short_description = "Options"
+
+    def correct_answer_display(self, obj):
+        """Display correct answer in a clean format"""
+        if obj.correct_answer:
+            if isinstance(obj.correct_answer, str):
+                return obj.correct_answer
+            elif isinstance(obj.correct_answer, dict):
+                return str(obj.correct_answer)
+            else:
+                return str(obj.correct_answer)
+        return "-"
+    correct_answer_display.short_description = "Correct Answer"
 
 
 # --------------------------------
@@ -99,47 +137,222 @@ class QuestionUploadAdmin(admin.ModelAdmin):
 
 
 # --------------------------------
-# Global Paper Type Control (Master Control)
+# Unified Question Set Management (ActivateSets)
 # --------------------------------
-@admin.register(GlobalPaperTypeControl)
-class GlobalPaperTypeControlAdmin(admin.ModelAdmin):
-    list_display = ['paper_type', 'is_active', 'last_activated', 'activated_by']
-    actions = ['activate_primary_globally', 'activate_secondary_globally']
+@admin.register(ActivateSets)
+class ActivateSetsAdmin(admin.ModelAdmin):
+    """
+    Unified admin interface for question set management.
+    Provides simple dropdown interface for selecting active question sets per trade.
+    """
+    list_display = ['trade', 'active_primary_set', 'active_secondary_set', 'last_updated', 'updated_by']
+    list_filter = ['active_primary_set', 'active_secondary_set', 'last_updated']
+    search_fields = ['trade__name', 'trade__code']
+    readonly_fields = ['last_updated']
     
-    def activate_primary_globally(self, request, queryset):
-        """Activate PRIMARY papers for all trades"""
-        from .models import GlobalPaperTypeControl
-        primary_control, created = GlobalPaperTypeControl.objects.get_or_create(
-            paper_type='PRIMARY',
-            defaults={'is_active': True, 'activated_by': request.user}
-        )
-        if not created:
-            primary_control.is_active = True
-            primary_control.activated_by = request.user
-            primary_control.save()
+    def changelist_view(self, request, extra_context=None):
+        """
+        Custom changelist view that provides the unified question set management interface
+        """
+        from reference.models import Trade
         
-        self.message_user(request, "PRIMARY papers activated globally for all trades.")
-    activate_primary_globally.short_description = "Activate PRIMARY globally"
+        # Handle POST requests for question set changes
+        if request.method == 'POST':
+            return self._handle_post_request(request)
+        
+        # Get current global paper type
+        active_paper_type = None
+        try:
+            active_control = GlobalPaperTypeControl.objects.get(is_active=True)
+            active_paper_type = active_control.paper_type
+        except GlobalPaperTypeControl.DoesNotExist:
+            pass
+        
+        # Get all trades and their question set data
+        trade_data = []
+        for trade in Trade.objects.all().order_by('name'):
+            # Get or create ActivateSets record for this trade
+            activate_sets = ActivateSets.get_or_create_for_trade(trade, request.user)
+            
+            # Get available question sets for current active paper type
+            available_sets = []
+            question_count = 0
+            active_set = None
+            
+            if active_paper_type:
+                available_sets = activate_sets.get_available_sets(active_paper_type)
+                if active_paper_type == 'PRIMARY':
+                    active_set = activate_sets.active_primary_set
+                    question_count = activate_sets.get_question_count('PRIMARY', active_set)
+                else:
+                    active_set = activate_sets.active_secondary_set
+                    question_count = activate_sets.get_question_count('SECONDARY', active_set)
+            
+            trade_data.append({
+                'trade': trade,
+                'activate_sets': activate_sets,
+                'available_sets': available_sets,
+                'active_set': active_set,
+                'question_count': question_count,
+            })
+        
+        # Get global paper type controls
+        controls = list(GlobalPaperTypeControl.objects.all().order_by('paper_type'))
+        
+        extra_context = extra_context or {}
+        extra_context.update({
+            'trade_data': trade_data,
+            'active_paper_type': active_paper_type,
+            'controls': controls,
+            'title': 'Unified Question Set Management',
+        })
+        
+        return super().changelist_view(request, extra_context)
     
-    def activate_secondary_globally(self, request, queryset):
-        """Activate SECONDARY papers for all trades"""
-        from .models import GlobalPaperTypeControl
-        secondary_control, created = GlobalPaperTypeControl.objects.get_or_create(
-            paper_type='SECONDARY',
-            defaults={'is_active': True, 'activated_by': request.user}
-        )
-        if not created:
-            secondary_control.is_active = True
-            secondary_control.activated_by = request.user
-            secondary_control.save()
+    def _handle_post_request(self, request):
+        """Handle POST requests for question set activation and global controls"""
+        from django.contrib import messages
+        from django.http import HttpResponseRedirect
+        from django.urls import reverse
         
-        self.message_user(request, "SECONDARY papers activated globally for all trades.")
-    activate_secondary_globally.short_description = "Activate SECONDARY globally"
+        action = request.POST.get('action')
+        
+        if action == 'activate_primary_globally':
+            # Activate PRIMARY globally
+            primary_control, created = GlobalPaperTypeControl.objects.get_or_create(
+                paper_type='PRIMARY',
+                defaults={'is_active': True, 'activated_by': request.user}
+            )
+            if not created:
+                primary_control.is_active = True
+                primary_control.activated_by = request.user
+                primary_control.save()
+            
+            # Deactivate SECONDARY
+            GlobalPaperTypeControl.objects.filter(paper_type='SECONDARY').update(is_active=False)
+            
+            messages.success(request, "✅ PRIMARY papers activated globally for all trades.")
+            
+        elif action == 'activate_secondary_globally':
+            # Activate SECONDARY globally
+            secondary_control, created = GlobalPaperTypeControl.objects.get_or_create(
+                paper_type='SECONDARY',
+                defaults={'is_active': True, 'activated_by': request.user}
+            )
+            if not created:
+                secondary_control.is_active = True
+                secondary_control.activated_by = request.user
+                secondary_control.save()
+            
+            # Deactivate PRIMARY
+            GlobalPaperTypeControl.objects.filter(paper_type='PRIMARY').update(is_active=False)
+            
+            messages.success(request, "✅ SECONDARY papers activated globally for all trades.")
+            
+        elif 'trade_id' in request.POST and 'question_set' in request.POST:
+            # Handle individual trade question set activation
+            trade_id = request.POST.get('trade_id')
+            question_set = request.POST.get('question_set')
+            paper_type = request.POST.get('paper_type')
+            
+            if trade_id and question_set and paper_type:
+                try:
+                    from reference.models import Trade
+                    trade = Trade.objects.get(id=trade_id)
+                    activate_sets = ActivateSets.get_or_create_for_trade(trade, request.user)
+                    
+                    # Update the appropriate field based on paper type
+                    if paper_type == 'PRIMARY':
+                        activate_sets.active_primary_set = question_set
+                    else:
+                        activate_sets.active_secondary_set = question_set
+                    
+                    activate_sets.updated_by = request.user
+                    activate_sets.save()
+                    
+                    messages.success(
+                        request, 
+                        f"✅ Activated question set {question_set} for {trade.name} {paper_type} papers."
+                    )
+                    
+                except Exception as e:
+                    messages.error(request, f"❌ Error activating question set: {str(e)}")
+        
+        # Redirect back to the same page
+        return HttpResponseRedirect(request.get_full_path())
     
     def has_add_permission(self, request):
-        # Only allow PRIMARY and SECONDARY entries
-        return GlobalPaperTypeControl.objects.count() < 2
+        # Prevent manual addition - records are auto-created
+        return False
     
     def has_delete_permission(self, request, obj=None):
-        # Prevent deletion of control entries
+        # Prevent deletion of activation records
         return False
+
+
+# --------------------------------
+# Global Paper Type Control (Master Control) - REPLACED BY ActivateSets
+# --------------------------------
+# The GlobalPaperTypeControl admin has been replaced by the unified ActivateSets interface
+# which provides better user experience and simpler management.
+# The model and functionality still exist but are managed through ActivateSets.
+
+# @admin.register(GlobalPaperTypeControl)
+# class GlobalPaperTypeControlAdmin(admin.ModelAdmin):
+#     list_display = ['paper_type', 'is_active', 'last_activated', 'activated_by']
+#     actions = ['activate_primary_globally', 'activate_secondary_globally']
+#     
+#     def activate_primary_globally(self, request, queryset):
+#         """Activate PRIMARY papers for all trades"""
+#         primary_control, created = GlobalPaperTypeControl.objects.get_or_create(
+#             paper_type='PRIMARY',
+#             defaults={'is_active': True, 'activated_by': request.user}
+#         )
+#         if not created:
+#             primary_control.is_active = True
+#             primary_control.activated_by = request.user
+#             primary_control.save()
+#         
+#         # Deactivate SECONDARY
+#         GlobalPaperTypeControl.objects.filter(paper_type='SECONDARY').update(is_active=False)
+#         
+#         self.message_user(request, "✅ PRIMARY papers activated globally. Use 'Activate Sets' to manage question sets per trade.")
+#     activate_primary_globally.short_description = "🔵 Activate PRIMARY globally"
+#     
+#     def activate_secondary_globally(self, request, queryset):
+#         """Activate SECONDARY papers for all trades"""
+#         secondary_control, created = GlobalPaperTypeControl.objects.get_or_create(
+#             paper_type='SECONDARY',
+#             defaults={'is_active': True, 'activated_by': request.user}
+#         )
+#         if not created:
+#             secondary_control.is_active = True
+#             secondary_control.activated_by = request.user
+#             secondary_control.save()
+#         
+#         # Deactivate PRIMARY
+#         GlobalPaperTypeControl.objects.filter(paper_type='PRIMARY').update(is_active=False)
+#         
+#         self.message_user(request, "✅ SECONDARY papers activated globally. Use 'Activate Sets' to manage question sets per trade.")
+#     activate_secondary_globally.short_description = "🟠 Activate SECONDARY globally"
+#     
+#     def has_add_permission(self, request):
+#         # Only allow PRIMARY and SECONDARY entries
+#         return GlobalPaperTypeControl.objects.count() < 2
+#     
+#     def has_delete_permission(self, request, obj=None):
+#         # Prevent deletion of control entries
+#         return False
+
+# --------------------------------
+# Global Paper Type Control (Master Control) - REMOVED FROM ADMIN
+# --------------------------------
+# The GlobalPaperTypeControl admin interface has been removed to avoid duplication
+# with the ActivateSets interface. All functionality is now available through
+# the unified ActivateSets admin page at /admin/questions/activatesets/
+#
+# The GlobalPaperTypeControl model still exists and functions normally for
+# programmatic access and backend operations, but is no longer exposed in admin.
+#
+# To manage paper types and question sets, use the ActivateSets interface which
+# provides the same functionality with a better user experience.

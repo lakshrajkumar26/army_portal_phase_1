@@ -1,0 +1,275 @@
+{% extends "admin/change_list.html" %}
+{% load admin_urls static admin_list %}
+
+{% block content_title %}
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <h1 style="margin: 0 0 10px 0; font-size: 28px; font-weight: 300; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 32px;">🎯</span>
+            Unified Question Set Management
+        </h1>
+        <p style="margin: 0; opacity: 0.9; font-size: 16px; line-height: 1.4;">
+            Centralized interface to manage active question sets across all trades. Configure paper types and question set assignments with ease.
+        </p>
+    </div>
+{% endblock %}
+
+{% block result_list %}
+    <div class="results">
+        <!-- Global Paper Type Control Section -->
+        <div class="module" style="margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;">
+            <h2 style="background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%); color: white; padding: 20px; margin: 0; font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">📋</span>
+                Step 1: Choose Paper Type (PRIMARY or SECONDARY)
+            </h2>
+            <div style="padding: 25px; background: #fafbfc; border-bottom: 1px solid #e1e8ed;">
+                {% if controls %}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px;">
+                        {% for control in controls %}
+                            <div style="padding: 20px; border: 2px solid {% if control.is_active %}#28a745{% else %}#dee2e6{% endif %}; border-radius: 12px; background: {% if control.is_active %}linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%){% else %}#ffffff{% endif %}; text-align: center; transition: all 0.3s ease; position: relative; overflow: hidden;">
+                                {% if control.is_active %}
+                                    <div style="position: absolute; top: 10px; right: 10px; background: #28a745; color: white; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold;">ACTIVE</div>
+                                {% endif %}
+                                <div style="font-size: 32px; margin-bottom: 10px;">
+                                    {% if control.is_active %}🟢{% else %}⚪{% endif %}
+                                </div>
+                                <h3 style="margin: 0 0 8px 0; color: {% if control.is_active %}#155724{% else %}#6c757d{% endif %}; font-size: 20px; font-weight: 600;">
+                                    {{ control.paper_type }} PAPERS
+                                </h3>
+                                <p style="margin: 0; font-size: 13px; color: #6c757d; line-height: 1.4;">
+                                    {% if control.is_active %}
+                                        <strong>Active since:</strong><br>
+                                        {{ control.last_activated|date:"M d, Y H:i" }}
+                                        {% if control.activated_by %}<br><small>by {{ control.activated_by.username }}</small>{% endif %}
+                                    {% else %}
+                                        Click the activation button below to enable this paper type
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffeaa7; border-radius: 10px; margin-bottom: 25px; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                        <h3 style="margin: 0 0 10px 0; color: #856404; font-weight: 600;">No Paper Type Controls Found</h3>
+                        <p style="margin: 0; color: #856404;">Use the activation buttons below to initialize PRIMARY or SECONDARY paper types.</p>
+                    </div>
+                {% endif %}
+                
+                <!-- Action Buttons -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 600px; margin: 0 auto;">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="activate_primary_globally">
+                        <button type="submit" style="width: 100%; padding: 18px; background: linear-gradient(135deg, #007cba 0%, #005a87 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,124,186,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,124,186,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,124,186,0.3)'">
+                            <span style="font-size: 20px;">🔵</span>
+                            Activate PRIMARY Globally
+                        </button>
+                    </form>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="activate_secondary_globally">
+                        <button type="submit" style="width: 100%; padding: 18px; background: linear-gradient(135deg, #e17009 0%, #b8570a 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(225,112,9,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(225,112,9,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(225,112,9,0.3)'">
+                            <span style="font-size: 20px;">🟠</span>
+                            Activate SECONDARY Globally
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Set Management Section -->
+        {% if active_paper_type %}
+            <div class="module" style="box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;">
+                <h2 style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; margin: 0; font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🎯</span>
+                    Step 2: Configure Question Sets - {{ active_paper_type }} Papers Active
+                </h2>
+                <div style="padding: 25px; background: white;">
+                    {% if trade_data %}
+                        <div style="overflow-x: auto; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <table style="width: 100%; border-collapse: collapse; min-width: 800px; background: white;">
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: left; font-weight: 600; font-size: 14px; color: #495057; width: 25%;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-size: 18px;">📚</span>
+                                                Trade Information
+                                            </div>
+                                        </th>
+                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: center; font-weight: 600; font-size: 14px; color: #495057; width: 15%;">
+                                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                                <span style="font-size: 18px;">📊</span>
+                                                Questions
+                                            </div>
+                                        </th>
+                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: center; font-weight: 600; font-size: 14px; color: #495057; width: 20%;">
+                                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                                <span style="font-size: 18px;">✅</span>
+                                                Active Set
+                                            </div>
+                                        </th>
+                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: center; font-weight: 600; font-size: 14px; color: #495057; width: 40%;">
+                                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                                <span style="font-size: 18px;">🔄</span>
+                                                Change Set
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for data in trade_data %}
+                                        <tr style="{% cycle 'background: #ffffff;' 'background: #f8f9fa;' %} transition: background 0.2s ease;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='{% cycle '#ffffff' '#f8f9fa' %}'">
+                                            <td style="padding: 18px; border: 1px solid #dee2e6; vertical-align: middle;">
+                                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                    <span style="font-weight: 600; font-size: 15px; color: #2c3e50;">{{ data.trade.name }}</span>
+                                                    <span style="font-size: 12px; color: #6c757d; background: #e9ecef; padding: 2px 8px; border-radius: 12px; display: inline-block; width: fit-content;">{{ data.trade.code }}</span>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
+                                                <div style="display: inline-flex; align-items: center; gap: 6px; background: {% if data.question_count > 0 %}linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%){% else %}linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%){% endif %}; padding: 10px 15px; border-radius: 20px; font-weight: 600; color: {% if data.question_count > 0 %}#495057{% else %}#721c24{% endif %}; border: 1px solid {% if data.question_count > 0 %}#ced4da{% else %}#f1aeb5{% endif %};">
+                                                    <span style="font-size: 16px;">{% if data.question_count > 0 %}📝{% else %}❌{% endif %}</span>
+                                                    <span>{{ data.question_count }}</span>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
+                                                {% if data.active_set %}
+                                                    <div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724; padding: 12px 20px; border-radius: 25px; font-weight: 600; font-size: 15px; border: 1px solid #c3e6cb; box-shadow: 0 2px 4px rgba(40,167,69,0.2);">
+                                                        <span style="font-size: 18px;">🟢</span>
+                                                        <span>Set {{ data.active_set }}</span>
+                                                    </div>
+                                                {% else %}
+                                                    <div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); color: #721c24; padding: 12px 20px; border-radius: 25px; font-weight: 600; border: 1px solid #f1aeb5;">
+                                                        <span style="font-size: 18px;">⚪</span>
+                                                        <span>No Active Set</span>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
+                                                {% if data.available_sets %}
+                                                    <form method="post" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="trade_id" value="{{ data.trade.id }}">
+                                                        <input type="hidden" name="paper_type" value="{{ active_paper_type }}">
+                                                        <select name="question_set" style="padding: 12px 16px; border: 2px solid #ced4da; border-radius: 8px; font-size: 14px; min-width: 140px; background: white; color: #495057; font-weight: 500; transition: border-color 0.2s ease;" onfocus="this.style.borderColor='#80bdff'" onblur="this.style.borderColor='#ced4da'">
+                                                            <option value="">Select Set...</option>
+                                                            {% for set in data.available_sets %}
+                                                                <option value="{{ set }}" {% if set == data.active_set %}selected{% endif %}>
+                                                                    Set {{ set }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <button type="submit" style="padding: 12px 24px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(40,167,69,0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(40,167,69,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(40,167,69,0.2)'">
+                                                            Activate
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <div style="color: #6c757d; font-style: italic; padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                                                        <span style="font-size: 16px; margin-right: 6px;">📭</span>
+                                                        No question sets available
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="margin-top: 25px; padding: 20px; background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%); border: 1px solid #b3d9ff; border-radius: 12px;">
+                            <h4 style="margin: 0 0 15px 0; color: #0056b3; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 24px;">💡</span>
+                                How to Use This Interface
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                                <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                                    <strong style="color: #0056b3; display: block; margin-bottom: 5px;">Step 1:</strong>
+                                    <span style="color: #0056b3;">Choose PRIMARY (trade-specific) or SECONDARY (common) papers above</span>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                                    <strong style="color: #0056b3; display: block; margin-bottom: 5px;">Step 2:</strong>
+                                    <span style="color: #0056b3;">For each trade, select which question set (A, B, C, etc.) should be active</span>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                                    <strong style="color: #0056b3; display: block; margin-bottom: 5px;">Result:</strong>
+                                    <span style="color: #0056b3;">Candidates will only see questions from the active set for their trade</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div style="padding: 40px; text-align: center; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffeaa7; border-radius: 12px;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+                            <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 24px; font-weight: 600;">No Trades Found</h3>
+                            <p style="margin: 0; color: #856404; font-size: 16px; line-height: 1.5;">Please ensure trades are properly configured in the system before managing question sets.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="module" style="box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;">
+                <h2 style="background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; padding: 20px; margin: 0; font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">⚠️</span>
+                    No Active Paper Type
+                </h2>
+                <div style="padding: 40px; background: #f8f9fa; text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.7;">📋</div>
+                    <h3 style="color: #6c757d; margin: 0 0 15px 0; font-size: 24px; font-weight: 600;">Please Activate a Paper Type First</h3>
+                    <p style="margin: 0; color: #6c757d; font-size: 16px; line-height: 1.5;">Use the activation buttons above to enable either PRIMARY or SECONDARY papers, then you can manage question sets for each trade.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <style>
+        /* Enhanced hover effects and animations */
+        .module {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .module:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
+        }
+        
+        /* Responsive design improvements */
+        @media (max-width: 768px) {
+            .results > div {
+                margin: 15px 0;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 12px 8px !important;
+            }
+            
+            /* Stack buttons vertically on mobile */
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            /* Stack info cards vertically on mobile */
+            div[style*="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 24px !important;
+            }
+            
+            h2 {
+                font-size: 18px !important;
+                padding: 15px !important;
+            }
+            
+            .results {
+                padding: 0 10px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block pagination %}{% endblock %}

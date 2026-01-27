@@ -148,6 +148,10 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
             col_map["trade"] = c
         elif uc in ("PAPER TYPE", "PAPER", "TYPE"):
             col_map["paper_type"] = c
+        elif uc in ("QUESTION SET", "QUESTION_SET", "SET", "QS"):
+            col_map["question_set"] = c
+        elif uc in ("IS COMMON", "IS_COMMON", "COMMON"):
+            col_map["is_common"] = c
 
     if "text" not in col_map:
         raise ValidationError("Excel must contain a Question column (e.g., 'Question').")
@@ -171,6 +175,25 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
 
         trade_val = str(r.get(col_map.get("trade", ""), "")).strip() if col_map.get("trade") else ""
         paper_type_val = str(r.get(col_map.get("paper_type", ""), "")).strip() if col_map.get("paper_type") else ""
+        
+        # Extract question_set
+        question_set_val = str(r.get(col_map.get("question_set", ""), "A")).strip() if col_map.get("question_set") else "A"
+        question_set = _norm(question_set_val)[:1] if question_set_val else "A"
+        if question_set not in {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}:
+            # If question_set is not found in column, try to extract from question text
+            import re
+            set_match = re.search(r'Set ([A-Z])', text)
+            if set_match:
+                question_set = set_match.group(1)
+            else:
+                question_set = "A"
+        
+        # Extract is_common
+        is_common_val = r.get(col_map.get("is_common", ""), False) if col_map.get("is_common") else False
+        if isinstance(is_common_val, str):
+            is_common = is_common_val.lower() in ('true', '1', 'yes', 'y')
+        else:
+            is_common = bool(is_common_val)
 
         # Default logic:
         # - If paper_type column exists: use it
@@ -200,6 +223,8 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
             "correct_answer": correct_answer,
             "trade": trade_norm,         # OCC / DMV / ALL etc.
             "paper_type": paper_type,    # PRIMARY / SECONDARY
+            "question_set": question_set, # A, B, C, D, E, etc.
+            "is_common": is_common,      # True/False
         })
 
     return rows
@@ -307,6 +332,13 @@ def import_questions_from_dicts(
             marks = q.get("marks", 1)
             options = q.get("options")
             correct_answer = q.get("correct_answer")
+            
+            # Extract question_set and is_common from the data
+            question_set = (q.get("question_set") or "A").strip().upper()[:1]
+            if question_set not in {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}:
+                question_set = "A"
+            
+            is_common_from_data = q.get("is_common", False)
 
             trade_norm = _norm(q.get("trade", ""))
             paper_type = _norm(q.get("paper_type", "")) or ("SECONDARY" if trade_norm == "ALL" else "PRIMARY")
@@ -318,17 +350,17 @@ def import_questions_from_dicts(
             if forced_trade:
                 trade_obj = forced_trade
                 # In forced legacy mode we can still mark ALL as common if the row explicitly says ALL
-                if trade_norm == "ALL" or paper_type == "SECONDARY":
+                if trade_norm == "ALL" or paper_type == "SECONDARY" or is_common_from_data:
                     is_common = True
             else:
-                if trade_norm == "ALL" or paper_type == "SECONDARY":
+                if trade_norm == "ALL" or paper_type == "SECONDARY" or is_common_from_data:
                     is_common = True
                     trade_obj = None
                 else:
                     trade_obj = trade_lookup.get(trade_norm)
 
-            # Avoid duplicates by text+part+trade/is_common
-            exists_qs = Question.objects.filter(text=text, part=part)
+            # Avoid duplicates by text+part+trade/is_common+question_set
+            exists_qs = Question.objects.filter(text=text, part=part, question_set=question_set)
             if trade_obj:
                 exists_qs = exists_qs.filter(trade=trade_obj)
             else:
@@ -345,6 +377,8 @@ def import_questions_from_dicts(
                 options=options,
                 correct_answer=correct_answer,
                 trade=trade_obj,
+                paper_type=paper_type,
+                question_set=question_set,
                 is_common=is_common,
                 is_active=True,
             )

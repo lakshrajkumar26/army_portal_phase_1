@@ -182,23 +182,56 @@ class GlobalPaperTypeControl(models.Model):
             with transaction.atomic():
                 # Deactivate all activations for the opposite paper type
                 opposite_type = 'SECONDARY' if self.paper_type == 'PRIMARY' else 'PRIMARY'
+                
+                # Update QuestionSetActivation records (new system)
                 QuestionSetActivation.objects.filter(
                     paper_type=opposite_type,
                     is_active=True
                 ).update(is_active=False)
                 
-                # Activate default set A for all trades with this paper type
+                # Update TradePaperActivation records (legacy system - needed for can_start_exam)
+                TradePaperActivation.objects.filter(
+                    paper_type=opposite_type,
+                    is_active=True
+                ).update(is_active=False)
+                
+                # Deactivate QuestionPaper records for opposite type
+                QuestionPaper.objects.filter(
+                    question_paper=opposite_type
+                ).update(is_active=False)
+                
+                # Create/activate QuestionPaper record for this paper type
+                question_paper, created = QuestionPaper.objects.get_or_create(
+                    question_paper=self.paper_type,
+                    defaults={'is_active': True}
+                )
+                if not created:
+                    question_paper.is_active = True
+                    question_paper.save()
+                
+                # Activate for all trades with this paper type
                 for trade in Trade.objects.all():
-                    activation, created = QuestionSetActivation.objects.get_or_create(
+                    # Create/update QuestionSetActivation (new system)
+                    qs_activation, created = QuestionSetActivation.objects.get_or_create(
                         trade=trade,
                         paper_type=self.paper_type,
                         question_set='A',
                         defaults={'is_active': True, 'activated_by': self.activated_by}
                     )
                     if not created:
-                        activation.is_active = True
-                        activation.activated_by = self.activated_by
-                        activation.save()
+                        qs_activation.is_active = True
+                        qs_activation.activated_by = self.activated_by
+                        qs_activation.save()
+                    
+                    # Create/update TradePaperActivation (legacy system - needed for can_start_exam)
+                    tp_activation, created = TradePaperActivation.objects.get_or_create(
+                        trade=trade,
+                        paper_type=self.paper_type,
+                        defaults={'is_active': True}
+                    )
+                    if not created:
+                        tp_activation.is_active = True
+                        tp_activation.save()
         
         super().save(*args, **kwargs)
 
@@ -259,8 +292,8 @@ class QuestionPaper(models.Model):
 
     def generate_for_candidate(self, user, trade=None, shuffle_within_parts=True):
         """
-        ✅ SAFE selection:
-        - PRIMARY => paper_type=PRIMARY AND trade matches
+        ✅ SAFE selection with Question Set filtering:
+        - PRIMARY => paper_type=PRIMARY AND trade matches AND active question_set
         - SECONDARY => paper_type=SECONDARY AND is_common=True
         - HARD FAIL if cannot build required questions
         """
@@ -286,6 +319,20 @@ class QuestionPaper(models.Model):
             order = 1
             total_selected = 0
 
+            # Get active question set for this trade and paper type
+            active_question_set = 'A'  # Default fallback
+            if not is_secondary and trade:
+                try:
+                    active_set = QuestionSetActivation.objects.get(
+                        trade=trade,
+                        paper_type=self.question_paper,
+                        is_active=True
+                    )
+                    active_question_set = active_set.question_set
+                except QuestionSetActivation.DoesNotExist:
+                    # If no active set found, use Set A as default
+                    active_question_set = 'A'
+
             for part, count in dist.items():
                 count = int(count)
                 if count <= 0:
@@ -296,13 +343,19 @@ class QuestionPaper(models.Model):
                 if is_secondary:
                     qs = qs.filter(paper_type="SECONDARY", is_common=True)
                 else:
-                    qs = qs.filter(paper_type="PRIMARY", trade=trade)
+                    # Filter by trade, paper type, AND active question set
+                    qs = qs.filter(
+                        paper_type="PRIMARY", 
+                        trade=trade,
+                        question_set=active_question_set
+                    )
 
                 selected = list(qs.order_by("?")[:count])
 
                 if len(selected) < count:
                     raise ValidationError(
-                        f"Not enough questions for {trade} {self.question_paper} part {part}. "
+                        f"Not enough questions for {trade} {self.question_paper} part {part} "
+                        f"from question set {active_question_set}. "
                         f"Required {count}, found {len(selected)}."
                     )
 
@@ -367,6 +420,153 @@ class ExamSession(models.Model):
     def finish(self):
         self.completed_at = timezone.now()
         self.save(update_fields=["completed_at"])
+
+
+class ActivateSets(models.Model):
+    """
+    Unified model for simple question set management interface.
+    Provides a single interface for managing question sets per trade.
+    """
+    trade = models.OneToOneField(Trade, on_delete=models.CASCADE, primary_key=True)
+    active_primary_set = models.CharField(
+        max_length=1,
+        choices=[(chr(i), chr(i)) for i in range(ord('A'), ord('Z')+1)],
+        default='A',
+        help_text="Active question set for PRIMARY papers"
+    )
+    active_secondary_set = models.CharField(
+        max_length=1,
+        choices=[(chr(i), chr(i)) for i in range(ord('A'), ord('Z')+1)],
+        default='A',
+        help_text="Active question set for SECONDARY papers"
+    )
+    last_updated = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    
+    class Meta:
+        verbose_name = "Activate Sets"
+        verbose_name_plural = "Activate Sets"
+        ordering = ['trade__name']
+    
+    def __str__(self):
+        return f"{self.trade.name} - PRIMARY: Set {self.active_primary_set}, SECONDARY: Set {self.active_secondary_set}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to sync with QuestionSetActivation model
+        """
+        with transaction.atomic():
+            # Save the ActivateSets record first
+            super().save(*args, **kwargs)
+            
+            # Sync PRIMARY set activation
+            if self.active_primary_set:
+                # Deactivate all PRIMARY sets for this trade
+                QuestionSetActivation.objects.filter(
+                    trade=self.trade,
+                    paper_type='PRIMARY'
+                ).update(is_active=False)
+                
+                # Activate the selected PRIMARY set
+                activation, created = QuestionSetActivation.objects.get_or_create(
+                    trade=self.trade,
+                    paper_type='PRIMARY',
+                    question_set=self.active_primary_set,
+                    defaults={'is_active': True, 'activated_by': self.updated_by}
+                )
+                if not created:
+                    activation.is_active = True
+                    activation.activated_by = self.updated_by
+                    activation.save()
+            
+            # Sync SECONDARY set activation
+            if self.active_secondary_set:
+                # Deactivate all SECONDARY sets for this trade
+                QuestionSetActivation.objects.filter(
+                    trade=self.trade,
+                    paper_type='SECONDARY'
+                ).update(is_active=False)
+                
+                # Activate the selected SECONDARY set
+                activation, created = QuestionSetActivation.objects.get_or_create(
+                    trade=self.trade,
+                    paper_type='SECONDARY',
+                    question_set=self.active_secondary_set,
+                    defaults={'is_active': True, 'activated_by': self.updated_by}
+                )
+                if not created:
+                    activation.is_active = True
+                    activation.activated_by = self.updated_by
+                    activation.save()
+    
+    @classmethod
+    def get_or_create_for_trade(cls, trade, user=None):
+        """
+        Get or create ActivateSets record for a trade, syncing with existing QuestionSetActivation data
+        """
+        try:
+            return cls.objects.get(trade=trade)
+        except cls.DoesNotExist:
+            # Create new record based on existing QuestionSetActivation data
+            primary_set = 'A'
+            secondary_set = 'A'
+            
+            # Check for existing PRIMARY activation
+            try:
+                primary_activation = QuestionSetActivation.objects.get(
+                    trade=trade,
+                    paper_type='PRIMARY',
+                    is_active=True
+                )
+                primary_set = primary_activation.question_set
+            except QuestionSetActivation.DoesNotExist:
+                pass
+            
+            # Check for existing SECONDARY activation
+            try:
+                secondary_activation = QuestionSetActivation.objects.get(
+                    trade=trade,
+                    paper_type='SECONDARY',
+                    is_active=True
+                )
+                secondary_set = secondary_activation.question_set
+            except QuestionSetActivation.DoesNotExist:
+                pass
+            
+            return cls.objects.create(
+                trade=trade,
+                active_primary_set=primary_set,
+                active_secondary_set=secondary_set,
+                updated_by=user
+            )
+    
+    def get_available_sets(self, paper_type):
+        """
+        Get available question sets for this trade and paper type
+        """
+        available_sets = Question.objects.filter(
+            trade=self.trade,
+            paper_type=paper_type,
+            is_active=True
+        ).values_list('question_set', flat=True).distinct().order_by('question_set')
+        
+        return list(available_sets)
+    
+    def get_question_count(self, paper_type, question_set):
+        """
+        Get count of questions for this trade, paper type, and question set
+        """
+        return Question.objects.filter(
+            trade=self.trade,
+            paper_type=paper_type,
+            question_set=question_set,
+            is_active=True
+        ).count()
 
 
 class ExamQuestion(models.Model):
