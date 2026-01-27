@@ -17,57 +17,98 @@
     </div>
 </div>
 
-<!-- Data Management Section -->
-<div class="data-management-section" style="background:#f8f9fa; padding:20px; border-radius:10px; margin-bottom:20px; border:1px solid #dee2e6;">
-    <h3 style="color:#495057; margin-bottom:15px; font-size:18px;">🗂️ Data Management</h3>
-    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+<!-- Data Management Quick Access -->
+<div class="data-management-quick-access" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:25px; border-radius:10px; margin-bottom:25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:15px;">
+        <div style="flex:1; min-width:250px;">
+            <h3 style="color:white; margin:0 0 10px 0; font-size:22px; display:flex; align-items:center; gap:10px;">
+                <span style="font-size:32px;">🗂️</span>
+                <span>Data Management System</span>
+            </h3>
+            <p style="color:rgba(255,255,255,0.9); margin:0; font-size:14px;">
+                Manage and clean system data with secure deletion operations
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'admin:deletedata_examdatacleanup_changelist' %}" 
+               style="display:inline-block; padding:15px 30px; background:white; color:#667eea; text-decoration:none; border-radius:8px; font-weight:bold; font-size:15px; transition:all 0.3s; box-shadow:0 4px 10px rgba(0,0,0,0.2);"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 15px rgba(0,0,0,0.3)'"
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.2)'">
+                Open Data Management →
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Data Section -->
+<div class="clear-data-section" style="background:#fff5f5; padding:25px; border-radius:10px; margin-bottom:25px; border:2px solid #ff6b6b;">
+    <h3 style="color:#dc3545; margin-bottom:20px; font-size:20px; text-align:center;">
+        🗑️ <strong>Quick Data Cleanup</strong>
+    </h3>
+    <p style="text-align:center; color:#6c757d; margin-bottom:20px;">
+        <strong>⚠️ DANGER ZONE:</strong> These actions will permanently delete data. Use with extreme caution.
+    </p>
+    
+    <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
         
-        <!-- Clean Questions Only -->
-        <div style="flex:1; min-width:200px;">
-            <button onclick="cleanQuestions()" 
-                    style="width:100%; padding:12px; background:#17a2b8; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition:background 0.3s;"
-                    onmouseover="this.style.background='#138496'" 
-                    onmouseout="this.style.background='#17a2b8'">
-                🗃️ Clean Questions & Papers
-            </button>
-            <p style="font-size:12px; color:#6c757d; margin-top:5px; text-align:center;">
-                Delete all questions and question papers only
-            </p>
+        <!-- Delete Questions Only -->
+        <div style="flex:1; min-width:250px; max-width:300px;">
+            <div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #17a2b8; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                <button onclick="deleteQuestions()" 
+                        style="width:100%; padding:15px; background:#17a2b8; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; transition:all 0.3s; margin-bottom:10px;"
+                        onmouseover="this.style.background='#138496'; this.style.transform='translateY(-2px)'" 
+                        onmouseout="this.style.background='#17a2b8'; this.style.transform='translateY(0)'">
+                    🗃️ Delete Questions & Papers
+                </button>
+                <p style="font-size:11px; color:#6c757d; margin:0; text-align:center;">
+                    Removes all questions and question papers only
+                </p>
+            </div>
         </div>
 
-        <!-- Clean Exam Data -->
-        <div style="flex:1; min-width:200px;">
-            <button onclick="cleanExamData()" 
-                    style="width:100%; padding:12px; background:#fd7e14; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition:background 0.3s;"
-                    onmouseover="this.style.background='#e8650e'" 
-                    onmouseout="this.style.background='#fd7e14'">
-                🧹 Clean Exam Data
-            </button>
-            <p style="font-size:12px; color:#6c757d; margin-top:5px; text-align:center;">
-                Delete exam data, keep user registrations
-            </p>
+        <!-- Delete Exam Data -->
+        <div style="flex:1; min-width:250px; max-width:300px;">
+            <div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #fd7e14; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                <button onclick="deleteExamData()" 
+                        style="width:100%; padding:15px; background:#fd7e14; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; transition:all 0.3s; margin-bottom:10px;"
+                        onmouseover="this.style.background='#e8650e'; this.style.transform='translateY(-2px)'" 
+                        onmouseout="this.style.background='#fd7e14'; this.style.transform='translateY(0)'">
+                    🧹 Delete Exam Data
+                </button>
+                <p style="font-size:11px; color:#6c757d; margin:0; text-align:center;">
+                    Removes exam data, preserves user registrations
+                </p>
+            </div>
         </div>
 
-        <!-- Clean Everything -->
-        <div style="flex:1; min-width:200px;">
-            <button onclick="cleanEverything()" 
-                    style="width:100%; padding:12px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition:background 0.3s;"
-                    onmouseover="this.style.background='#c82333'" 
-                    onmouseout="this.style.background='#dc3545'">
-                ⚠️ Clean Everything
-            </button>
-            <p style="font-size:12px; color:#6c757d; margin-top:5px; text-align:center;">
-                Delete ALL data including registrations
-            </p>
+        <!-- Delete Everything -->
+        <div style="flex:1; min-width:250px; max-width:300px;">
+            <div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #dc3545; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                <button onclick="deleteEverything()" 
+                        style="width:100%; padding:15px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; transition:all 0.3s; margin-bottom:10px; animation:pulse 2s infinite;"
+                        onmouseover="this.style.background='#c82333'; this.style.transform='translateY(-2px)'" 
+                        onmouseout="this.style.background='#dc3545'; this.style.transform='translateY(0)'">
+                    ⚠️ DELETE EVERYTHING
+                </button>
+                <p style="font-size:11px; color:#dc3545; margin:0; text-align:center; font-weight:bold;">
+                    Complete system reset - ALL data deleted
+                </p>
+            </div>
         </div>
 
+    </div>
+    
+    <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:6px; text-align:center;">
+        <p style="margin:0; font-size:12px; color:#6c757d;">
+            💡 <strong>Before deleting:</strong> Always export your data and create a database backup
+        </p>
     </div>
 </div>
 
 {{ block.super }}
 
 <script>
-function cleanQuestions() {
+function deleteQuestions() {
     if (confirm('⚠️ WARNING: This will delete ALL questions and question papers.\n\nThis action cannot be undone. Are you sure?')) {
         if (confirm('🔴 FINAL CONFIRMATION: Delete all questions and papers?\n\nType "DELETE QUESTIONS" in the next prompt to confirm.')) {
             var confirmation = prompt('Type "DELETE QUESTIONS" to confirm:');
@@ -80,12 +121,12 @@ function cleanQuestions() {
     }
 }
 
-function cleanExamData() {
+function deleteExamData() {
     if (confirm('⚠️ WARNING: This will delete all exam-related data but keep user registrations.\n\nThis includes:\n- Questions and papers\n- Exam sessions and results\n- Uploaded files\n\nThis action cannot be undone. Are you sure?')) {
-        if (confirm('🔴 FINAL CONFIRMATION: Delete all exam data but keep users?\n\nType "DELETE EXAM DATA" in the next prompt to confirm.')) {
+        if (confirm('🔴 FINAL CONFIRMATION: Delete all exam data but keep users?')) {
             var confirmation = prompt('Type "DELETE EXAM DATA" to confirm:');
             if (confirmation === 'DELETE EXAM DATA') {
-                window.location.href = '{% url "admin:cleanup_exam_data" %}';
+                window.location.href = '/admin/deletedata/examdatacleanup/clean-exam-data/';
             } else {
                 alert('❌ Operation cancelled - incorrect confirmation text.');
             }
@@ -93,18 +134,24 @@ function cleanExamData() {
     }
 }
 
-function cleanEverything() {
+function deleteEverything() {
     if (confirm('🚨 DANGER ZONE 🚨\n\nThis will delete EVERYTHING:\n- All user registrations\n- All exam data\n- All questions and papers\n- All uploaded files\n- Everything except admin accounts\n\nThis action cannot be undone and will reset the system completely.\n\nAre you absolutely sure?')) {
-        if (confirm('🔴 FINAL WARNING: This will delete ALL DATA including candidate registrations!\n\nType "DELETE EVERYTHING" in the next prompt to confirm.')) {
-            var confirmation = prompt('Type "DELETE EVERYTHING" to confirm complete system reset:');
-            if (confirmation === 'DELETE EVERYTHING') {
-                window.location.href = '{% url "admin:cleanup_everything" %}';
-            } else {
-                alert('❌ Operation cancelled - incorrect confirmation text.');
-            }
+        if (confirm('🔴 FINAL WARNING: This will delete ALL DATA including candidate registrations!\n\nClick OK to proceed or Cancel to abort.')) {
+            window.location.href = '/admin/deletedata/examdatacleanup/clean-everything/';
         }
     }
 }
+
+// Add pulse animation for danger button
+var style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+`;
+document.head.appendChild(style);
 </script>
 
 {% endblock %}

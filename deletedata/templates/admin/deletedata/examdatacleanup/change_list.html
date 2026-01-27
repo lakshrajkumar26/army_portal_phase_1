@@ -1,152 +1,379 @@
-{% extends "admin/change_list.html" %}
+﻿{% extends "admin/base_site.html" %}
 {% load static %}
 
-{% block content %}
-<div class="cleanup-interface" style="padding: 20px;">
+{% block extrastyle %}
+<style>
+    .data-management-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
     
-    <div class="cleanup-header" style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #333; margin-bottom: 10px;">🗂️ Exam Data Cleanup</h1>
-        <p style="color: #666; font-size: 16px;">Manage and clean exam-related data with different levels of cleanup</p>
+    .page-header {
+        background: linear-gradient(135deg, #417690 0%, #2c5364 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .page-header h1 {
+        margin: 0 0 10px 0;
+        font-size: 28px;
+        font-weight: 600;
+    }
+    
+    .page-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 14px;
+    }
+    
+    .deletion-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .deletion-card {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border-left: 5px solid;
+    }
+    
+    .deletion-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+    
+    .deletion-card.exam-data {
+        border-left-color: #fd7e14;
+    }
+    
+    .deletion-card.everything {
+        border-left-color: #dc3545;
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .card-icon {
+        font-size: 36px;
+        margin-right: 15px;
+    }
+    
+    .card-title {
+        flex: 1;
+    }
+    
+    .card-title h3 {
+        margin: 0 0 5px 0;
+        font-size: 20px;
+        color: #333;
+    }
+    
+    .card-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .badge-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .card-content {
+        margin-bottom: 20px;
+    }
+    
+    .scope-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+    
+    .scope-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 10px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .scope-list {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+        color: #6c757d;
+        line-height: 1.8;
+    }
+    
+    .scope-list li {
+        margin-bottom: 5px;
+    }
+    
+    .scope-list strong {
+        color: #495057;
+    }
+    
+    .delete-button {
+        width: 100%;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .delete-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .delete-button:active {
+        transform: translateY(0);
+    }
+    
+    .btn-exam-data {
+        background: linear-gradient(135deg, #fd7e14 0%, #e8590c 100%);
+        color: white;
+    }
+    
+    .btn-exam-data:hover {
+        background: linear-gradient(135deg, #e8590c 0%, #d14d09 100%);
+    }
+    
+    .btn-everything {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+    
+    .btn-everything:hover {
+        background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    }
+    
+    .info-section {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-left: 4px solid #ffc107;
+        padding: 20px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    
+    .info-section h4 {
+        margin: 0 0 15px 0;
+        color: #856404;
+        font-size: 16px;
+    }
+    
+    .info-list {
+        margin: 0;
+        padding-left: 20px;
+        color: #856404;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+    
+    .cli-section {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 20px;
+        border-radius: 6px;
+        margin-top: 20px;
+    }
+    
+    .cli-section h4 {
+        margin: 0 0 15px 0;
+        color: #3498db;
+        font-size: 16px;
+    }
+    
+    .cli-code {
+        background: rgba(0,0,0,0.3);
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 3px solid #3498db;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #2ecc71;
+    }
+    
+    .cli-comment {
+        color: #f39c12;
+        margin-bottom: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='deletedata' %}">Delete Data</a>
+    &rsaquo; Data Management System
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="data-management-container">
+    
+    <div class="page-header">
+        <h1> Data Management System</h1>
+        <p>Manage and clean system data with secure deletion operations</p>
     </div>
 
-    <!-- Cleanup Options -->
-    <div class="cleanup-options" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+    <div class="deletion-cards">
         
-        <!-- Clean Questions Only -->
-        <div class="cleanup-card" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 15px;">🗃️</div>
-            <h3 style="color: #17a2b8; margin-bottom: 15px;">Clean Questions & Papers</h3>
-            <p style="color: #6c757d; margin-bottom: 20px; line-height: 1.5;">
-                Delete all questions, question papers, exam sessions, and answers.<br>
-                <strong>Preserves:</strong> User registrations and profiles
-            </p>
-            <button onclick="cleanQuestions()" 
-                    style="background: #17a2b8; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
-                Clean Questions & Papers
+        <!-- Delete Exam Data Card -->
+        <div class="deletion-card exam-data">
+            <div class="card-header">
+                <div class="card-icon"></div>
+                <div class="card-title">
+                    <h3>Delete Exam Data</h3>
+                    <span class="card-badge badge-warning">Restricted</span>
+                </div>
+            </div>
+            
+            <div class="card-content">
+                <div class="scope-section">
+                    <div class="scope-title">Operation Scope</div>
+                    <ul class="scope-list">
+                        <li><strong>Removes:</strong> Questions, Papers, Sessions, Answers</li>
+                        <li><strong>Removes:</strong> Question Uploads & Activations</li>
+                        <li><strong>Removes:</strong> All Exam-Related Data</li>
+                        <li><strong>Preserves:</strong> User Registrations & Profiles</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button onclick="deleteExamData()" class="delete-button btn-exam-data">
+                Delete Exam Data
             </button>
         </div>
 
-        <!-- Clean Exam Data -->
-        <div class="cleanup-card" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 15px;">🧹</div>
-            <h3 style="color: #fd7e14; margin-bottom: 15px;">Clean All Exam Data</h3>
-            <p style="color: #6c757d; margin-bottom: 20px; line-height: 1.5;">
-                Delete all exam-related data including questions, papers, sessions, answers, and uploads.<br>
-                <strong>Preserves:</strong> User registrations and profiles
-            </p>
-            <button onclick="cleanExamData()" 
-                    style="background: #fd7e14; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
-                Clean All Exam Data
-            </button>
-        </div>
-
-        <!-- Clean Exam Slots -->
-        <div class="cleanup-card" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 15px;">🎫</div>
-            <h3 style="color: #28a745; margin-bottom: 15px;">Reset Exam Slots</h3>
-            <p style="color: #6c757d; margin-bottom: 20px; line-height: 1.5;">
-                Reset all exam slots for candidates.<br>
-                <strong>Preserves:</strong> All other data including questions and user profiles
-            </p>
-            <button onclick="cleanExamSlots()" 
-                    style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
-                Reset Exam Slots
-            </button>
-        </div>
-
-        <!-- Delete All Candidates -->
-        <div class="cleanup-card" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 15px;">👥</div>
-            <h3 style="color: #dc3545; margin-bottom: 15px;">Delete All Candidates</h3>
-            <p style="color: #6c757d; margin-bottom: 20px; line-height: 1.5;">
-                Delete all candidate registrations and profiles.<br>
-                <strong>Preserves:</strong> Questions, papers, and admin accounts
-            </p>
-            <button onclick="deleteAllCandidates()" 
-                    style="background: #dc3545; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
-                Delete All Candidates
+        <!-- Delete Everything Card -->
+        <div class="deletion-card everything">
+            <div class="card-header">
+                <div class="card-icon"></div>
+                <div class="card-title">
+                    <h3>Delete Everything</h3>
+                    <span class="card-badge badge-danger">Top Secret</span>
+                </div>
+            </div>
+            
+            <div class="card-content">
+                <div class="scope-section">
+                    <div class="scope-title">Operation Scope</div>
+                    <ul class="scope-list">
+                        <li><strong>Removes:</strong> All Questions & Papers</li>
+                        <li><strong>Removes:</strong> All User Registrations</li>
+                        <li><strong>Removes:</strong> All Candidate Profiles</li>
+                        <li><strong>Preserves:</strong> Admin Accounts Only</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button onclick="deleteEverything()" class="delete-button btn-everything">
+                Delete Everything
             </button>
         </div>
 
     </div>
 
-    <!-- Warning Section -->
-    <div class="warning-section" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h4 style="color: #856404; margin-bottom: 10px;">⚠️ Important Notes</h4>
-        <ul style="color: #856404; margin-bottom: 0; padding-left: 20px;">
-            <li>All cleanup operations are <strong>permanent and cannot be undone</strong></li>
-            <li>Make sure you have backups before performing any cleanup</li>
-            <li>Questions cleanup will also delete all related exam sessions and answers</li>
-            <li>Candidates cleanup will delete all user registrations but preserve questions</li>
-            <li>Use the command line tool <code>exam_admin.bat</code> for dry-run options</li>
+    <div class="info-section">
+        <h4> Important Security Warnings</h4>
+        <ul class="info-list">
+            <li><strong>All operations are permanent and irreversible</strong></li>
+            <li><strong>Ensure complete database backup before proceeding</strong></li>
+            <li><strong>Debug logging is enabled for troubleshooting</strong></li>
+            <li><strong>Operations may take several minutes to complete</strong></li>
         </ul>
     </div>
 
-    <!-- Command Line Alternative -->
-    <div class="cli-section" style="background: #e9ecef; border: 1px solid #ced4da; padding: 15px; border-radius: 8px;">
-        <h5 style="color: #495057; margin-bottom: 10px;">💻 Command Line Alternative</h5>
-        <p style="color: #6c757d; margin-bottom: 10px; font-size: 14px;">
-            For more control and dry-run options, use the command line:
-        </p>
-        <code style="background: #f8f9fa; padding: 8px; border-radius: 4px; display: block; font-family: monospace;">
-            python manage.py cleanup_exam_data --level=questions --dry-run<br>
-            python manage.py cleanup_exam_data --level=exam-data --confirm<br>
-            python manage.py cleanup_exam_data --level=candidates --confirm<br>
-            # Or use the batch file: exam_admin.bat
-        </code>
+    <div class="cli-section">
+        <h4> Command Line Interface</h4>
+        <p style="margin-bottom: 15px; font-size: 14px;">For advanced operations and dry-run testing:</p>
+        <div class="cli-code">
+            <div class="cli-comment"># Test operations (dry-run mode)</div>
+            python manage.py cleanup_exam_data --level=exam-data --dry-run --debug<br>
+            python manage.py cleanup_exam_data --level=everything --dry-run --debug<br><br>
+            
+            <div class="cli-comment"># Execute operations</div>
+            python manage.py cleanup_exam_data --level=exam-data --confirm --debug<br>
+            python manage.py cleanup_exam_data --level=everything --confirm --debug<br><br>
+            
+            <div class="cli-comment"># Use batch file (Windows)</div>
+            exam_admin.bat
+        </div>
     </div>
 
 </div>
 
 <script>
-function cleanQuestions() {
-    if (confirm('⚠️ WARNING: This will delete ALL questions, question papers, exam sessions, and answers.\n\nUser registrations will be preserved.\n\nThis action cannot be undone. Are you sure?')) {
-        if (confirm('🔴 FINAL CONFIRMATION: Delete all questions and related exam data?\n\nClick OK to proceed or Cancel to abort.')) {
-            window.location.href = '{% url "admin:deletedata_examdatacleanup_clean_questions" %}';
-        }
-    }
-}
-
-function cleanExamData() {
-    if (confirm('⚠️ WARNING: This will delete ALL exam-related data including questions, papers, sessions, answers, and uploads.\n\nUser registrations will be preserved.\n\nThis action cannot be undone. Are you sure?')) {
-        if (confirm('🔴 FINAL CONFIRMATION: Delete all exam data but keep user registrations?\n\nClick OK to proceed or Cancel to abort.')) {
-            window.location.href = '{% url "admin:deletedata_examdatacleanup_clean_exam_data" %}';
-        }
-    }
-}
-
-function cleanExamSlots() {
-    if (confirm('⚠️ This will reset all exam slots for all candidates.\n\nCandidates will need new slots assigned to take exams.\n\nAre you sure?')) {
-        window.location.href = '{% url "admin:deletedata_examdatacleanup_clean_exam_slots" %}';
-    }
-}
-
-function deleteAllCandidates() {
-    if (confirm('⚠️ WARNING: This will delete ALL candidate registrations and profiles.\n\nThis includes all candidate data, photos, and user accounts.\n\nQuestions and exam data will be preserved.\n\nThis action cannot be undone. Are you sure?')) {
-        if (confirm('🔴 FINAL CONFIRMATION: Delete all candidate registrations?\n\nThis will remove all candidate profiles and user accounts (except admins).\n\nClick OK to proceed or Cancel to abort.')) {
-            var confirmation = prompt('Type "DELETE CANDIDATES" to confirm:');
-            if (confirmation === 'DELETE CANDIDATES') {
-                window.location.href = '{% url "admin:deletedata_examdatacleanup_delete_candidates" %}';
+function deleteExamData() {
+    if (confirm(' WARNING: This will DELETE ALL EXAM-RELATED DATA\n\nThis includes:\n All Questions and Question Papers\n All Exam Sessions and Answers\n All Question Uploads and Activations\n All Exam-Related Files\n\nUSER REGISTRATIONS WILL BE PRESERVED\n\nThis action is PERMANENT and CANNOT be undone.\n\nDo you want to proceed?')) {
+        if (confirm(' FINAL CONFIRMATION\n\nYou are about to execute a RESTRICTED OPERATION that will permanently delete all exam data.\n\nClick OK to proceed or Cancel to abort.')) {
+            var confirmation = prompt(' SECURITY VERIFICATION\n\nTo confirm this critical operation, type exactly:\n\nDELETE EXAM DATA\n\n(Case sensitive)');
+            if (confirmation === 'DELETE EXAM DATA') {
+                showLoading('Executing secure deletion... Please wait.');
+                window.location.href = '/admin/deletedata/examdatacleanup/clean-exam-data/';
             } else {
-                alert('❌ Operation cancelled - incorrect confirmation text.');
+                alert(' OPERATION CANCELLED\n\nIncorrect confirmation text entered.\nOperation aborted for security.');
             }
         }
     }
 }
+
+function deleteEverything() {
+    if (confirm(' MAXIMUM SECURITY ALERT\n\n CRITICAL WARNING: This operation will DELETE EVERYTHING\n\nThis includes:\n ALL Questions and Question Papers\n ALL User Registrations and Profiles\n ALL Candidate Data and Photos\n ALL Exam Sessions and Answers\n ALL System Data\n\nONLY ADMIN ACCOUNTS WILL BE PRESERVED\n\nThis action is PERMANENT and CANNOT be undone.\n\nDo you want to proceed?')) {
+        if (confirm(' FINAL CONFIRMATION\n\nYou are about to execute a TOP SECRET OPERATION that will completely reset the entire system.\n\nThis is the MOST DESTRUCTIVE operation available.\n\nClick OK to proceed or Cancel to abort.')) {
+            showLoading('Executing complete system reset... Please wait.');
+            window.location.href = '/admin/deletedata/examdatacleanup/clean-everything/';
+        }
+    }
+}
+
+function showLoading(message) {
+    document.body.style.cursor = 'wait';
+    var buttons = document.querySelectorAll('button');
+    buttons.forEach(btn => btn.disabled = true);
+    
+    var loadingDiv = document.createElement('div');
+    loadingDiv.innerHTML = '<div style="text-align:center;"><div style="display:inline-block;width:40px;height:40px;border:4px solid #f3f3f3;border-top:4px solid #3498db;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:15px;"></div><br>' + message + '</div>';
+    loadingDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;color:#333;padding:40px;border-radius:10px;z-index:9999;font-size:16px;box-shadow:0 10px 40px rgba(0,0,0,0.3);min-width:300px;';
+    document.body.appendChild(loadingDiv);
+    
+    var style = document.createElement('style');
+    style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+}
 </script>
-
-<style>
-.cleanup-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-.cleanup-card button:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-    transition: all 0.2s ease;
-}
-</style>
-
 {% endblock %}

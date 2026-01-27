@@ -222,6 +222,10 @@ def exam_interface(request):
         # -----------------------------
         if request.method == "POST":
             with transaction.atomic():
+                # Check if exam was terminated
+                exam_terminated = request.POST.get('exam_terminated') == 'true'
+                termination_reason = request.POST.get('termination_reason', 'Normal submission')
+                
                 for key, value in request.POST.items():
                     if key.startswith("question_"):
                         qid = key.split("_")[1]
@@ -238,6 +242,17 @@ def exam_interface(request):
 
                 session.completed_at = timezone.now()
                 session.save(update_fields=["completed_at"])
+                
+                # CRITICAL: Clear exam slot on submission/termination
+                # This prevents the candidate from retaking the exam
+                candidate.exam_slot_from = None
+                candidate.exam_slot_to = None
+                candidate.save(update_fields=['exam_slot_from', 'exam_slot_to'])
+                
+                # Log termination if applicable
+                if exam_terminated:
+                    # You can add additional logging here if needed
+                    messages.warning(request, f"Exam was terminated: {termination_reason}")
 
             logout(request)
             return redirect("exam_success")

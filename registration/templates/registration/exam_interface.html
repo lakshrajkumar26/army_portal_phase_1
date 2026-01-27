@@ -562,34 +562,368 @@
         </div>
     </div>
 
-    <!-- Security Warning Modal - STAYS IN FULLSCREEN -->
+    <!-- Security Warning Modal - PROFESSIONAL MILITARY THEME WITH MOUSE LOCK -->
     <div id="securityWarningModal" class="modal" style="z-index: 99999999;">
-        <div class="modal-content" style="border: 3px solid #f44336; background: rgba(244, 67, 54, 0.95);">
-            <h3 style="color: #fff; font-size: 2rem;">🚨 SECURITY VIOLATION DETECTED</h3>
-            <p style="color: #fff; font-size: 1.3rem; font-weight: bold;" id="violationMessage">
-                You attempted to exit fullscreen mode or use blocked keys!
-            </p>
-            <p style="color: #ffeb3b; font-size: 1.1rem;">
-                ⚠️ Your exam progress has been automatically saved.<br>
-                Choose your action carefully:
-            </p>
-            <div class="modal-buttons">
+        <div class="modal-content" style="
+            background: linear-gradient(135deg, #1a2e1a 0%, #2c4c2c 50%, #1a2e1a 100%);
+            border: 4px solid #c8b072;
+            box-shadow: 
+                0 0 40px rgba(200, 176, 114, 0.6),
+                inset 0 0 20px rgba(200, 176, 114, 0.1);
+            max-width: 700px;
+            padding: 50px;
+            position: relative;
+            overflow: hidden;">
+            
+            <!-- Military Header Stripe -->
+            <div style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 8px;
+                background: linear-gradient(90deg, #c8b072 0%, #d6c28e 50%, #c8b072 100%);
+            "></div>
+            
+            <!-- Military Badge/Emblem -->
+            <div style="
+                text-align: center;
+                margin-bottom: 35px;
+                position: relative;">
+                <div style="
+                    width: 100px;
+                    height: 100px;
+                    margin: 0 auto 25px;
+                    background: radial-gradient(circle, #2c4c2c 0%, #1a2e1a 70%);
+                    border: 4px solid #c8b072;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                    box-shadow: 
+                        0 0 20px rgba(200, 176, 114, 0.4),
+                        inset 0 0 10px rgba(0, 0, 0, 0.5);">
+                    
+                    <!-- Military Star -->
+                    <div style="
+                        width: 50px;
+                        height: 50px;
+                        background: #c8b072;
+                        clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+                        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+                    "></div>
+                </div>
+                
+                <h3 style="
+                    color: #c8b072;
+                    font-size: 1.6rem;
+                    margin: 0;
+                    text-transform: uppercase;
+                    letter-spacing: 3px;
+                    font-weight: 700;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+                    font-family: 'Arial Black', Arial, sans-serif;">
+                    SECURITY PROTOCOL VIOLATION
+                </h3>
+                
+                <div style="
+                    width: 200px;
+                    height: 2px;
+                    background: linear-gradient(90deg, transparent 0%, #c8b072 50%, transparent 100%);
+                    margin: 15px auto;
+                "></div>
+            </div>
+            
+            <!-- Violation Details -->
+            <div style="
+                background: rgba(0, 0, 0, 0.4);
+                border: 2px solid #c8b072;
+                border-left: 6px solid #c8b072;
+                padding: 25px;
+                margin-bottom: 30px;
+                position: relative;">
+                
+                <div style="
+                    position: absolute;
+                    top: -2px;
+                    right: -2px;
+                    background: #c8b072;
+                    color: #1a2e1a;
+                    padding: 5px 15px;
+                    font-size: 0.8rem;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;">
+                    CLASSIFIED
+                </div>
+                
+                <h4 style="
+                    color: #c8b072;
+                    font-size: 1.1rem;
+                    margin: 0 0 15px 0;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    font-weight: 600;">
+                    VIOLATION REPORT
+                </h4>
+                
+                <p style="
+                    color: #f0f0f0;
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    margin: 0 0 20px 0;
+                    line-height: 1.6;" id="violationMessage">
+                    Unauthorized attempt to exit secure examination environment detected.
+                </p>
+                
+                <div style="
+                    background: rgba(200, 176, 114, 0.1);
+                    border: 1px solid #c8b072;
+                    padding: 15px;
+                    margin-top: 15px;">
+                    <p style="
+                        color: #d6c28e;
+                        font-size: 0.95rem;
+                        margin: 0;
+                        text-align: center;
+                        font-weight: 500;">
+                        EXAMINATION PROGRESS HAS BEEN AUTOMATICALLY SECURED
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Action Required Section -->
+            <div style="
+                background: linear-gradient(135deg, rgba(200, 176, 114, 0.1) 0%, rgba(200, 176, 114, 0.05) 100%);
+                border: 2px solid #c8b072;
+                padding: 25px;
+                margin-bottom: 35px;
+                text-align: center;">
+                
+                <h4 style="
+                    color: #c8b072;
+                    font-size: 1.2rem;
+                    margin: 0 0 20px 0;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                    font-weight: 700;">
+                    ACTION REQUIRED
+                </h4>
+                
+                <p style="
+                    color: #f0f0f0;
+                    font-size: 1rem;
+                    margin: 0;
+                    line-height: 1.5;">
+                    Select your course of action to proceed with the examination protocol.
+                </p>
+            </div>
+            
+            <!-- Command Buttons -->
+            <div class="modal-buttons" style="
+                display: flex;
+                gap: 20px;
+                justify-content: center;
+                margin-bottom: 25px;">
+                
                 <button class="modal-btn" id="backToExam" style="
-                    background: #4caf50; color: white; font-size: 1.2rem; 
-                    padding: 15px 30px; margin: 10px;">
-                    🔙 Back to Exam (Continue)
+                    background: linear-gradient(135deg, #2c4c2c 0%, #3d6b3d 100%);
+                    color: #c8b072;
+                    font-size: 1rem;
+                    padding: 18px 35px;
+                    border: 3px solid #c8b072;
+                    cursor: pointer;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    box-shadow: 
+                        0 4px 15px rgba(200, 176, 114, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    transition: all 0.3s ease;
+                    position: relative;
+                    overflow: hidden;">
+                    
+                    <span style="position: relative; z-index: 2;">
+                        RETURN TO EXAMINATION
+                    </span>
+                    
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: -100%;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(90deg, transparent, rgba(200, 176, 114, 0.2), transparent);
+                        transition: left 0.5s ease;
+                    " class="button-shine"></div>
                 </button>
+                
                 <button class="modal-btn" id="exitExam" style="
-                    background: #f44336; color: white; font-size: 1.2rem; 
-                    padding: 15px 30px; margin: 10px;">
-                    🚪 Exit Exam (Submit & Leave)
+                    background: linear-gradient(135deg, #4a1a1a 0%, #6d2c2c 100%);
+                    color: #c8b072;
+                    font-size: 1rem;
+                    padding: 18px 35px;
+                    border: 3px solid #c8b072;
+                    cursor: pointer;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    box-shadow: 
+                        0 4px 15px rgba(200, 176, 114, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    transition: all 0.3s ease;
+                    position: relative;
+                    overflow: hidden;">
+                    
+                    <span style="position: relative; z-index: 2;">
+                        TERMINATE EXAMINATION
+                    </span>
+                    
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: -100%;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(90deg, transparent, rgba(200, 176, 114, 0.2), transparent);
+                        transition: left 0.5s ease;
+                    " class="button-shine"></div>
                 </button>
             </div>
-            <p style="color: #ffcdd2; font-size: 0.9rem; margin-top: 15px;">
-                Note: Multiple violations may result in automatic exam termination.
-            </p>
+            
+            <!-- Footer Classification -->
+            <div style="
+                text-align: center;
+                padding-top: 20px;
+                border-top: 2px solid rgba(200, 176, 114, 0.3);">
+                <p style="
+                    color: #d6c28e;
+                    font-size: 0.85rem;
+                    margin: 0;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    opacity: 0.8;">
+                    MILITARY EXAMINATION SECURITY PROTOCOL
+                </p>
+            </div>
+            
+            <!-- Military Corner Decorations -->
+            <div style="
+                position: absolute;
+                top: 15px;
+                left: 15px;
+                width: 30px;
+                height: 30px;
+                border-top: 3px solid #c8b072;
+                border-left: 3px solid #c8b072;
+            "></div>
+            <div style="
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                width: 30px;
+                height: 30px;
+                border-top: 3px solid #c8b072;
+                border-right: 3px solid #c8b072;
+            "></div>
+            <div style="
+                position: absolute;
+                bottom: 15px;
+                left: 15px;
+                width: 30px;
+                height: 30px;
+                border-bottom: 3px solid #c8b072;
+                border-left: 3px solid #c8b072;
+            "></div>
+            <div style="
+                position: absolute;
+                bottom: 15px;
+                right: 15px;
+                width: 30px;
+                height: 30px;
+                border-bottom: 3px solid #c8b072;
+                border-right: 3px solid #c8b072;
+            "></div>
         </div>
     </div>
+
+    <style>
+        /* Professional Military Modal with Mouse Lock */
+        #securityWarningModal {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.95) !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            pointer-events: auto !important;
+        }
+        
+        #securityWarningModal .modal-content {
+            animation: militaryModalEntry 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        @keyframes militaryModalEntry {
+            0% { 
+                transform: scale(0.8) translateY(-50px);
+                opacity: 0;
+            }
+            100% { 
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Button Hover Effects */
+        #backToExam:hover, #exitExam:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 25px rgba(200, 176, 114, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        #backToExam:hover .button-shine,
+        #exitExam:hover .button-shine {
+            left: 100%;
+        }
+        
+        #backToExam:active, #exitExam:active {
+            transform: translateY(-1px);
+        }
+        
+        /* MOUSE LOCK SYSTEM - Prevents all interactions outside modal */
+        body.modal-open {
+            overflow: hidden !important;
+            pointer-events: none !important;
+        }
+        
+        body.modal-open #securityWarningModal,
+        body.modal-open #securityWarningModal * {
+            pointer-events: auto !important;
+        }
+        
+        /* Block all other page elements */
+        body.modal-open #examContent,
+        body.modal-open #fullscreenOverlay,
+        body.modal-open #confirmationModal {
+            pointer-events: none !important;
+        }
+        
+        /* Ensure modal is always on top and captures all events */
+        #securityWarningModal::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            z-index: -1;
+            pointer-events: auto;
+        }
+    </style>
 
 <div id="examContent" style="display:none;">
     <div class="exam-container">
@@ -756,10 +1090,88 @@ document.addEventListener("DOMContentLoaded", () => {
   let examSubmitted = false;
   let isExamTerminated = false;
   let examStarted = false;
+  let violationCount = 0;
+  let isShowingWarning = false;
+  let maxViolations = Infinity; // INFINITE WARNINGS - NO TERMINATION LIMIT
+  let fullscreenCheckInterval = null;
+  let pointerLocked = false;
   
   // ---------------------------
-  // ULTRA MAXIMUM SECURITY SYSTEM
+  // NUCLEAR OPTION: ABSOLUTE FULLSCREEN LOCK
   // ---------------------------
+  
+  function isInFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || 
+             document.mozFullScreenElement || document.msFullscreenElement);
+  }
+  
+  function showSecurityWarning(reason) {
+    if (isShowingWarning || examSubmitted || isExamTerminated) return;
+    
+    isShowingWarning = true;
+    violationCount++;
+    
+    // Save progress immediately
+    saveCurrentProgress();
+    
+    // Log the violation
+    logSecurityViolation(`WARNING ${violationCount}: ${reason}`);
+    
+    // Update violation message with professional military language
+    const violationMsg = document.getElementById('violationMessage');
+    violationMsg.innerHTML = `
+      <strong>VIOLATION #${violationCount}:</strong><br>
+      ${reason}<br><br>
+      <span style="color: #d6c28e;">
+        This incident has been logged in the security database.
+      </span>
+    `;
+    
+    // ENABLE MOUSE LOCK - Block all interactions outside modal
+    document.body.classList.add('modal-open');
+    
+    // Show warning modal (STAYS IN FULLSCREEN)
+    document.getElementById('securityWarningModal').style.display = 'block';
+    
+    // Force focus on modal and trap it
+    document.getElementById('backToExam').focus();
+    
+    // Prevent tabbing out of modal
+    trapFocusInModal();
+  }
+  
+  function hideSecurityWarning() {
+    isShowingWarning = false;
+    
+    // DISABLE MOUSE LOCK - Restore normal interactions
+    document.body.classList.remove('modal-open');
+    
+    document.getElementById('securityWarningModal').style.display = 'none';
+  }
+  
+  // Focus trap function to keep focus within modal
+  function trapFocusInModal() {
+    const modal = document.getElementById('securityWarningModal');
+    const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    });
+  }
   
   function terminateExamImmediately(reason) {
     if (isExamTerminated || examSubmitted) return;
@@ -767,11 +1179,19 @@ document.addEventListener("DOMContentLoaded", () => {
     isExamTerminated = true;
     examSubmitted = true;
     
+    // Stop fullscreen monitoring
+    if (fullscreenCheckInterval) {
+      clearInterval(fullscreenCheckInterval);
+    }
+    
     // Save current progress immediately
     saveCurrentProgress();
     
     // Log the termination
     logSecurityViolation(`EXAM TERMINATED: ${reason}`);
+    
+    // Hide any warnings
+    hideSecurityWarning();
     
     // Show termination message
     alert(`EXAM TERMINATED!\n\nReason: ${reason}\n\nYour progress has been saved and the exam is now ended.`);
@@ -791,10 +1211,15 @@ document.addEventListener("DOMContentLoaded", () => {
       reasonInput.value = reason;
       form.appendChild(reasonInput);
       
-      form.submit();
+      // Exit fullscreen before submitting
+      exitFullScreen().finally(() => {
+        form.submit();
+      });
     } else {
       // Fallback: redirect to logout
-      window.location.href = '/candidate/login/';
+      exitFullScreen().finally(() => {
+        window.location.href = '/candidate/login/';
+      });
     }
   }
 
@@ -825,14 +1250,15 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem('examProgress', JSON.stringify({
       timestamp: new Date().toISOString(),
       answers: answers,
-      reason: 'Progress backup'
+      reason: 'Security violation backup',
+      violationCount: violationCount
     }));
     
     console.log('Progress saved:', Object.keys(answers).length, 'answers');
   }
 
   // ---------------------------
-  // Fullscreen helpers
+  // NUCLEAR FULLSCREEN CONTROL
   // ---------------------------
   function enterFullScreen() {
     const el = document.documentElement;
@@ -859,6 +1285,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // NUCLEAR OPTION: Aggressive fullscreen enforcement
+  function enforceFullscreen() {
+    if (examSubmitted || isExamTerminated) return;
+    
+    if (!isInFullscreen() && examStarted) {
+      // Immediately try to re-enter fullscreen
+      enterFullScreen().catch(() => {
+        // If we can't re-enter fullscreen, show warning
+        if (!isShowingWarning) {
+          if (violationCount >= maxViolations) {
+            terminateExamImmediately("Maximum violations reached - Cannot maintain fullscreen");
+          } else {
+            showSecurityWarning("Exited fullscreen mode - Please stay in fullscreen during exam");
+          }
+        }
+      });
+    }
+  }
+
+  // Request pointer lock to trap mouse
+  function requestPointerLock() {
+    const el = document.body;
+    const fn = el.requestPointerLock || el.mozRequestPointerLock || el.webkitRequestPointerLock;
+    
+    if (fn && !pointerLocked) {
+      try {
+        fn.call(el);
+        pointerLocked = true;
+      } catch (e) {
+        console.warn("Pointer lock failed:", e);
+      }
+    }
+  }
+
+  // Release pointer lock
+  function releasePointerLock() {
+    const fn = document.exitPointerLock || document.mozExitPointerLock || document.webkitExitPointerLock;
+    
+    if (fn && pointerLocked) {
+      try {
+        fn.call(document);
+        pointerLocked = false;
+      } catch (e) {
+        console.warn("Pointer unlock failed:", e);
+      }
+    }
+  }
+
   // ---------------------------
   // Start Exam button
   // ---------------------------
@@ -873,11 +1347,20 @@ document.addEventListener("DOMContentLoaded", () => {
           document.getElementById("fullscreenOverlay").style.display = "none";
           document.getElementById("examContent").style.display = "block";
           examStarted = true;
-          console.log("Exam started successfully");
+          
+          // Start NUCLEAR fullscreen monitoring (every 10ms)
+          fullscreenCheckInterval = setInterval(enforceFullscreen, 10);
+          
+          // Request pointer lock to trap mouse
+          setTimeout(() => {
+            requestPointerLock();
+          }, 1000);
+          
+          console.log("🔒 NUCLEAR FULLSCREEN LOCK ACTIVATED - Monitoring every 10ms");
         })
         .catch(err => {
           console.error("Fullscreen failed:", err);
-          alert("Fullscreen is required to start the exam. Please allow fullscreen.");
+          alert("Fullscreen is required to start the exam. Please allow fullscreen and try again.");
         });
     });
   } else {
@@ -885,89 +1368,157 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------------------------
-  // ULTRA MAXIMUM SECURITY - IMMEDIATE TERMINATION
+  // NUCLEAR SECURITY WARNING SYSTEM
   // ---------------------------
   
-  // Fullscreen monitoring every 100ms
-  setInterval(() => {
-    if (examStarted && !examSubmitted && !isExamTerminated) {
-      const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
-                             document.mozFullScreenElement || document.msFullscreenElement);
-      
-      if (!isFullscreen) {
-        terminateExamImmediately("Exited fullscreen mode - Security violation");
-      }
-    }
-  }, 100);
-
-  // Window blur detection
-  window.addEventListener('blur', () => {
-    if (examStarted && !examSubmitted && !isExamTerminated) {
-      setTimeout(() => {
-        if (!document.hasFocus() && !examSubmitted && !isExamTerminated) {
-          terminateExamImmediately("Clicked outside exam window or switched to another application");
-        }
-      }, 500);
-    }
-  });
-
-  // Tab visibility monitoring
-  document.addEventListener('visibilitychange', () => {
-    if (examStarted && document.hidden && !examSubmitted && !isExamTerminated) {
-      setTimeout(() => {
-        if (document.hidden && !examSubmitted && !isExamTerminated) {
-          terminateExamImmediately("Tab was hidden or switched to another tab");
-        }
-      }, 1000);
-    }
-  });
-
-  // ULTRA AGGRESSIVE KEYBOARD BLOCKING
-  document.addEventListener('keydown', (e) => {
-    if (!examStarted) return; // Allow during start screen
+  // Security Warning Modal Event Handlers
+  document.getElementById('backToExam').addEventListener('click', () => {
+    hideSecurityWarning();
     
-    // Immediate termination for critical keys
-    if (e.key === 'F11') {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      terminateExamImmediately("F11 key pressed - Attempted to toggle fullscreen");
-      return false;
-    }
+    // IMMEDIATELY force back to fullscreen
+    enterFullScreen().then(() => {
+      // Re-request pointer lock
+      setTimeout(() => {
+        requestPointerLock();
+      }, 500);
+    }).catch(() => {
+      // If fullscreen fails, terminate exam
+      terminateExamImmediately("Failed to return to fullscreen mode after warning");
+    });
+  });
 
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      
-      let escapeAttempts = parseInt(localStorage.getItem('escapeAttempts') || '0') + 1;
-      localStorage.setItem('escapeAttempts', escapeAttempts.toString());
-      
-      if (escapeAttempts >= 2) {
-        terminateExamImmediately(`Multiple Escape key attempts (${escapeAttempts}) - Security violation`);
+  document.getElementById('exitExam').addEventListener('click', () => {
+    hideSecurityWarning();
+    examSubmitted = true;
+    
+    // Stop fullscreen monitoring
+    if (fullscreenCheckInterval) {
+      clearInterval(fullscreenCheckInterval);
+    }
+    
+    // Release pointer lock
+    releasePointerLock();
+    
+    // Save final progress
+    saveCurrentProgress();
+    
+    // Exit fullscreen and submit
+    exitFullScreen().finally(() => {
+      const form = document.getElementById("exam-form");
+      if (form) {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'voluntary_exit';
+        hiddenInput.value = 'true';
+        form.appendChild(hiddenInput);
+        
+        form.submit();
+      } else {
+        window.location.href = '/candidate/login/';
       }
+    });
+  });
+
+  // ---------------------------
+  // NUCLEAR FULLSCREEN CHANGE DETECTION
+  // ---------------------------
+  
+  // Multiple redundant fullscreen change listeners
+  function onFullscreenChange() {
+    if (!examStarted || examSubmitted || isExamTerminated) return;
+    
+    if (!isInFullscreen()) {
+      // IMMEDIATELY try to re-enter fullscreen (no delays)
+      enterFullScreen().catch(() => {
+        // If immediate re-entry fails, show warning
+        if (!isShowingWarning) {
+          if (violationCount >= maxViolations) {
+            terminateExamImmediately("Maximum violations reached - Cannot maintain fullscreen");
+          } else {
+            showSecurityWarning("Fullscreen mode was exited - Please stay in fullscreen during exam");
+          }
+        }
+      });
+    }
+  }
+  
+  // Attach to all possible fullscreen change events
+  document.addEventListener("fullscreenchange", onFullscreenChange, true);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange, true);
+  document.addEventListener("mozfullscreenchange", onFullscreenChange, true);
+  document.addEventListener("MSFullscreenChange", onFullscreenChange, true);
+
+  // Additional redundant monitoring
+  document.addEventListener("fullscreenerror", () => {
+    if (examStarted && !examSubmitted && !isExamTerminated) {
+      logSecurityViolation("Fullscreen error detected");
+    }
+  });
+
+  // ---------------------------
+  // NUCLEAR KEYBOARD BLOCKING
+  // ---------------------------
+  
+  // Block at capture phase (earliest possible)
+  document.addEventListener('keydown', (e) => {
+    if (!examStarted || isShowingWarning) return;
+    
+    // COMPLETELY BLOCK Escape key - INFINITE WARNINGS
+    if (e.key === 'Escape' || e.keyCode === 27 || e.which === 27) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
       
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning("Escape key is not allowed during examination");
       return false;
     }
 
-    // Immediate termination for Alt+Tab
+    // COMPLETELY BLOCK F11 - INFINITE WARNINGS
+    if (e.key === 'F11' || e.keyCode === 122 || e.which === 122) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning("F11 key is not allowed during examination");
+      return false;
+    }
+
+    // Block Alt+Tab - INFINITE WARNINGS
     if ((e.altKey && e.key === 'Tab') || (e.metaKey && e.key === 'Tab')) {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
-      terminateExamImmediately("Alt+Tab detected - Attempted to switch applications");
+      
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning("Alt+Tab is not allowed during examination - Do not switch applications");
       return false;
     }
 
-    // Immediate termination for dangerous combinations
+    // Block all function keys - INFINITE WARNINGS
+    const functionKeys = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F12"];
+    if (functionKeys.includes(e.key)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning(`${e.key} key is not allowed during examination`);
+      return false;
+    }
+
+    // Block dangerous combinations - INFINITE WARNINGS
     const dangerousCombos = [
-      { ctrl: true, shift: true, key: "I" }, // DevTools
-      { ctrl: true, shift: true, key: "J" }, // Console
-      { ctrl: true, key: "W" }, // Close tab
-      { ctrl: true, key: "T" }, // New tab
-      { ctrl: true, key: "N" }, // New window
-      { ctrl: true, key: "R" }, // Refresh
-      { alt: true, key: "F4" }, // Close window
+      { ctrl: true, shift: true, key: "I", desc: "Developer Tools access" },
+      { ctrl: true, shift: true, key: "J", desc: "Console access" },
+      { ctrl: true, shift: true, key: "C", desc: "Inspector access" },
+      { ctrl: true, key: "W", desc: "Close Tab attempt" },
+      { ctrl: true, key: "T", desc: "New Tab attempt" },
+      { ctrl: true, key: "N", desc: "New Window attempt" },
+      { ctrl: true, key: "R", desc: "Page Refresh attempt" },
+      { alt: true, key: "F4", desc: "Close Window attempt" },
+      { meta: true, key: "q", desc: "Quit Application attempt" },
     ];
 
     for (const combo of dangerousCombos) {
@@ -982,65 +1533,193 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         e.stopImmediatePropagation();
         e.stopPropagation();
-        terminateExamImmediately(`Dangerous keyboard combination: ${JSON.stringify(combo)}`);
+        
+        // INFINITE WARNINGS - NO TERMINATION
+        showSecurityWarning(`${combo.desc} is not allowed during examination`);
+        return false;
+      }
+    }
+  }, true); // Capture phase
+
+  // Additional keyup blocking for Escape
+  document.addEventListener('keyup', (e) => {
+    if (examStarted && !isShowingWarning) {
+      if (e.key === 'Escape' || e.keyCode === 27 || e.which === 27) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        return false;
+      }
+      if (e.key === 'F11' || e.keyCode === 122 || e.which === 122) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
         return false;
       }
     }
   }, true);
 
-  // Right-click termination
+  // Additional keypress blocking for Escape
+  document.addEventListener('keypress', (e) => {
+    if (examStarted && !isShowingWarning) {
+      if (e.key === 'Escape' || e.keyCode === 27 || e.which === 27) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        return false;
+      }
+      if (e.key === 'F11' || e.keyCode === 122 || e.which === 122) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        return false;
+      }
+    }
+  }, true);
+
+  // ---------------------------
+  // WINDOW FOCUS MONITORING WITH WARNINGS
+  // ---------------------------
+  window.addEventListener('blur', () => {
+    if (examStarted && !examSubmitted && !isExamTerminated && !isShowingWarning) {
+      setTimeout(() => {
+        if (!document.hasFocus() && !examSubmitted && !isExamTerminated && !isShowingWarning) {
+          if (violationCount >= maxViolations) {
+            terminateExamImmediately("Maximum security violations reached - Window focus lost");
+          } else {
+            showSecurityWarning("Do not click outside the exam window or switch to other applications");
+          }
+        }
+      }, 1000); // 1 second delay to avoid false positives
+    }
+  });
+
+  // Tab visibility monitoring - IMMEDIATE TERMINATION (NO WARNINGS)
+  document.addEventListener('visibilitychange', () => {
+    if (examStarted && document.hidden && !examSubmitted && !isExamTerminated && !isShowingWarning) {
+      // IMMEDIATE TERMINATION on tab switch - NO SECOND CHANCES
+      terminateExamImmediately("Tab was switched or window was minimized - Exam terminated for security");
+    }
+  });
+
+  // ---------------------------
+  // MOUSE CONTROLS WITH WARNINGS
+  // ---------------------------
+  
+  // Right-click warning - INFINITE WARNINGS
   document.addEventListener("contextmenu", e => {
-    if (!examStarted) return;
+    if (!examStarted || isShowingWarning) return;
     
     e.preventDefault();
     e.stopImmediatePropagation();
-    terminateExamImmediately("Right-click detected - Security violation");
+    
+    // INFINITE WARNINGS - NO TERMINATION
+    showSecurityWarning("Right-click is not allowed during examination");
     return false;
   }, true);
 
-  // Mouse button termination
+  // Mouse button warnings - INFINITE WARNINGS
   document.addEventListener("mousedown", e => {
-    if (!examStarted) return;
+    if (!examStarted || isShowingWarning) return;
     
     if (e.button === 1) { // Middle button
       e.preventDefault();
       e.stopImmediatePropagation();
-      terminateExamImmediately("Middle mouse button clicked - Attempted to open new tab");
+      
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning("Middle mouse button is not allowed during examination");
       return false;
     }
     if (e.button === 2) { // Right button
       e.preventDefault();
       e.stopImmediatePropagation();
-      terminateExamImmediately("Right mouse button clicked - Security violation");
+      
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning("Right mouse button is not allowed during examination");
       return false;
     }
     if (e.button === 3 || e.button === 4) { // Navigation buttons
       e.preventDefault();
       e.stopImmediatePropagation();
-      terminateExamImmediately("Navigation mouse button clicked - Attempted browser navigation");
+      
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning("Mouse navigation buttons are not allowed during examination");
       return false;
     }
   }, true);
 
-  // Override window.open
+  // ---------------------------
+  // OVERRIDE BROWSER FUNCTIONS
+  // ---------------------------
+  
+  // Override window.open - INFINITE WARNINGS
+  const originalWindowOpen = window.open;
   window.open = function() {
     if (examStarted && !examSubmitted && !isExamTerminated) {
-      terminateExamImmediately("Attempted to open new window - Security violation");
+      // INFINITE WARNINGS - NO TERMINATION
+      showSecurityWarning("Opening new windows is not allowed during examination");
     }
     return null;
   };
 
-  // Block all forms of fullscreen exit
+  // Override fullscreen exit functions - PREVENT ALL EXITS
   ['exitFullscreen', 'webkitExitFullscreen', 'mozCancelFullScreen', 'msExitFullscreen'].forEach(method => {
     if (document[method]) {
       const original = document[method];
       document[method] = function() {
-        if (examStarted && !examSubmitted && !isExamTerminated) {
-          terminateExamImmediately(`Attempted to exit fullscreen using ${method} - Security violation`);
+        if (examStarted && !examSubmitted && !isExamTerminated && !isShowingWarning) {
+          // Block the exit and show warning
+          if (violationCount >= maxViolations) {
+            terminateExamImmediately(`Maximum security violations reached - Attempted to exit fullscreen using ${method}`);
+          } else {
+            showSecurityWarning("Exiting fullscreen is not allowed during exam");
+          }
+          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
         }
-        return Promise.reject(new Error("Fullscreen exit blocked - exam terminated"));
+        return original.call(this);
       };
     }
+  });
+
+  // ---------------------------
+  // ADDITIONAL SECURITY OVERRIDES
+  // ---------------------------
+  
+  // Block print
+  window.addEventListener('beforeprint', (e) => {
+    if (examStarted && !examSubmitted && !isExamTerminated) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      
+      if (violationCount >= maxViolations) {
+        terminateExamImmediately("Maximum security violations reached - Print attempt detected");
+      } else {
+        showSecurityWarning("Printing is not allowed during exam");
+      }
+      return false;
+    }
+  }, true);
+
+  // Block drag operations
+  document.addEventListener("dragstart", e => {
+    if (examStarted && !isShowingWarning) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      logSecurityViolation("Drag operation blocked");
+      return false;
+    }
+  }, true);
+
+  // Block copy/cut outside input fields
+  ['copy', 'cut'].forEach(eventType => {
+    document.addEventListener(eventType, e => {
+      if (examStarted && !e.target.matches('input, textarea') && !isShowingWarning) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        logSecurityViolation(`${eventType} operation blocked`);
+        return false;
+      }
+    }, true);
   });
 
   // ---------------------------
@@ -1058,8 +1737,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('confirmSubmit').addEventListener('click', () => {
     hideConfirmationModal();
     examSubmitted = true;
-    exitFullScreen();
-    document.getElementById("exam-form").submit();
+    exitFullScreen().finally(() => {
+      document.getElementById("exam-form").submit();
+    });
   });
 
   document.getElementById('cancelSubmit').addEventListener('click', () => {
@@ -1091,17 +1771,16 @@ document.addEventListener("DOMContentLoaded", () => {
         showConfirmationModal();
         return false;
       }
-      examSubmitted = true;
-      exitFullScreen();
     });
   }
 
   // Used by timer or external triggers
   window.endExam = function () {
     examSubmitted = true;
-    exitFullScreen();
-    alert("Time is up! Submitting your exam.");
-    document.getElementById("exam-form")?.submit();
+    exitFullScreen().finally(() => {
+      alert("Time is up! Submitting your exam.");
+      document.getElementById("exam-form")?.submit();
+    });
   };
 
   // ---------------------------
@@ -1177,9 +1856,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (timer <= 0) {
         clearInterval(intervalId);
         examSubmitted = true;
-        exitFullScreen();
-        alert("Time is up! Submitting your exam.");
-        document.getElementById("exam-form")?.submit();
+        exitFullScreen().finally(() => {
+          alert("Time is up! Submitting your exam.");
+          document.getElementById("exam-form")?.submit();
+        });
       }
 
       timer -= 1;
@@ -1206,7 +1886,46 @@ document.addEventListener("DOMContentLoaded", () => {
     document.head.appendChild(style);
   })();
 
-  console.log("🔒 ULTRA MAXIMUM SECURITY MODE ACTIVATED");
+  // ---------------------------
+  // NUCLEAR BROWSER OVERRIDE SYSTEM
+  // ---------------------------
+  
+  // Override ALL fullscreen exit methods at document level
+  const fullscreenExitMethods = [
+    'exitFullscreen',
+    'webkitExitFullscreen', 
+    'webkitCancelFullScreen',
+    'mozCancelFullScreen',
+    'msExitFullscreen'
+  ];
+
+  fullscreenExitMethods.forEach(method => {
+    if (document[method]) {
+      const original = document[method];
+      document[method] = function() {
+        if (examStarted && !examSubmitted && !isExamTerminated && !isShowingWarning) {
+          // Block the exit completely
+          logSecurityViolation(`Blocked fullscreen exit attempt via ${method}`);
+          
+          // Force re-entry immediately
+          setTimeout(() => {
+            if (!isInFullscreen()) {
+              enterFullScreen();
+            }
+          }, 1);
+          
+          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
+        }
+        return original.call(this);
+      };
+    }
+  });
+
+  console.log("🔒 NUCLEAR FULLSCREEN LOCK ACTIVATED");
+  console.log("🚨 Monitoring every 10ms - Escape is IMPOSSIBLE");
+  console.log("⚠️ INFINITE WARNINGS - No termination limit");
+  console.log("🔐 MOUSE LOCK - Modal traps all interactions");
+  console.log("🚫 Tab switching = IMMEDIATE TERMINATION");
 });
 
 // Prevent back/forward navigation

@@ -178,11 +178,13 @@ JAZZMIN_SETTINGS = {
         "exams.Question": "fas fa-question-circle",
         "exams.Result": "fas fa-chart-line",
         "students.Student": "fas fa-user-graduate",
+        "deletedata.ExamDataCleanup": "fas fa-trash-alt",
     },
     
     # Top menu links
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Data Management", "url": "admin:deletedata_examdatacleanup_changelist", "permissions": ["auth.view_user"], "icon": "fas fa-database"},
         {"name": "Support", "url": "https://www.slogsolutions.com", "new_window": True},
     ],
     
