@@ -15,7 +15,24 @@ import sys
 
 
 class CustomAdminSite(admin.AdminSite):
-    """Custom admin site with cleanup operations"""
+    """Custom admin site with cleanup operations and simplified dashboard"""
+    
+    def index(self, request, extra_context=None):
+        """Custom admin index with simplified dashboard"""
+        from registration.models import CandidateProfile
+        from questions.models import Question, QuestionPaper
+        
+        # Get basic stats for the simplified dashboard
+        context = {
+            'total_candidates': CandidateProfile.objects.count(),
+            'total_questions': Question.objects.filter(is_active=True).count(),
+            'active_papers': QuestionPaper.objects.filter(is_active=True).count(),
+        }
+        
+        if extra_context:
+            context.update(extra_context)
+            
+        return super().index(request, extra_context=context)
     
     def get_urls(self):
         urls = super().get_urls()

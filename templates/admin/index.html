@@ -1,139 +1,86 @@
-{% extends "admin/index.html" %}
-{% load static %}
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
 
 {% block content %}
-<div class="dashboard-stats" style="display:flex; gap:20px; margin-bottom:20px;">
-    <div style="flex:1; background:#4CAF50; color:white; padding:20px; border-radius:10px; text-align:center;">
-        <h2>{{ total_candidates }}</h2>
-        <p>Total Candidates</p>
-    </div>
-    <div style="flex:1; background:#2196F3; color:white; padding:20px; border-radius:10px; text-align:center;">
-        <h2>{{ total_shifts }}</h2>
-        <p>Total Shifts</p>
-    </div>
-    <div style="flex:1; background:#FF9800; color:white; padding:20px; border-radius:10px; text-align:center;">
-        <h2>{{ total_trades }}</h2>
-        <p>Total Trades</p>
-    </div>
-</div>
-
-<!-- Clear Data Section -->
-<div class="clear-data-section" style="background:#fff5f5; padding:25px; border-radius:10px; margin-bottom:25px; border:2px solid #ff6b6b;">
-    <h3 style="color:#dc3545; margin-bottom:20px; font-size:20px; text-align:center;">
-        🗑️ <strong>Clear Data Section</strong>
-    </h3>
-    <p style="text-align:center; color:#6c757d; margin-bottom:20px;">
-        <strong>⚠️ DANGER ZONE:</strong> These actions will permanently delete data. Use with extreme caution.
-    </p>
+<div id="content-main">
     
-    <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
+    <!-- Simplified Admin Interface - No Dashboard -->
+    <div class="admin-options" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #333; margin-bottom: 20px; text-align: center;">Admin Control Panel</h2>
         
-        <!-- Delete Questions Only -->
-        <div style="flex:1; min-width:250px; max-width:300px;">
-            <div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #17a2b8; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                <button onclick="deleteQuestions()" 
-                        style="width:100%; padding:15px; background:#17a2b8; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; transition:all 0.3s; margin-bottom:10px;"
-                        onmouseover="this.style.background='#138496'; this.style.transform='translateY(-2px)'" 
-                        onmouseout="this.style.background='#17a2b8'; this.style.transform='translateY(0)'">
-                    🗃️ Delete Questions & Papers
-                </button>
-                <p style="font-size:11px; color:#6c757d; margin:0; text-align:center;">
-                    Removes all questions and question papers only
-                </p>
+        <!-- Quick Actions Section -->
+        <div class="quick-actions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px;">
+            
+            <!-- Question Management -->
+            <div class="action-card" style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #007bff;">
+                <h3 style="color: #007bff; margin: 0 0 10px 0; font-size: 16px;">📝 Question Management</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="{% url 'admin:questions_questionupload_changelist' %}" style="color: #007bff; text-decoration: none; padding: 5px 0;">• Upload Questions</a>
+                    <a href="{% url 'admin:questions_question_changelist' %}" style="color: #007bff; text-decoration: none; padding: 5px 0;">• Manage Questions</a>
+                    <a href="{% url 'admin:questions_questionsetactivation_changelist' %}" style="color: #007bff; text-decoration: none; padding: 5px 0;">• Activate Question Sets</a>
+                    <a href="{% url 'admin:questions_globalpapertypecontrol_changelist' %}" style="color: #007bff; text-decoration: none; padding: 5px 0;">• Paper Type Control</a>
+                </div>
+            </div>
+            
+            <!-- Candidate Management -->
+            <div class="action-card" style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                <h3 style="color: #28a745; margin: 0 0 10px 0; font-size: 16px;">👥 Candidate Management</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="{% url 'admin:registration_candidateprofile_changelist' %}" style="color: #28a745; text-decoration: none; padding: 5px 0;">• Manage Candidates</a>
+                    <a href="{% url 'admin:centers_center_changelist' %}" style="color: #28a745; text-decoration: none; padding: 5px 0;">• Exam Centers</a>
+                    <a href="{% url 'admin:reference_trade_changelist' %}" style="color: #28a745; text-decoration: none; padding: 5px 0;">• Manage Trades</a>
+                </div>
+            </div>
+            
+            <!-- System Management -->
+            <div class="action-card" style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #dc3545;">
+                <h3 style="color: #dc3545; margin: 0 0 10px 0; font-size: 16px;">⚙️ System Management</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="{% url 'admin:accounts_user_changelist' %}" style="color: #dc3545; text-decoration: none; padding: 5px 0;">• User Accounts</a>
+                    <a href="{% url 'admin:deletedata_examdatacleanup_changelist' %}" style="color: #dc3545; text-decoration: none; padding: 5px 0;">• Data Cleanup</a>
+                    <a href="{% url 'admin:deletedata_completecleanup_changelist' %}" style="color: #dc3545; text-decoration: none; padding: 5px 0;">• Complete Reset</a>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Quick Stats (Minimal) -->
+        <div class="quick-stats" style="background: #e9ecef; padding: 15px; border-radius: 6px; text-align: center;">
+            <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <strong style="color: #495057; font-size: 18px;">{{ total_candidates|default:0 }}</strong>
+                    <br><small style="color: #6c757d;">Candidates</small>
+                </div>
+                <div>
+                    <strong style="color: #495057; font-size: 18px;">{{ total_questions|default:0 }}</strong>
+                    <br><small style="color: #6c757d;">Questions</small>
+                </div>
+                <div>
+                    <strong style="color: #495057; font-size: 18px;">{{ active_papers|default:0 }}</strong>
+                    <br><small style="color: #6c757d;">Active Papers</small>
+                </div>
             </div>
         </div>
-
-        <!-- Delete Exam Data -->
-        <div style="flex:1; min-width:250px; max-width:300px;">
-            <div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #fd7e14; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                <button onclick="deleteExamData()" 
-                        style="width:100%; padding:15px; background:#fd7e14; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; transition:all 0.3s; margin-bottom:10px;"
-                        onmouseover="this.style.background='#e8650e'; this.style.transform='translateY(-2px)'" 
-                        onmouseout="this.style.background='#fd7e14'; this.style.transform='translateY(0)'">
-                    🧹 Delete Exam Data
-                </button>
-                <p style="font-size:11px; color:#6c757d; margin:0; text-align:center;">
-                    Removes exam data, preserves user registrations
-                </p>
-            </div>
-        </div>
-
-        <!-- Delete Everything -->
-        <div style="flex:1; min-width:250px; max-width:300px;">
-            <div style="background:white; padding:15px; border-radius:8px; border-left:4px solid #dc3545; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                <button onclick="deleteEverything()" 
-                        style="width:100%; padding:15px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px; transition:all 0.3s; margin-bottom:10px; animation:pulse 2s infinite;"
-                        onmouseover="this.style.background='#c82333'; this.style.transform='translateY(-2px)'" 
-                        onmouseout="this.style.background='#dc3545'; this.style.transform='translateY(0)'">
-                    ⚠️ DELETE EVERYTHING
-                </button>
-                <p style="font-size:11px; color:#dc3545; margin:0; text-align:center; font-weight:bold;">
-                    Complete system reset - ALL data deleted
-                </p>
-            </div>
-        </div>
-
+        
     </div>
     
-    <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:6px; text-align:center;">
-        <p style="margin:0; font-size:12px; color:#6c757d;">
-            💡 <strong>Before deleting:</strong> Always export your data and create a database backup
-        </p>
-    </div>
 </div>
 
-{{ block.super }}
-
-<script>
-function deleteQuestions() {
-    if (confirm('⚠️ WARNING: This will delete ALL questions and question papers.\n\nThis action cannot be undone. Are you sure?')) {
-        if (confirm('🔴 FINAL CONFIRMATION: Delete all questions and papers?\n\nType "DELETE QUESTIONS" in the next prompt to confirm.')) {
-            var confirmation = prompt('Type "DELETE QUESTIONS" to confirm:');
-            if (confirmation === 'DELETE QUESTIONS') {
-                window.location.href = '{% url "admin:cleanup_questions" %}';
-            } else {
-                alert('❌ Operation cancelled - incorrect confirmation text.');
-            }
-        }
-    }
+<style>
+.action-card a:hover {
+    background: rgba(0,0,0,0.05);
+    border-radius: 3px;
+    padding-left: 10px !important;
+    transition: all 0.2s ease;
 }
-
-function deleteExamData() {
-    if (confirm('⚠️ WARNING: This will delete all exam-related data but keep user registrations.\n\nThis includes:\n- Questions and papers\n- Exam sessions and results\n- Uploaded files\n\nThis action cannot be undone. Are you sure?')) {
-        if (confirm('🔴 FINAL CONFIRMATION: Delete all exam data but keep users?\n\nType "DELETE EXAM DATA" in the next prompt to confirm.')) {
-            var confirmation = prompt('Type "DELETE EXAM DATA" to confirm:');
-            if (confirmation === 'DELETE EXAM DATA') {
-                window.location.href = '{% url "admin:cleanup_exam_data" %}';
-            } else {
-                alert('❌ Operation cancelled - incorrect confirmation text.');
-            }
-        }
-    }
-}
-
-function deleteEverything() {
-    if (confirm('🚨 DANGER ZONE 🚨\n\nThis will delete EVERYTHING:\n- All user registrations\n- All exam data\n- All questions and papers\n- All exam centers\n- All uploaded files\n- Everything except admin accounts\n\nThis action cannot be undone and will reset the system completely.\n\nAre you absolutely sure?')) {
-        if (confirm('🔴 FINAL WARNING: This will delete ALL DATA including candidate registrations!\n\nType "DELETE EVERYTHING" in the next prompt to confirm.')) {
-            var confirmation = prompt('Type "DELETE EVERYTHING" to confirm complete system reset:');
-            if (confirmation === 'DELETE EVERYTHING') {
-                window.location.href = '{% url "admin:cleanup_everything" %}';
-            } else {
-                alert('❌ Operation cancelled - incorrect confirmation text.');
-            }
-        }
-    }
-}
-
-// Add pulse animation for danger button
-var style = document.createElement('style');
-style.textContent = `
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-    }
-`;
-document.head.appendChild(style);
-</script>
+</style>
 
 {% endblock %}

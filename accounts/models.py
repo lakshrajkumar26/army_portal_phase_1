@@ -4,9 +4,9 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
     class Roles(models.TextChoices):
-        CENTER_ADMIN = "CENTER_ADMIN", "Center Admin"
+        OIC_ADMIN = "OIC_ADMIN", "OIC Admin"  # Officer In Charge
         CANDIDATE = "CANDIDATE", "Candidate"
-        PO_ADMIN = "PO_ADMIN", "PO Admin"  # <-- added
+        PO_ADMIN = "PO_ADMIN", "PO Admin"  # Presiding Officer
 
     role = models.CharField(
         max_length=32, choices=Roles.choices, default=Roles.CANDIDATE, db_index=True

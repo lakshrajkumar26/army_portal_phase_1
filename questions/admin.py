@@ -1,10 +1,11 @@
 # questions/admin.py
 from django.contrib import admin, messages
+from django.urls import path
+from django.utils.html import format_html
 
 from .models import (
     Question,
     QuestionUpload,
-    QuestionSetActivation,
     GlobalPaperTypeControl,
 )
 from .forms import QuestionUploadForm
@@ -85,39 +86,16 @@ class QuestionUploadAdmin(admin.ModelAdmin):
 
 
 # --------------------------------
-# Question Set Activation Management
+# Question Set Activation Management (REMOVED FROM ADMIN)
 # --------------------------------
-@admin.register(QuestionSetActivation)
-class QuestionSetActivationAdmin(admin.ModelAdmin):
-    list_display = ['trade', 'paper_type', 'question_set', 'is_active', 'activated_at', 'activated_by']
-    list_filter = ['paper_type', 'is_active', 'question_set', 'trade']
-    search_fields = ['trade__name', 'trade__code']
-    actions = ['activate_selected_sets', 'deactivate_selected_sets']
-    ordering = ['trade__code', 'paper_type', 'question_set']
-    
-    def activate_selected_sets(self, request, queryset):
-        """Bulk activate selected question sets"""
-        activated_count = 0
-        for activation in queryset:
-            activation.is_active = True
-            activation.activated_by = request.user
-            activation.save()
-            activated_count += 1
-        
-        self.message_user(
-            request,
-            f"Successfully activated {activated_count} question sets."
-        )
-    activate_selected_sets.short_description = "Activate selected question sets"
-    
-    def deactivate_selected_sets(self, request, queryset):
-        """Bulk deactivate selected question sets"""
-        deactivated_count = queryset.update(is_active=False)
-        self.message_user(
-            request,
-            f"Successfully deactivated {deactivated_count} question sets."
-        )
-    deactivate_selected_sets.short_description = "Deactivate selected question sets"
+# The QuestionSetActivation admin interface has been removed to simplify
+# the admin panel. All question set management is now handled through
+# the GlobalPaperTypeControl interface, which provides master control
+# over PRIMARY/SECONDARY paper activation and automatically manages
+# the underlying QuestionSetActivation records.
+#
+# The QuestionSetActivation model still exists and functions normally
+# for programmatic access and the GlobalPaperTypeControl system.
 
 
 # --------------------------------
