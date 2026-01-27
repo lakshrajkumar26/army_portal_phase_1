@@ -8,7 +8,6 @@
     <title>Military Examination Portal</title>
     <link href="{% static 'css/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <script src="{% static 'css/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> -->
     <meta http-equiv="Cache-Control" content="no-store" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -34,6 +33,18 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Re-enable selection for input fields */
+        input, textarea, [contenteditable="true"] {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
         }
         
         body {
@@ -49,90 +60,10 @@
         body:fullscreen,
         body:-webkit-full-screen,
         body:-moz-full-screen {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            overflow: hidden;
-        }
-        
-        /* Hide fullscreen controls completely */
-        body:fullscreen::backdrop,
-        body:-webkit-full-screen::backdrop,
-        body:-moz-full-screen::backdrop {
-            background: #000;
-        }
-
-        /* Block top area hover effects with larger area */
-        body:fullscreen::before,
-        body:-webkit-full-screen::before,
-        body:-moz-full-screen::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 100px;
-            background: transparent;
-            z-index: 9999999;
-            pointer-events: auto;
-            display: block;
-        }
-
-        /* Force hide any browser UI */
-        body:fullscreen *:hover,
-        body:-webkit-full-screen *:hover,
-        body:-moz-full-screen *:hover {
-            cursor: default !important;
-        }
-
-        /* Prevent any scrolling in fullscreen */
-        body:fullscreen,
-        body:-webkit-full-screen,
-        body:-moz-full-screen {
             overflow: hidden !important;
             position: fixed !important;
             width: 100% !important;
             height: 100% !important;
-        }
-
-        /* Hide scrollbars completely in fullscreen */
-        body:fullscreen::-webkit-scrollbar,
-        body:-webkit-full-screen::-webkit-scrollbar,
-        body:-moz-full-screen::-webkit-scrollbar {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-        }
-
-        /* Block any potential browser UI elements */
-        body:fullscreen *[title],
-        body:-webkit-full-screen *[title],
-        body:-moz-full-screen *[title] {
-            title: "" !important;
-        }
-
-        /* Prevent text selection in fullscreen */
-        body:fullscreen *,
-        body:-webkit-full-screen *,
-        body:-moz-full-screen * {
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            user-select: none !important;
-        }
-
-        /* Allow text selection only in input fields */
-        body:fullscreen input,
-        body:fullscreen textarea,
-        body:-webkit-full-screen input,
-        body:-webkit-full-screen textarea,
-        body:-moz-full-screen input,
-        body:-moz-full-screen textarea {
-            -webkit-user-select: text !important;
-            -moz-user-select: text !important;
-            -ms-user-select: text !important;
-            user-select: text !important;
         }
         
         .exam-container {
@@ -467,12 +398,6 @@
         .question-page:first-child {
             display: block;
         }
-        
-        /* Icons */
-        .fas, .far {
-            width: 18px;
-            height: 18px;
-        }
 
         /* Confirmation Modal Styles */
         .modal {
@@ -541,25 +466,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-
-        /* Top area overlay to prevent fullscreen controls */
-        .fullscreen-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            z-index: 9999998;
-            background: rgba(0, 0, 0, 0.01);
-            pointer-events: auto;
-            display: none;
-        }
-
-        body:fullscreen .fullscreen-overlay,
-        body:-webkit-full-screen .fullscreen-overlay,
-        body:-moz-full-screen .fullscreen-overlay {
-            display: block;
-        }
         
         /* Responsive design */
         @media (max-width: 768px) {
@@ -582,25 +488,6 @@
             }
         }
 
-        /* Additional security measures */
-        * {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* Re-enable selection for input fields */
-        input, textarea, [contenteditable="true"] {
-            -webkit-user-select: text !important;
-            -moz-user-select: text !important;
-            -ms-user-select: text !important;
-            user-select: text !important;
-        }
-        
         /* Prevent image dragging */
         img {
             -webkit-user-drag: none;
@@ -609,12 +496,6 @@
             -o-user-drag: none;
             user-drag: none;
             pointer-events: none;
-        }
-        
-        /* Prevent text highlighting on double-click */
-        * {
-            -webkit-tap-highlight-color: rgba(0,0,0,0);
-            -webkit-tap-highlight-color: transparent;
         }
         
         /* Hide scrollbars to prevent right-click on them */
@@ -635,53 +516,14 @@
             background: var(--army-tan);
         }
         
-        /* Prevent outline on focus that might be used for navigation */
-        *:focus {
-            outline: 2px solid var(--army-gold) !important;
-            outline-offset: 2px;
-        }
-        
-        /* Disable pointer events on non-interactive elements */
-        .question-text, .marks-badge, .sidebar-header h2 {
-            pointer-events: none;
-        }
-        
         /* Ensure interactive elements remain clickable */
         button, input, textarea, .form-check-input, .form-check-label, .question-btn {
             pointer-events: auto !important;
-        }
-        
-        /* Additional fullscreen protection */
-        body:fullscreen, body:-webkit-full-screen, body:-moz-full-screen {
-            overflow: hidden !important;
-        }
-        
-        /* Prevent text cursor on non-editable content */
-        body, div, span, p, h1, h2, h3, h4, h5, h6 {
-            cursor: default !important;
-        }
-        
-        /* Maintain proper cursor for interactive elements */
-        button, .question-btn, .form-check-input, .form-check-label {
             cursor: pointer !important;
         }
         
         input, textarea {
             cursor: text !important;
-        }
-        
-        /* Prevent selection of placeholder text */
-        ::placeholder {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-        
-        /* Hide any potential browser UI elements */
-        body:fullscreen *::-webkit-media-controls,
-        body:fullscreen *::-webkit-media-controls-enclosure {
-            display: none !important;
         }
 
     </style>
@@ -703,9 +545,6 @@
         </button>
     </div>
 
-    <!-- Top overlay to block fullscreen controls -->
-    <div class="fullscreen-overlay" id="topOverlay"></div>
-
     <!-- Confirmation Modal -->
     <div id="confirmationModal" class="modal">
         <div class="modal-content">
@@ -723,32 +562,32 @@
         </div>
     </div>
 
-    <!-- Warning Modal for Exit Attempts -->
-    <div id="warningModal" class="modal" style="z-index: 10000001;">
-        <div class="modal-content" style="border: 3px solid #f44336; background: linear-gradient(135deg, #2c4c2c, #1a2e1a);">
-            <h3 style="color: #f44336; font-size: 1.8rem; margin-bottom: 20px;">
-                🚨 EXAM SECURITY WARNING
-            </h3>
-            <p style="font-size: 1.2rem; line-height: 1.5; margin-bottom: 25px; color: #fff;">
-                <strong>You attempted to exit fullscreen mode or switch away from the exam!</strong><br><br>
-                This action is not allowed during the examination for security reasons.<br>
-                Your activity has been logged.
+    <!-- Security Warning Modal - STAYS IN FULLSCREEN -->
+    <div id="securityWarningModal" class="modal" style="z-index: 99999999;">
+        <div class="modal-content" style="border: 3px solid #f44336; background: rgba(244, 67, 54, 0.95);">
+            <h3 style="color: #fff; font-size: 2rem;">🚨 SECURITY VIOLATION DETECTED</h3>
+            <p style="color: #fff; font-size: 1.3rem; font-weight: bold;" id="violationMessage">
+                You attempted to exit fullscreen mode or use blocked keys!
             </p>
-            <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 25px;">
-                <p style="margin: 0; font-size: 1rem; color: #c8b072;">
-                    <strong>Choose your action:</strong><br>
-                    • <strong>Back to Exam:</strong> Continue your examination<br>
-                    • <strong>Exit Exam:</strong> Save your current progress and terminate the exam
-                </p>
-            </div>
+            <p style="color: #ffeb3b; font-size: 1.1rem;">
+                ⚠️ Your exam progress has been automatically saved.<br>
+                Choose your action carefully:
+            </p>
             <div class="modal-buttons">
-                <button class="modal-btn" id="backToExam" style="background: #4caf50; color: white; font-size: 1.1rem; padding: 15px 25px;">
-                    🔙 Back to Exam
+                <button class="modal-btn" id="backToExam" style="
+                    background: #4caf50; color: white; font-size: 1.2rem; 
+                    padding: 15px 30px; margin: 10px;">
+                    🔙 Back to Exam (Continue)
                 </button>
-                <button class="modal-btn" id="exitExam" style="background: #f44336; color: white; font-size: 1.1rem; padding: 15px 25px;">
-                    🚪 Exit Exam
+                <button class="modal-btn" id="exitExam" style="
+                    background: #f44336; color: white; font-size: 1.2rem; 
+                    padding: 15px 30px; margin: 10px;">
+                    🚪 Exit Exam (Submit & Leave)
                 </button>
             </div>
+            <p style="color: #ffcdd2; font-size: 0.9rem; margin-top: 15px;">
+                Note: Multiple violations may result in automatic exam termination.
+            </p>
         </div>
     </div>
 
@@ -796,7 +635,6 @@
                 <input type="hidden" name="paper_id" value="{{ paper.id }}">
 
                 {% for question in questions %}
-                <!-- DEBUG: Question {{ forloop.counter }} - ID: {{ question.question.id }} -->
                 <div class="question-card question-page" id="question-{{ forloop.counter0 }}" style="{% if not forloop.first %}display:none{% endif %}">
                     <div class="question-header">
                         <h2 class="question-text">Q{{ forloop.counter }}. {{ question.question.text }}</h2>
@@ -916,22 +754,89 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   let examSubmitted = false;
-  let isWindowFocused = true;
-  let altPressed = false;
-  let warningCount = 0;
-  let maxWarnings = 3;
-  let isWarningModalOpen = false;
+  let isExamTerminated = false;
+  let examStarted = false;
+  
+  // ---------------------------
+  // ULTRA MAXIMUM SECURITY SYSTEM
+  // ---------------------------
+  
+  function terminateExamImmediately(reason) {
+    if (isExamTerminated || examSubmitted) return;
+    
+    isExamTerminated = true;
+    examSubmitted = true;
+    
+    // Save current progress immediately
+    saveCurrentProgress();
+    
+    // Log the termination
+    logSecurityViolation(`EXAM TERMINATED: ${reason}`);
+    
+    // Show termination message
+    alert(`EXAM TERMINATED!\n\nReason: ${reason}\n\nYour progress has been saved and the exam is now ended.`);
+    
+    // Submit the form immediately
+    const form = document.getElementById("exam-form");
+    if (form) {
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = 'exam_terminated';
+      hiddenInput.value = 'true';
+      form.appendChild(hiddenInput);
+      
+      const reasonInput = document.createElement('input');
+      reasonInput.type = 'hidden';
+      reasonInput.name = 'termination_reason';
+      reasonInput.value = reason;
+      form.appendChild(reasonInput);
+      
+      form.submit();
+    } else {
+      // Fallback: redirect to logout
+      window.location.href = '/candidate/login/';
+    }
+  }
+
+  function logSecurityViolation(reason) {
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] SECURITY VIOLATION: ${reason}`);
+    
+    const violations = JSON.parse(localStorage.getItem('examSecurityViolations') || '[]');
+    violations.push({
+      timestamp,
+      reason,
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    });
+    localStorage.setItem('examSecurityViolations', JSON.stringify(violations));
+  }
+
+  function saveCurrentProgress() {
+    const formData = new FormData(document.getElementById("exam-form"));
+    const answers = {};
+    
+    for (let [key, value] of formData.entries()) {
+      if (key.startsWith('question_')) {
+        answers[key] = value;
+      }
+    }
+    
+    localStorage.setItem('examProgress', JSON.stringify({
+      timestamp: new Date().toISOString(),
+      answers: answers,
+      reason: 'Progress backup'
+    }));
+    
+    console.log('Progress saved:', Object.keys(answers).length, 'answers');
+  }
 
   // ---------------------------
-  // Fullscreen helpers (always return a Promise)
+  // Fullscreen helpers
   // ---------------------------
   function enterFullScreen() {
     const el = document.documentElement;
-    const fn =
-      el.requestFullscreen ||
-      el.mozRequestFullScreen ||
-      el.webkitRequestFullscreen ||
-      el.msRequestFullscreen;
+    const fn = el.requestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
 
     if (!fn) return Promise.reject(new Error("Fullscreen API not supported"));
     try {
@@ -943,11 +848,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function exitFullScreen() {
-    const fn =
-      document.exitFullscreen ||
-      document.webkitExitFullscreen ||
-      document.mozCancelFullScreen ||
-      document.msExitFullscreen;
+    const fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
 
     if (!fn) return Promise.resolve();
     try {
@@ -959,707 +860,186 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------------------------
-  // Warning Modal Functions
-  // ---------------------------
-  function showWarningModal(reason = "security violation") {
-    if (examSubmitted || isWarningModalOpen) return;
-    
-    isWarningModalOpen = true;
-    warningCount++;
-    
-    console.warn(`Security warning ${warningCount}: ${reason}`);
-    
-    // Log the security violation
-    logSecurityViolation(reason);
-    
-    document.getElementById('warningModal').style.display = 'block';
-    
-    // Auto-terminate after max warnings
-    if (warningCount >= maxWarnings) {
-      setTimeout(() => {
-        if (isWarningModalOpen) {
-          alert(`Maximum security violations (${maxWarnings}) reached. Exam will be terminated automatically.`);
-          forceExitExam();
-        }
-      }, 5000);
-    }
-  }
-
-  function hideWarningModal() {
-    isWarningModalOpen = false;
-    document.getElementById('warningModal').style.display = 'none';
-  }
-
-  function logSecurityViolation(reason) {
-    // Log security violation (could be sent to server in real implementation)
-    const timestamp = new Date().toISOString();
-    console.warn(`[${timestamp}] SECURITY VIOLATION: ${reason} (Count: ${warningCount}/${maxWarnings})`);
-    
-    // Store in localStorage for audit trail
-    const violations = JSON.parse(localStorage.getItem('examViolations') || '[]');
-    violations.push({
-      timestamp,
-      reason,
-      count: warningCount,
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    });
-    localStorage.setItem('examViolations', JSON.stringify(violations));
-  }
-
-  function forceExitExam() {
-    examSubmitted = true;
-    hideWarningModal();
-    
-    // Save current progress
-    saveCurrentProgress();
-    
-    alert("Exam terminated due to security violations. Your current progress has been saved.");
-    
-    // Submit the form
-    document.getElementById("exam-form")?.submit();
-  }
-
-  function saveCurrentProgress() {
-    // Collect all current answers
-    const formData = new FormData(document.getElementById("exam-form"));
-    const answers = {};
-    
-    for (let [key, value] of formData.entries()) {
-      if (key.startsWith('question_')) {
-        answers[key] = value;
-      }
-    }
-    
-    // Store in localStorage as backup
-    localStorage.setItem('examProgress', JSON.stringify({
-      timestamp: new Date().toISOString(),
-      answers: answers,
-      warningCount: warningCount,
-      reason: 'Security violation - forced exit'
-    }));
-    
-    console.log('Progress saved:', Object.keys(answers).length, 'answers');
-  }
-
-  // Warning modal event listeners
-  document.getElementById('backToExam').addEventListener('click', () => {
-    hideWarningModal();
-    
-    // Force back to fullscreen
-    enterFullScreen().then(() => {
-      // Re-focus on exam content
-      document.getElementById('examContent').focus();
-    }).catch(err => {
-      console.error('Failed to re-enter fullscreen:', err);
-      showWarningModal('Failed to return to fullscreen mode');
-    });
-  });
-
-  document.getElementById('exitExam').addEventListener('click', () => {
-    // User chose to exit - save progress and submit
-    examSubmitted = true;
-    hideWarningModal();
-    
-    saveCurrentProgress();
-    
-    alert("Your exam progress has been saved. You will now be logged out.");
-    
-    // Submit the form
-    document.getElementById("exam-form")?.submit();
-  });
-
-  // ---------------------------
-  // Enhanced fullscreen control blocking
-  // ---------------------------
-  function blockFullscreenControls() {
-    // Block mouse events near top of screen with more aggressive prevention
-    document.addEventListener('mousemove', (e) => {
-      const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
-                          document.mozFullScreenElement || document.msFullscreenElement;
-      
-      if (isFullscreen && e.clientY < 80) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        
-        // Force cursor away from top and show warning
-        document.body.style.cursor = 'none';
-        
-        // Move cursor to center of screen
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        
-        // Create invisible element to capture focus
-        const focusElement = document.createElement('div');
-        focusElement.style.position = 'fixed';
-        focusElement.style.left = centerX + 'px';
-        focusElement.style.top = centerY + 'px';
-        focusElement.style.width = '1px';
-        focusElement.style.height = '1px';
-        focusElement.style.opacity = '0';
-        focusElement.tabIndex = -1;
-        document.body.appendChild(focusElement);
-        focusElement.focus();
-        
-        setTimeout(() => {
-          document.body.style.cursor = 'default';
-          document.body.removeChild(focusElement);
-        }, 500);
-        
-        if (!examSubmitted && !isWarningModalOpen) {
-          showWarningModal("Attempted to access browser controls");
-        }
-        return false;
-      }
-    }, { passive: false, capture: true });
-
-    // Block all mouse events in top area
-    ['mouseenter', 'mouseover', 'hover', 'mouseup', 'mousedown', 'click', 'dblclick'].forEach(eventType => {
-      document.addEventListener(eventType, (e) => {
-        const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
-                            document.mozFullScreenElement || document.msFullscreenElement;
-        
-        if (isFullscreen && e.clientY < 80) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          e.stopPropagation();
-          return false;
-        }
-      }, { passive: false, capture: true });
-    });
-
-    // Continuously monitor and force fullscreen
-    setInterval(() => {
-      const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
-                          document.mozFullScreenElement || document.msFullscreenElement;
-      
-      if (!isFullscreen && !examSubmitted && !isWarningModalOpen) {
-        // Attempt to re-enter fullscreen immediately
-        enterFullScreen().catch(() => {
-          showWarningModal("Fullscreen mode is required for the exam");
-        });
-      }
-    }, 1000);
-
-    // Block F11 key specifically (fullscreen toggle)
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F11') {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-        
-        if (!examSubmitted && !isWarningModalOpen) {
-          showWarningModal("F11 key is blocked during exam");
-        }
-        return false;
-      }
-    }, { passive: false, capture: true });
-
-    // Override browser's fullscreen exit attempts
-    const originalExitFullscreen = document.exitFullscreen;
-    const originalWebkitExitFullscreen = document.webkitExitFullscreen;
-    const originalMozCancelFullScreen = document.mozCancelFullScreen;
-    const originalMsExitFullscreen = document.msExitFullscreen;
-
-    // Intercept fullscreen exit calls
-    if (originalExitFullscreen) {
-      document.exitFullscreen = function() {
-        if (!examSubmitted && !isWarningModalOpen) {
-          showWarningModal("Attempted to exit fullscreen programmatically");
-          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
-        }
-        return originalExitFullscreen.call(this);
-      };
-    }
-
-    if (originalWebkitExitFullscreen) {
-      document.webkitExitFullscreen = function() {
-        if (!examSubmitted && !isWarningModalOpen) {
-          showWarningModal("Attempted to exit fullscreen programmatically");
-          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
-        }
-        return originalWebkitExitFullscreen.call(this);
-      };
-    }
-
-    if (originalMozCancelFullScreen) {
-      document.mozCancelFullScreen = function() {
-        if (!examSubmitted && !isWarningModalOpen) {
-          showWarningModal("Attempted to exit fullscreen programmatically");
-          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
-        }
-        return originalMozCancelFullScreen.call(this);
-      };
-    }
-
-    if (originalMsExitFullscreen) {
-      document.msExitFullscreen = function() {
-        if (!examSubmitted && !isWarningModalOpen) {
-          showWarningModal("Attempted to exit fullscreen programmatically");
-          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
-        }
-        return originalMsExitFullscreen.call(this);
-      };
-    }
-  }
-
-  // ---------------------------
   // Start Exam button
   // ---------------------------
   const startBtn = document.getElementById("enterFullscreenBtn");
   if (startBtn) {
+    console.log("Start button found, adding event listener");
     startBtn.addEventListener("click", () => {
+      console.log("Start button clicked, attempting to enter fullscreen");
       enterFullScreen()
         .then(() => {
+          console.log("Fullscreen entered successfully, showing exam content");
           document.getElementById("fullscreenOverlay").style.display = "none";
           document.getElementById("examContent").style.display = "block";
-          blockFullscreenControls();
+          examStarted = true;
+          console.log("Exam started successfully");
         })
         .catch(err => {
+          console.error("Fullscreen failed:", err);
           alert("Fullscreen is required to start the exam. Please allow fullscreen.");
-          console.error(err);
         });
     });
+  } else {
+    console.error("Start button not found!");
   }
 
   // ---------------------------
-  // Enhanced fullscreen exit detection
+  // ULTRA MAXIMUM SECURITY - IMMEDIATE TERMINATION
   // ---------------------------
-  function onFsChange() {
-    const inFs =
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement;
-
-    if (!inFs && !examSubmitted && !isWarningModalOpen) {
-      // User exited fullscreen - show warning
-      showWarningModal("Attempted to exit fullscreen mode");
-    }
-  }
   
-  document.addEventListener("fullscreenchange", onFsChange);
-  document.addEventListener("webkitfullscreenchange", onFsChange);
-  document.addEventListener("mozfullscreenchange", onFsChange);
-  document.addEventListener("MSFullscreenChange", onFsChange);
+  // Fullscreen monitoring every 100ms
+  setInterval(() => {
+    if (examStarted && !examSubmitted && !isExamTerminated) {
+      const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                             document.mozFullScreenElement || document.msFullscreenElement);
+      
+      if (!isFullscreen) {
+        terminateExamImmediately("Exited fullscreen mode - Security violation");
+      }
+    }
+  }, 100);
 
-  // ---------------------------
-  // Enhanced keyboard blocking with Esc key warning
-  // ---------------------------
-  document.addEventListener('keydown', (e) => {
-    // Handle Escape key specially
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to press Escape key");
-      }
-      return false;
-    }
-    
-    if (e.key === 'Alt') {
-      altPressed = true;
-    }
-    
-    // Block Alt+Tab, Alt+Shift+Tab, Cmd+Tab (Mac)
-    if ((e.altKey && e.key === 'Tab') || 
-        (e.metaKey && e.key === 'Tab') ||
-        (altPressed && e.key === 'Tab')) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to switch windows/tabs using Alt+Tab");
-      }
-      return false;
-    }
-    
-    // Enhanced key blocking
-    const blockedKeys = [
-      // Function keys
-      "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
-      // System keys
-      "PrintScreen", "ScrollLock", "Pause", "Insert", "Delete", "Home", "End", "PageUp", "PageDown",
-      // Windows/Cmd keys
-      "Meta", "ContextMenu",
-    ];
-    
-    // Block individual keys
-    if (blockedKeys.includes(e.key)) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal(`Attempted to press blocked key: ${e.key}`);
-      }
-      return false;
-    }
-    
-    // Block dangerous key combinations
-    const dangerousCombinations = [
-      // Developer tools
-      { ctrl: true, shift: true, key: "I" }, // DevTools
-      { ctrl: true, shift: true, key: "J" }, // Console
-      { ctrl: true, shift: true, key: "C" }, // Inspector
-      { ctrl: true, shift: true, key: "K" }, // Console (Firefox)
-      { ctrl: true, key: "U" }, // View Source
-      
-      // Window/Tab management
-      { ctrl: true, key: "W" }, // Close tab
-      { ctrl: true, key: "T" }, // New tab
-      { ctrl: true, key: "N" }, // New window
-      { ctrl: true, shift: true, key: "N" }, // New incognito window
-      { ctrl: true, key: "R" }, // Refresh
-      { ctrl: true, shift: true, key: "R" }, // Hard refresh
-      { ctrl: true, key: "H" }, // History
-      { ctrl: true, shift: true, key: "Delete" }, // Clear browsing data
-      
-      // Navigation
-      { ctrl: true, key: "Tab" }, // Switch tabs
-      { ctrl: true, shift: true, key: "Tab" }, // Switch tabs reverse
-      { ctrl: true, key: "PageUp" }, // Previous tab
-      { ctrl: true, key: "PageDown" }, // Next tab
-      
-      // Copy/Paste/Select (except in input fields)
-      { ctrl: true, key: "A" }, // Select all
-      { ctrl: true, key: "C" }, // Copy
-      { ctrl: true, key: "V" }, // Paste
-      { ctrl: true, key: "X" }, // Cut
-      { ctrl: true, key: "Z" }, // Undo
-      { ctrl: true, key: "Y" }, // Redo
-      { ctrl: true, shift: true, key: "Z" }, // Redo
-      
-      // Find
-      { ctrl: true, key: "F" }, // Find
-      { ctrl: true, key: "G" }, // Find next
-      { ctrl: true, shift: true, key: "G" }, // Find previous
-      
-      // Zoom
-      { ctrl: true, key: "+" }, // Zoom in
-      { ctrl: true, key: "-" }, // Zoom out
-      { ctrl: true, key: "0" }, // Reset zoom
-      
-      // Print
-      { ctrl: true, key: "P" }, // Print
-      
-      // Mac specific
-      { meta: true, key: "Tab" }, // Cmd+Tab (Mac)
-      { meta: true, shift: true, key: "Tab" }, // Cmd+Shift+Tab (Mac)
-      { meta: true, key: "W" }, // Close tab (Mac)
-      { meta: true, key: "T" }, // New tab (Mac)
-      { meta: true, key: "N" }, // New window (Mac)
-      { meta: true, key: "R" }, // Refresh (Mac)
-      { meta: true, key: "Q" }, // Quit application (Mac)
-      { meta: true, key: "H" }, // Hide application (Mac)
-      { meta: true, alt: true, key: "I" }, // DevTools (Mac)
-      
-      // Additional Windows combinations
-      { alt: true, key: "F4" }, // Close window
-      { alt: true, key: "Space" }, // System menu
-      { alt: true, key: "Enter" }, // Properties
-      { ctrl: true, alt: true, key: "Delete" }, // Task manager
-      { ctrl: true, shift: true, key: "Escape" }, // Task manager
-    ];
-    
-    // Check for dangerous combinations
-    for (const combo of dangerousCombinations) {
-      let matches = true;
-      
-      if (combo.ctrl && !e.ctrlKey) matches = false;
-      if (combo.shift && !e.shiftKey) matches = false;
-      if (combo.alt && !e.altKey) matches = false;
-      if (combo.meta && !e.metaKey) matches = false;
-      if (combo.key && e.key !== combo.key) matches = false;
-      
-      if (matches) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        
-        if (!examSubmitted && !isWarningModalOpen) {
-          showWarningModal(`Attempted to use blocked keyboard shortcut: ${JSON.stringify(combo)}`);
-        }
-        return false;
-      }
-    }
-    
-    // Allow certain keys for input fields
-    const allowedKeys = ['Enter', 'Backspace', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'];
-    const isInputField = e.target.matches('input, textarea');
-    
-    // Block remaining Ctrl combinations (except for input fields)
-    if (e.ctrlKey && !allowedKeys.includes(e.key) && !isInputField) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal(`Attempted to use Ctrl+${e.key} shortcut`);
-      }
-      return false;
-    }
-    
-    // Block remaining Alt combinations
-    if (e.altKey && !allowedKeys.includes(e.key)) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal(`Attempted to use Alt+${e.key} shortcut`);
-      }
-      return false;
-    }
-    
-    // Block remaining Meta (Windows/Cmd) combinations
-    if (e.metaKey) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal(`Attempted to use system key combination`);
-      }
-      return false;
-    }
-  });
-
-  document.addEventListener('keyup', (e) => {
-    if (e.key === 'Alt') {
-      altPressed = false;
-    }
-  });
-
-  // ---------------------------
-  // Enhanced window focus monitoring
-  // ---------------------------
+  // Window blur detection
   window.addEventListener('blur', () => {
-    if (!examSubmitted && isWindowFocused && !isWarningModalOpen) {
-      isWindowFocused = false;
+    if (examStarted && !examSubmitted && !isExamTerminated) {
       setTimeout(() => {
-        if (!isWindowFocused && !examSubmitted && !isWarningModalOpen) {
-          showWarningModal("Switched away from exam window");
+        if (!document.hasFocus() && !examSubmitted && !isExamTerminated) {
+          terminateExamImmediately("Clicked outside exam window or switched to another application");
+        }
+      }, 500);
+    }
+  });
+
+  // Tab visibility monitoring
+  document.addEventListener('visibilitychange', () => {
+    if (examStarted && document.hidden && !examSubmitted && !isExamTerminated) {
+      setTimeout(() => {
+        if (document.hidden && !examSubmitted && !isExamTerminated) {
+          terminateExamImmediately("Tab was hidden or switched to another tab");
         }
       }, 1000);
     }
   });
 
-  window.addEventListener('focus', () => {
-    isWindowFocused = true;
-  });
-
-  // ---------------------------
-  // Enhanced visibility change detection
-  // ---------------------------
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && !examSubmitted && !isWarningModalOpen) {
-      setTimeout(() => {
-        if (document.hidden && !examSubmitted && !isWarningModalOpen) {
-          showWarningModal("Tab/window became hidden");
-        }
-      }, 1500);
+  // ULTRA AGGRESSIVE KEYBOARD BLOCKING
+  document.addEventListener('keydown', (e) => {
+    if (!examStarted) return; // Allow during start screen
+    
+    // Immediate termination for critical keys
+    if (e.key === 'F11') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      terminateExamImmediately("F11 key pressed - Attempted to toggle fullscreen");
+      return false;
     }
-  });
 
-  // ---------------------------
-  // Enhanced Anti-Cheating Measures
-  // ---------------------------
-  
-  // Prevent right-click context menu
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      
+      let escapeAttempts = parseInt(localStorage.getItem('escapeAttempts') || '0') + 1;
+      localStorage.setItem('escapeAttempts', escapeAttempts.toString());
+      
+      if (escapeAttempts >= 2) {
+        terminateExamImmediately(`Multiple Escape key attempts (${escapeAttempts}) - Security violation`);
+      }
+      
+      return false;
+    }
+
+    // Immediate termination for Alt+Tab
+    if ((e.altKey && e.key === 'Tab') || (e.metaKey && e.key === 'Tab')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      terminateExamImmediately("Alt+Tab detected - Attempted to switch applications");
+      return false;
+    }
+
+    // Immediate termination for dangerous combinations
+    const dangerousCombos = [
+      { ctrl: true, shift: true, key: "I" }, // DevTools
+      { ctrl: true, shift: true, key: "J" }, // Console
+      { ctrl: true, key: "W" }, // Close tab
+      { ctrl: true, key: "T" }, // New tab
+      { ctrl: true, key: "N" }, // New window
+      { ctrl: true, key: "R" }, // Refresh
+      { alt: true, key: "F4" }, // Close window
+    ];
+
+    for (const combo of dangerousCombos) {
+      let matches = true;
+      if (combo.ctrl && !e.ctrlKey) matches = false;
+      if (combo.shift && !e.shiftKey) matches = false;
+      if (combo.alt && !e.altKey) matches = false;
+      if (combo.meta && !e.metaKey) matches = false;
+      if (combo.key && e.key !== combo.key) matches = false;
+
+      if (matches) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        terminateExamImmediately(`Dangerous keyboard combination: ${JSON.stringify(combo)}`);
+        return false;
+      }
+    }
+  }, true);
+
+  // Right-click termination
   document.addEventListener("contextmenu", e => {
+    if (!examStarted) return;
+    
     e.preventDefault();
-    if (!examSubmitted && !isWarningModalOpen) {
-      showWarningModal("Attempted to right-click (context menu)");
-    }
+    e.stopImmediatePropagation();
+    terminateExamImmediately("Right-click detected - Security violation");
     return false;
-  });
-  
-  // Prevent text selection in exam content
-  document.addEventListener("selectstart", e => {
-    if (!e.target.matches('input, textarea')) {
-      e.preventDefault();
-      return false;
-    }
-  });
-  
-  // Prevent drag and drop
-  document.addEventListener("dragstart", e => {
-    e.preventDefault();
-    if (!examSubmitted && !isWarningModalOpen) {
-      showWarningModal("Attempted to drag content");
-    }
-    return false;
-  });
-  
-  document.addEventListener("drop", e => {
-    e.preventDefault();
-    return false;
-  });
-  
-  document.addEventListener("dragover", e => {
-    e.preventDefault();
-    return false;
-  });
-  
-  // Block mouse combinations that could be used for cheating
+  }, true);
+
+  // Mouse button termination
   document.addEventListener("mousedown", e => {
-    // Block middle mouse button (often used for new tab)
-    if (e.button === 1) {
-      e.preventDefault();
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to use middle mouse button");
-      }
-      return false;
-    }
+    if (!examStarted) return;
     
-    // Block right mouse button with additional check
-    if (e.button === 2) {
+    if (e.button === 1) { // Middle button
       e.preventDefault();
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to right-click");
-      }
+      e.stopImmediatePropagation();
+      terminateExamImmediately("Middle mouse button clicked - Attempted to open new tab");
       return false;
     }
-    
-    // Block mouse button 4 and 5 (back/forward buttons)
-    if (e.button === 3 || e.button === 4) {
+    if (e.button === 2) { // Right button
       e.preventDefault();
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to use navigation mouse buttons");
-      }
+      e.stopImmediatePropagation();
+      terminateExamImmediately("Right mouse button clicked - Security violation");
       return false;
     }
-  });
-  
-  // Prevent mouse wheel with Ctrl (zoom)
-  document.addEventListener("wheel", e => {
-    if (e.ctrlKey) {
+    if (e.button === 3 || e.button === 4) { // Navigation buttons
       e.preventDefault();
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to zoom using Ctrl+Scroll");
-      }
+      e.stopImmediatePropagation();
+      terminateExamImmediately("Navigation mouse button clicked - Attempted browser navigation");
       return false;
     }
-  });
-  
-  // Prevent clipboard access
-  document.addEventListener("copy", e => {
-    if (!e.target.matches('input, textarea')) {
-      e.preventDefault();
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to copy content");
-      }
-      return false;
-    }
-  });
-  
-  document.addEventListener("cut", e => {
-    if (!e.target.matches('input, textarea')) {
-      e.preventDefault();
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to cut content");
-      }
-      return false;
-    }
-  });
-  
-  document.addEventListener("paste", e => {
-    // Allow paste only in input fields for legitimate use
-    if (!e.target.matches('input[type="text"], textarea')) {
-      e.preventDefault();
-      if (!examSubmitted && !isWarningModalOpen) {
-        showWarningModal("Attempted to paste content outside input fields");
-      }
-      return false;
-    }
-  });
-  
-  // Monitor for suspicious activity
-  let suspiciousActivityCount = 0;
-  const maxSuspiciousActivity = 5;
-  
-  function logSuspiciousActivity(activity) {
-    suspiciousActivityCount++;
-    console.warn(`Suspicious activity detected: ${activity} (Count: ${suspiciousActivityCount})`);
-    
-    if (suspiciousActivityCount >= maxSuspiciousActivity) {
-      showWarningModal(`Multiple suspicious activities detected (${suspiciousActivityCount}). Exam may be terminated.`);
-    }
-  }
-  
-  // Monitor for rapid key presses (potential automation)
-  let lastKeyTime = 0;
-  let rapidKeyCount = 0;
-  
-  document.addEventListener("keydown", e => {
-    const currentTime = Date.now();
-    if (currentTime - lastKeyTime < 50) { // Less than 50ms between keys
-      rapidKeyCount++;
-      if (rapidKeyCount > 10) {
-        logSuspiciousActivity("Rapid key presses detected (possible automation)");
-        rapidKeyCount = 0;
-      }
-    } else {
-      rapidKeyCount = 0;
-    }
-    lastKeyTime = currentTime;
-  });
-  
-  // Monitor for multiple rapid clicks (potential automation)
-  let lastClickTime = 0;
-  let rapidClickCount = 0;
-  
-  document.addEventListener("click", e => {
-    const currentTime = Date.now();
-    if (currentTime - lastClickTime < 100) { // Less than 100ms between clicks
-      rapidClickCount++;
-      if (rapidClickCount > 5) {
-        logSuspiciousActivity("Rapid clicking detected (possible automation)");
-        rapidClickCount = 0;
-      }
-    } else {
-      rapidClickCount = 0;
-    }
-    lastClickTime = currentTime;
-  });
-  
-  // Prevent opening new windows/tabs via JavaScript
-  const originalOpen = window.open;
+  }, true);
+
+  // Override window.open
   window.open = function() {
-    if (!examSubmitted && !isWarningModalOpen) {
-      showWarningModal("Attempted to open new window via JavaScript");
+    if (examStarted && !examSubmitted && !isExamTerminated) {
+      terminateExamImmediately("Attempted to open new window - Security violation");
     }
     return null;
   };
-  
-  // Enhanced developer tools detection
-  let devToolsOpen = false;
-  setInterval(() => {
-    const threshold = 160;
-    if (window.outerHeight - window.innerHeight > threshold || 
-        window.outerWidth - window.innerWidth > threshold) {
-      if (!devToolsOpen && !examSubmitted && !isWarningModalOpen) {
-        devToolsOpen = true;
-        showWarningModal("Developer tools detected");
-      }
-    } else {
-      devToolsOpen = false;
-    }
-  }, 1000);
-  
-  // Block print
-  window.addEventListener('beforeprint', function(e) {
-    e.preventDefault();
-    if (!examSubmitted && !isWarningModalOpen) {
-      showWarningModal("Attempted to print exam content");
-    }
-    return false;
-  });
-  
-  // Enhanced beforeunload warning
-  window.addEventListener("beforeunload", e => {
-    if (!examSubmitted) {
-      e.preventDefault();
-      e.returnValue = "Are you sure you want to leave the exam? Your progress may be lost.";
-      return "Are you sure you want to leave the exam? Your progress may be lost.";
+
+  // Block all forms of fullscreen exit
+  ['exitFullscreen', 'webkitExitFullscreen', 'mozCancelFullScreen', 'msExitFullscreen'].forEach(method => {
+    if (document[method]) {
+      const original = document[method];
+      document[method] = function() {
+        if (examStarted && !examSubmitted && !isExamTerminated) {
+          terminateExamImmediately(`Attempted to exit fullscreen using ${method} - Security violation`);
+        }
+        return Promise.reject(new Error("Fullscreen exit blocked - exam terminated"));
+      };
     }
   });
 
@@ -1694,7 +1074,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ---------------------------
-  // Submit (manual + auto)
+  // Submit handlers
   // ---------------------------
   const finalSubmitBtn = document.getElementById("final-submit");
   if (finalSubmitBtn) {
@@ -1725,7 +1105,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ---------------------------
-  // Question navigation & state (exposed for inline onclick handlers)
+  // Question navigation & state
   // ---------------------------
   let currentIndex = 0;
   const answeredQuestions = new Set();
@@ -1807,7 +1187,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ---------------------------
-  // Init (timer + first question + blink style)
+  // Init
   // ---------------------------
   (function init() {
     const display = document.getElementById("timer");
@@ -1817,7 +1197,6 @@ document.addEventListener("DOMContentLoaded", () => {
       startTimer(duration, display);
     }
 
-    // totalQuestions from Django; fall back to 0
     window.totalQuestions = {{ questions|length|default:0 }};
 
     if (window.totalQuestions > 0) showQuestion(0);
@@ -1826,6 +1205,8 @@ document.addEventListener("DOMContentLoaded", () => {
     style.textContent = `@keyframes blink { 50% { opacity: 0.5; } }`;
     document.head.appendChild(style);
   })();
+
+  console.log("🔒 ULTRA MAXIMUM SECURITY MODE ACTIVATED");
 });
 
 // Prevent back/forward navigation
@@ -1835,155 +1216,12 @@ window.addEventListener("pageshow", function (e) {
     if (viaBFCache) location.reload();
 });
 
-// Enhanced fullscreen control prevention with multiple approaches
-document.addEventListener('DOMContentLoaded', function() {
-    let isInFullscreen = false;
-    let mouseBlockTimer = null;
-    
-    // Track fullscreen state
-    function updateFullscreenState() {
-        isInFullscreen = !!(document.fullscreenElement || 
-                           document.webkitFullscreenElement || 
-                           document.mozFullScreenElement || 
-                           document.msFullscreenElement);
-    }
-
-    // Listen for fullscreen changes
-    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
-        .forEach(event => document.addEventListener(event, updateFullscreenState));
-
-    // Block top area completely with multiple event handlers
-    const blockEvents = ['mousemove', 'mouseenter', 'mouseover', 'hover', 'focus'];
-    
-    blockEvents.forEach(eventType => {
-      document.addEventListener(eventType, function(e) {
-          if (isInFullscreen && e.clientY < 60) {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              
-              // Hide cursor temporarily
-              document.body.style.cursor = 'none';
-              
-              // Clear existing timer
-              if (mouseBlockTimer) clearTimeout(mouseBlockTimer);
-              
-              // Restore cursor after delay
-              mouseBlockTimer = setTimeout(() => {
-                  document.body.style.cursor = 'default';
-              }, 300);
-              
-              // Force focus back to document
-              if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                  document.activeElement.blur();
-              }
-              document.body.focus();
-              
-              return false;
-          }
-      }, { passive: false, capture: true });
-    });
-
-    // Additional protection against any hover events
-    document.addEventListener('pointerenter', function(e) {
-        if (isInFullscreen && e.clientY < 60) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            document.body.style.cursor = 'none';
-            setTimeout(() => {
-                document.body.style.cursor = 'default';
-            }, 200);
-            return false;
-        }
-    }, { passive: false, capture: true });
-
-    // Block any click events in top area
-    document.addEventListener('click', function(e) {
-        if (isInFullscreen && e.clientY < 60) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return false;
-        }
-    }, { passive: false, capture: true });
-
-    // Continuous monitoring and blocking
-    setInterval(() => {
-        if (isInFullscreen) {
-            const topOverlay = document.getElementById('topOverlay');
-            if (topOverlay) {
-                topOverlay.style.display = 'block';
-                topOverlay.style.zIndex = '9999999';
-            }
-        }
-    }, 100);
-});
-
-// Additional security measures
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden && !examSubmitted) {
-        setTimeout(() => {
-            if (document.hidden && !examSubmitted) {
-                alert("You switched away from the exam. Your exam has been terminated.");
-                examSubmitted = true;
-                window.location.replace("/candidate/login");
-            }
-        }, 1500);
-    }
-});
-
-// Block developer tools
-document.addEventListener('keydown', function(e) {
-    // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, etc.
-    if (e.key === 'F12' || 
-        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-        (e.ctrlKey && e.key === 'U')) {
+// Enhanced beforeunload warning
+window.addEventListener("beforeunload", e => {
+    if (!examSubmitted) {
         e.preventDefault();
-        e.stopPropagation();
-        alert("Developer tools are disabled during the exam.");
-        return false;
-    }
-});
-
-// Detect dev tools opening (basic detection)
-let devtools = {open: false, orientation: null};
-setInterval(function() {
-    if (window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200) {
-        if (!devtools.open && !examSubmitted) {
-            devtools.open = true;
-            alert("Developer tools detected. Your exam has been terminated.");
-            examSubmitted = true;
-            window.location.replace("/candidate/login");
-        }
-    } else {
-        devtools.open = false;
-    }
-}, 500);
-
-// Block text selection in fullscreen
-document.addEventListener('selectstart', function(e) {
-    if (document.fullscreenElement || document.webkitFullscreenElement || 
-        document.mozFullScreenElement || document.msFullscreenElement) {
-        e.preventDefault();
-    }
-});
-
-// Block drag and drop
-document.addEventListener('dragstart', function(e) {
-    e.preventDefault();
-});
-
-// Block print
-window.addEventListener('beforeprint', function(e) {
-    e.preventDefault();
-    alert("Printing is disabled during the exam.");
-    return false;
-});
-
-// Block Ctrl+P
-document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 'p') {
-        e.preventDefault();
-        alert("Printing is disabled during the exam.");
-        return false;
+        e.returnValue = "Are you sure you want to leave the exam? Your progress may be lost.";
+        return "Are you sure you want to leave the exam? Your progress may be lost.";
     }
 });
 </script>

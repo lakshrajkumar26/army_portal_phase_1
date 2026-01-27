@@ -262,20 +262,24 @@ class CandidateProfile(models.Model):
     @property
     def slot_status(self):
         """Get human-readable slot status"""
-        if not self.has_exam_slot:
-            return "No Slot"
-        elif self.slot_consumed_at:
-            try:
-                return f"Consumed on {self.slot_consumed_at.strftime('%Y-%m-%d %H:%M')}"
-            except (AttributeError, TypeError):
-                return "Consumed (date unknown)"
-        elif self.slot_assigned_at:
-            try:
-                return f"Available (assigned {self.slot_assigned_at.strftime('%Y-%m-%d %H:%M')})"
-            except (AttributeError, TypeError):
-                return "Available (assignment date unknown)"
-        else:
-            return "Available (no assignment date)"
+        try:
+            if not self.has_exam_slot:
+                return "No Slot"
+            elif self.slot_consumed_at:
+                try:
+                    return f"Consumed on {self.slot_consumed_at.strftime('%Y-%m-%d %H:%M')}"
+                except (AttributeError, TypeError):
+                    return "Consumed (date unknown)"
+            elif self.slot_assigned_at:
+                try:
+                    return f"Available (assigned {self.slot_assigned_at.strftime('%Y-%m-%d %H:%M')})"
+                except (AttributeError, TypeError):
+                    return "Available (assignment date unknown)"
+            else:
+                return "Available (no assignment date)"
+        except Exception as e:
+            # Fallback for any unexpected errors
+            return f"Status Error: {str(e)}"
 
     def __str__(self):
         return f"{self.army_no} - {self.name}"

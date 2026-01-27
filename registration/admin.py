@@ -7,10 +7,11 @@ import os as _os  # for urandom
 
 from django import forms
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils import timezone
 from django.utils.html import format_html
@@ -824,27 +825,67 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     
     def slot_status_display(self, obj):
         """Display slot status with color coding and reset button"""
-        status = obj.slot_status
-        reset_button = ""
-        
-        # Add reset button if slot exists (consumed or available)
-        if obj.has_exam_slot:
-            reset_url = f"/admin/registration/candidateprofile/{obj.id}/reset-slot/"
-            reset_button = f'<br><a href="{reset_url}" style="background:#dc3545; color:white; padding:4px 8px; text-decoration:none; border-radius:3px; font-size:11px; margin-top:5px; display:inline-block;" onclick="return confirm(\'Reset exam slot for {obj.name}?\')">🔄 Reset Slot</a>'
-        
-        if "No Slot" in status:
-            return format_html('<span style="color: red; font-weight: bold;">{}</span>{}', status, reset_button)
-        elif "Consumed" in status:
-            return format_html('<span style="color: orange; font-weight: bold;">{}</span>{}', status, reset_button)
-        else:  # Available
-            return format_html('<span style="color: green; font-weight: bold;">{}</span>{}', status, reset_button)
+        try:
+            status = obj.slot_status
+            
+            # Create a more compact display
+            if "No Slot" in status:
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #dc3545; font-weight: bold; background: #fff5f5; padding: 4px 8px; border-radius: 4px; border: 1px solid #fed7d7; display: inline-block; margin-bottom: 4px;">❌ No Slot</span>'
+                    '</div>'
+                )
+            elif "Consumed" in status:
+                # Extract date from status
+                import re
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2})', status)
+                date_str = date_match.group(1) if date_match else "Unknown"
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #fd7e14; font-weight: bold; background: #fffaf0; padding: 4px 8px; border-radius: 4px; border: 1px solid #fbd38d; display: inline-block; margin-bottom: 4px;">🔒 Consumed</span>'
+                    '<br><small style="color: #6c757d;">{}</small>'
+                    '</div>',
+                    date_str
+                )
+            elif "Available" in status:
+                # Extract date from status
+                import re
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2})', status)
+                date_str = date_match.group(1) if date_match else "Unknown"
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #28a745; font-weight: bold; background: #f0fff4; padding: 4px 8px; border-radius: 4px; border: 1px solid #9ae6b4; display: inline-block; margin-bottom: 4px;">✅ Available</span>'
+                    '<br><small style="color: #6c757d;">{}</small>'
+                    '</div>',
+                    date_str
+                )
+            else:
+                status_html = format_html('<span style="color: #6c757d;">{}</span>', status)
+            
+            # Add reset button if slot exists
+            if obj.has_exam_slot:
+                reset_url = f"/admin/registration/candidateprofile/{obj.id}/reset-slot/"
+                reset_button = format_html(
+                    '<div style="text-align: center; margin-top: 6px;">'
+                    '<a href="{}" style="background:#dc3545; color:white; padding:3px 8px; text-decoration:none; border-radius:3px; font-size:11px; display:inline-block; transition: all 0.2s ease;" onclick="return confirm(\'Reset exam slot for {}?\')" title="Reset exam slot">🔄 Reset</a>'
+                    '</div>',
+                    reset_url, obj.name
+                )
+                return format_html('{}{}', status_html, reset_button)
+            
+            return status_html
+            
+        except Exception as e:
+            # Fallback display for any errors
+            return format_html('<span style="color: red;">Error: {}</span>', str(e))
     
     slot_status_display.short_description = "Slot Status"
+    slot_status_display.allow_tags = True
     
     def trade_questions_display(self, obj):
         """Display trade and available question counts"""
         if not obj.trade:
-            return "No Trade"
+            return format_html('<span style="color: #6c757d; font-style: italic;">No Trade</span>')
         
         from questions.models import Question
         
@@ -863,16 +904,21 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         ).count()
         
         trade_name = obj.trade.name
+        
+        # Create a more compact and visually appealing display
         return format_html(
-            '<strong>{}</strong><br>'
-            '<small style="color: #666;">'
-            '📝 Primary: {} questions<br>'
-            '📝 Secondary: {} questions'
-            '</small>',
+            '<div style="text-align: center;">'
+            '<strong style="color: #2c3e50; font-size: 14px; display: block; margin-bottom: 4px;">{}</strong>'
+            '<div style="display: flex; justify-content: space-around; font-size: 11px;">'
+            '<span style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; border: 1px solid #bbdefb;">📝 P: {}</span>'
+            '<span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 6px; border-radius: 3px; border: 1px solid #ce93d8;">📝 S: {}</span>'
+            '</div>'
+            '</div>',
             trade_name, primary_count, secondary_count
         )
     
     trade_questions_display.short_description = "Trade & Questions"
+    trade_questions_display.allow_tags = True
 
     # ---------- changelist (top buttons/links area) ----------
     def changelist_view(self, request, extra_context=None):
@@ -903,8 +949,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "secondary_viva_marks",
                 "secondary_practical_marks",
             )
-        # non-PO (your original default + slot status)
-        return ("army_no", "name", "user", "rank", "trade_questions_display", "shift", "slot_status_display", "created_at")
+        # non-PO (optimized layout with essential columns)
+        return ("army_no", "name", "rank", "trade_questions_display", "slot_status_display", "created_at")
 
     # Remove row links for PO
     def get_list_display_links(self, request, list_display):
