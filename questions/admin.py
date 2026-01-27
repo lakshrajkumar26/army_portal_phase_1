@@ -4,7 +4,6 @@ from django.contrib import admin, messages
 from .models import (
     Question,
     QuestionUpload,
-    TradePaperActivation,
     QuestionSetActivation,
     GlobalPaperTypeControl,
 )
@@ -78,25 +77,11 @@ class QuestionUploadAdmin(admin.ModelAdmin):
 
 
 # --------------------------------
-# Trade Paper Activation (ONLY CONTROL PANEL)
+# Trade Paper Activation (REMOVED - Replaced by QuestionSetActivation)
 # --------------------------------
-@admin.register(TradePaperActivation)
-class TradePaperActivationAdmin(admin.ModelAdmin):
-    """
-    This is the ONLY exam control screen admin should use.
-    """
-    list_display = ("trade", "paper_type", "is_active", "exam_duration")
-    list_filter = ("paper_type", "is_active", "trade")
-    ordering = ("trade__code", "paper_type")
-    fields = ("trade", "paper_type", "is_active", "exam_duration")
-
-    def has_add_permission(self, request):
-        # 🔒 Prevent manual creation (rows will be auto-created)
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        # 🔒 Prevent deletion
-        return False
+# The TradePaperActivation admin has been removed as it's been replaced
+# by the more advanced QuestionSetActivation and GlobalPaperTypeControl system.
+# The model still exists for backward compatibility but is no longer exposed in admin.
 
 
 # --------------------------------
