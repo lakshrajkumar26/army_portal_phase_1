@@ -1,0 +1,9 @@
+{% extends "admin/change_list.html" %}
+
+{# Keep the default object-tools (Add / filters / actions) but DO NOT add custom export links here.
+   The PO-only export links are injected into the sidebar by the ModelAdmin JS, so the
+   change_list template must not print them in the header. #}
+
+{% block object-tools %}
+    {{ block.super }}
+{% endblock %}

@@ -1,0 +1,924 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Army Candidate Registration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --army-green:#1e2e22;
+      --army-green-light:#3a4d39;
+      --army-gold:#d4af37;
+      --army-muted:#cfcfcf;
+      --card-bg:rgba(20,30,20,0.88);
+    }
+    html,body{height:100%;margin:0;}
+    body{
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background: url("{% static 'registration/army.jpg' %}") no-repeat center center fixed;
+      background-size: cover;
+      color:#f0f0f0;
+      display:flex;align-items:flex-start;justify-content:center;
+      padding:30px 10px;position:relative;
+    }
+    body::before{
+      content:"";position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.45);z-index:-1;
+    }
+    .wrap{max-width:1050px;width:100%;}
+    .title{font-size:34px;font-weight:900;text-align:center;margin:6px 0;color:var(--army-gold);text-shadow:2px 2px 8px rgba(0,0,0,0.9);}
+    .subtitle{text-align:center;color:#f0f0f0;margin:0 0 30px;font-size:16px;font-weight:600;text-shadow:1px 1px 6px rgba(0,0,0,0.9);}
+    .stepper{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:12px;margin:0 auto 28px;max-width:820px;}
+    .step{text-align:center;color:#bbb;font-size:12px;font-weight:600;}
+    .step .dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--army-gold);color:var(--army-gold);font-weight:800;margin:0 auto 6px;}
+    .step.active{color:#fff}.step.active .dot{background:var(--army-gold);color:#000;}
+    .line{height:3px;width:100%;background:rgba(255,255,255,0.3);}
+    .card{max-width:760px;margin:0 auto;background:var(--card-bg);border-radius:16px;padding:28px 26px;}
+    .card h2{text-align:center;font-size:20px;margin:0 0 18px;font-weight:800;color:var(--army-gold);}
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    .grid-1 {grid-template-columns: 1fr;}
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--army-gold);
+      margin-bottom: 6px;
+    }
+
+    /* Inputs + Selects */
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--army-green-light);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--army-gold);
+      outline: none;
+      box-shadow: 0 0 6px var(--army-gold);
+    }
+
+    /* Custom dropdown arrow */
+    select {
+      background-image: url("data:image/svg+xml;utf8,<svg fill='%23d4af37' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 18px;
+      padding-right: 40px;
+      cursor: pointer;
+    }
+    select option {
+      background: var(--army-green);
+      color: #fff;
+    }
+
+    /* Date input calendar icon */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(72%) sepia(85%) saturate(450%) hue-rotate(20deg) brightness(1.2);
+      cursor: pointer;
+      opacity: 1;
+    }
+
+    input[readonly]{background:rgba(255,255,255,0.1);color:#ddd;}
+
+    /* ---------- PHOTO + CAMERA LAYOUT ---------- */
+    .photo-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* left = upload/preview, right = camera */
+      gap: 16px;
+      align-items: start;
+      margin-top: 6px;
+    }
+    .photo-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .photo-col input[type="file"] {
+      width: 100%;
+      max-width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    #snapshot {
+      display: none;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 2px solid var(--army-gold);
+      background: #fff;
+    }
+    .camera-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    #camera {
+      width: 100%;
+      max-width: 320px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.2);
+      display: none;
+    }
+    #captureBtn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 4px;
+      display: none;
+    }
+
+    /* ---------- ACTIONS (buttons) ---------- */
+    .actions {
+      display:flex;
+      justify-content:center;
+      gap:18px;
+      margin-top:14px;
+    }
+    .actions .btn {
+      flex: unset;
+      min-width: 180px;
+      padding: 10px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    /* keep submit a bit larger/highlighted */
+    .actions .btn-primary {
+      min-width: 140px;
+      font-weight: 900;
+    }
+
+    .btn{ /* generic fallback */
+      cursor:pointer;
+      border: none;
+      background: transparent;
+    }
+    .btn-ghost{border:2px solid var(--army-gold);color:var(--army-gold);background:transparent;}
+    .btn-primary{background:var(--army-gold);color:#000;}
+    .btn[disabled] { opacity: .6; cursor: not-allowed; }
+
+    .form-step{display:none}.form-step.active{display:block}
+
+    /* footer */
+    .footer-container {
+      position: fixed;
+      bottom: 12px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between; /* pushes left & right */
+      align-items: center;
+      padding: 0 20px; /* some breathing space from edges */
+      box-sizing: border-box;
+    }
+    .footer-note {
+      color: var(--army-gold);
+      background: rgba(30,46,34,0.9);
+      padding: 6px 14px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      font-weight: 700;
+    }
+    .footer-note.developed { font-size: 16px; }
+    .footer-note.reserved { font-size: 13px; font-weight: 600; }
+
+    /* Responsive: stack photo/camera and buttons on small screens */
+    @media (max-width: 720px) {
+      .photo-row { grid-template-columns: 1fr; }
+      #camera, #snapshot { max-width: 100%; display: block; }
+      .actions { flex-direction: column; gap: 10px; }
+      .actions .btn { width: 100%; min-width: unset; }
+      #captureBtn { display: inline-block; }
+    }
+
+    input.invalid, select.invalid {
+      border-color: red !important;
+      box-shadow: 0 0 6px red;
+    }
+    .field-error {
+      color: red;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">ARMY CANDIDATE REGISTRATION</div>
+    <div class="subtitle">2 Signal Training Centre Online Exam Portal</div>
+
+    <!-- Stepper -->
+    <div class="stepper" id="stepper">
+      <div class="step active"><div class="dot">1</div>Personal<br/>Details</div>
+      <div class="line"></div>
+      <div class="step"><div class="dot">2</div>Exam<br/>Details</div>
+    </div>
+
+    <form id="regForm" class="card" method="post" enctype="multipart/form-data" 
+      action="{% url 'register_candidate' %}" novalidate>
+
+      <input type="hidden" name="username" id="username_hidden">
+      <input type="hidden" name="password" id="password_hidden">
+
+      {% csrf_token %}
+
+      <!-- Step 2 -->
+      <section class="form-step active" data-step="2">
+        <h2>Personal Details</h2>
+        <div class="grid">
+          <div><label>Army No (USERNAME) *</label><input type="text" name="army_no" required {% if form.army_no.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-army_no">{% for error in form.army_no.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div><label>Date of Birth (PASSWORD dd-mm-yyyy) *</label><input type="text" name="dob" required {% if form.dob.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-dob">{% for error in form.dob.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div>
+            <label for="rank">Rank *</label>
+            <select name="rank" id="rank" required {% if form.rank.errors %}class="invalid"{% endif %}>
+              <option value="">-- Select Rank --</option>
+              <option value="AGV">AGV</option>
+            </select>
+            <div class="field-error" id="error-rank">{% for error in form.rank.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div><label>Unit *</label><input type="text" name="unit" required {% if form.unit.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-unit">{% for error in form.unit.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div><label>Brigade</label><input type="text" name="brigade" {% if form.brigade.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-brigade">{% for error in form.brigade.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div><label>Corps</label><input type="text" name="corps" {% if form.corps.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-corps">{% for error in form.corps.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div><label>Command</label><input type="text" name="command" {% if form.command.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-command">{% for error in form.command.errors %}{{ error }}<br>{% endfor %}</div></div>
+
+          <div>
+            <label>Trade *</label>
+            <select name="trade" id="trade" class="form-control" required {% if form.trade.errors %}class="invalid"{% endif %}>
+              <option value="">-- Select Trade --</option>
+              {% for trade in form.fields.trade.queryset %}
+                <option value="{{ trade.id }}" data-code="{{ trade.code }}">{{ trade.code }}</option>
+              {% endfor %}
+            </select>
+            <div class="field-error" id="error-trade">{% for error in form.trade.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div><label>Name *</label><input type="text" name="name" required {% if form.name.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-name">{% for error in form.name.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div><label>Date of Enrollment *</label><input type="date" name="doe" required {% if form.doe.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-doe">{% for error in form.doe.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div><label>Aadhar No(12 digit) *</label><input type="text" name="aadhar_number" pattern="[0-9]{12}" maxlength="12" required {% if form.aadhar_number.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-aadhar_number">{% for error in form.aadhar_number.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div>
+            <label>Mobile No (Linked to Aadhaar Card) *</label>
+            <input
+              type="text"
+              name="mobile_no"
+              inputmode="numeric"
+              pattern="[0-9]{10}"
+              maxlength="10"
+              required
+              {% if form.mobile_no.errors %}class="invalid"{% endif %}
+            />
+            <div class="field-error" id="error-mobile_no">
+              {% for error in form.mobile_no.errors %}
+                {{ error }}<br>
+              {% endfor %}
+            </div>
+          </div>
+          <div>
+            <label>APAAR ID (12 digits)</label>
+            <input
+              type="text"
+              name="apaar_id"
+              inputmode="numeric"
+              pattern="[0-9]{12}"
+              maxlength="12"
+              {% if form.apaar_id.errors %}class="invalid"{% endif %}
+            />
+            <div class="field-error" id="error-apaar_id">
+              {% for error in form.apaar_id.errors %}
+                {{ error }}<br>
+              {% endfor %}
+            </div>
+          </div>
+          <div><label>Father's Name *</label><input type="text" name="father_name" required {% if form.father_name.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-father_name">{% for error in form.father_name.errors %}{{ error }}<br>{% endfor %}</div></div>
+
+          <!-- ---------- PHOTO AREA: Replace original block with this ---------- -->
+          <div class="grid-1" style="grid-column:1/-1;">
+            <label>Photograph *</label>
+
+            <div class="photo-row">
+              <!-- Left: upload + preview -->
+              <div class="photo-col">
+                <input type="file" name="photograph" id="fileInput" accept="image/*" required {% if form.photograph.errors %}class="invalid"{% endif %}>
+                <small style="color:#aaa;">Upload a photo from your device</small>
+                {% comment %} <p style="margin:8px 0; text-align:center; color:#bbb; font-weight:bold;">OR</p> {% endcomment %}
+                <!-- preview canvas -->
+                <canvas id="snapshot" width="320" height="240"></canvas>
+              </div>
+
+              <!-- Right: camera -->
+              <div class="camera-col">
+                <button type="button" id="openCameraBtn" style="align-self:flex-start;">📷 Open Camera</button>
+                <video id="camera" autoplay playsinline></video>
+                <button type="button" id="captureBtn">📸 Capture</button>
+              </div>
+            </div>
+            <div class="field-error" id="error-photograph">{% for error in form.photograph.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+
+        </div>
+
+        <!-- Buttons moved below photograph section and centered -->
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" data-prev>Previous</button>
+          <button type="button" class="btn btn-primary" data-next>Next</button>
+        </div>
+      </section>
+
+      <!-- Step 3 -->
+      <section class="form-step" data-step="3">
+        <h2>Exam Details</h2>
+        <div class="grid">
+          <div class="grid-1" style="grid-column:1/-1;">
+            <h3 style="color:var(--army-gold);margin-bottom:8px;">Primary Qualification</h3>
+          </div>
+          <div>
+            <label>Primary Qualification *</label>
+            <input type="text" id="primary_qualification" name="primary_qualification" readonly required {% if form.primary_qualification.errors %}class="invalid"{% endif %} />
+            <div class="field-error" id="error-primary_qualification">{% for error in form.primary_qualification.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div>
+            <label>Duration</label>
+            <input type="text" id="primary_duration" name="primary_duration" readonly {% if form.primary_duration.errors %}class="invalid"{% endif %} />
+            <div class="field-error" id="error-primary_duration">{% for error in form.primary_duration.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div>
+            <label>Credits</label>
+            <input type="text" id="primary_credits" name="primary_credits" readonly {% if form.primary_credits.errors %}class="invalid"{% endif %} />
+            <div class="field-error" id="error-primary_credits">{% for error in form.primary_credits.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+
+          <div class="grid-1" style="grid-column:1/-1;margin-top:20px;">
+            <h3 style="color:var(--army-gold);margin-bottom:8px;">Secondary Qualification</h3>
+          </div>
+          <div>
+            <label>Secondary Qualification *</label>
+            <input type="text" id="secondary_qualification" name="secondary_qualification" readonly required {% if form.secondary_qualification.errors %}class="invalid"{% endif %} />
+            <div class="field-error" id="error-secondary_qualification">{% for error in form.secondary_qualification.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div>
+            <label>Duration</label>
+            <input type="text" id="secondary_duration" name="secondary_duration" readonly {% if form.secondary_duration.errors %}class="invalid"{% endif %} />
+            <div class="field-error" id="error-secondary_duration">{% for error in form.secondary_duration.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div>
+            <label>Credits</label>
+            <input type="text" id="secondary_credits" name="secondary_credits" readonly {% if form.secondary_credits.errors %}class="invalid"{% endif %} />
+            <div class="field-error" id="error-secondary_credits">{% for error in form.secondary_credits.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+
+          <div class="grid-1" style="grid-column:1/-1">
+            <label>Exam Center *</label>
+            <select name="exam_center" required {% if form.exam_center.errors %}class="invalid"{% endif %}>
+              <option value="">-- Select Exam Center --</option>
+              <option>SWC-Jaipur</option><option>SWC-Hissar</option><option>SWC-Bathinda</option>
+              <option>SWC-Sriganganagar</option><option>SWC-Bikaner</option><option>SWC-Suratgarh</option>
+              <option>SWC-Kota</option><option>ARTRAC-Port Blair</option>
+              <option>ARTRAC-Ahmednagar</option><option>ARTRAC-Bangalore</option><option>ARTRAC-Chennai</option>
+              <option>SWC-Pune MINTSD</option><option>ARTRAC-MCTE Mhow</option>
+              <option>SC-Secunderabad</option><option>SC-Jhansi</option><option>SC-Ahmedabad</option>
+              <option>SC-Jodhpur</option><option>SC-Saugor</option><option>SC-Bhopal</option><option>SC-Pune</option>
+              <option>EC-Binaguri</option><option>EC-Kolkata</option><option>EC-Missamari</option>
+              <option>EC-Rangapahar</option><option>EC-Dinjan</option><option>EC-Gangtok</option>
+              <option>EC-Leimakhong</option><option>EC-Tenga</option><option>EC-Panagarh</option>
+              <option>EC-Ranchi</option><option>EC-Likabali</option><option>EC-Tejpur</option>
+              <option>EC-Kalimpong</option>
+              <option>WC-Jalandhar</option><option>WC-Ambala</option><option>WC-Delhi</option>
+              <option>WC-Amritsar</option><option>WC-Ferozepur</option><option>WC-Patiala</option>
+              <option>WC-Jammu</option><option>WC-Pathankot</option><option>WC-Chandimandir</option>
+              <option>WC-Meerut</option>
+              <option>CC-Agra</option><option>CC-Bareilly</option><option>CC-Jabalpur</option>
+              <option>CC-Lucknow</option><option>CC-Ranikhet</option><option>CC-Dehradun</option>
+              <option>NC-Udhampur</option><option>NC-Baramula</option><option>NC-Kargil</option>
+              <option>NC-Leh</option><option>NC-Srinagar</option><option>NC-Kupwara</option>
+              <option>NC-Allahabad</option><option>NC-Rajouri</option><option>NC-Akhnoor</option>
+              <option>NC-Nagrota</option><option>NC-Palampur</option><option>NC-Mathura</option>
+              <option>NC-Karu</option>
+            </select>
+            <div class="field-error" id="error-exam_center">{% for error in form.exam_center.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div>
+            <label>NSQF Level</label>
+            <input type="text" name="nsqf_level" value="4.5" readonly {% if form.nsqf_level.errors %}class="invalid"{% endif %} />
+            <div class="field-error" id="error-nsqf_level">{% for error in form.nsqf_level.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div>
+            <label>Training Center *</label>
+            <select id="training_center" name="training_center" required {% if form.training_center.errors %}class="invalid"{% endif %}>
+              <option value="">-- Select Training Center --</option>
+              <option value="1 Signal Training Center">1 Signal Training Center</option>
+              <option value="2 Signal Training Center">2 Signal Training Center</option>
+            </select>
+            <div class="field-error" id="error-training_center">{% for error in form.training_center.errors %}{{ error }}<br>{% endfor %}</div>
+          </div>
+          <div><label>State *</label><input type="text" id="state" name="state" readonly required {% if form.state.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-state">{% for error in form.state.errors %}{{ error }}<br>{% endfor %}</div></div>
+          <div><label>District *</label><input type="text" id="district" name="district" readonly required {% if form.district.errors %}class="invalid"{% endif %} /><div class="field-error" id="error-district">{% for error in form.district.errors %}{{ error }}<br>{% endfor %}</div></div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" data-prev>Previous</button>
+          <button type="submit" class="btn btn-primary">🚀 Register Candidate</button>
+        </div>
+      </section>
+
+    </form>
+  </div>
+
+  <div class="footer-container">
+    <div class="footer-note developed">
+      Developed by SLOG Solutions Pvt Ltd and 2STC
+    </div>
+    <div class="footer-note reserved">
+      All Rights Reserved @ SLOG Solutions Pvt Ltd
+    </div>
+  </div>
+
+<script>
+  // ===== Trade mapping (moved to top for priority) =====
+  const tradeMapping = {
+    "TTC": { primary:{qualification:"Technician Data Network",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "OCC": { primary:{qualification:"Technician Communication Center & Radio System",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "DTMN": { primary:{qualification:"Technician Draughtsman Topographical",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "EFS": { primary:{qualification:"Technician Electrical System",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "DMV": { primary:{qualification:"Commercial Vehicle Driver (Heavy Motor Veh Driver) Light Motor Veh Driver",duration:"1350",credits:"45"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "LMN": { primary:{qualification:"Technician Network System Support",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "CLK SD": { primary:{qualification:"Office Supervisor",duration:"1260",credits:"42"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "STEWARD": { primary:{qualification:"Food & Beverage Service Associate",duration:"1350",credits:"45"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "WASHERMAN": { primary:{qualification:"Laundry Associate",duration:"1350",credits:"45"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "HOUSE KEEPER": { primary:{qualification:"Housekeeping Support Staff",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "CHEFCOM": { primary:{qualification:"Commis Chef (Advanced)",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "MESS KEEPER": { primary:{qualification:"Camp Coordinator",duration:"1350",credits:"45"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "SKT": { primary:{qualification:"Store Keeper Technician",duration:"1350",credits:"45"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "Musician": { primary:{qualification:"Music Performer",duration:"1200",credits:"40"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "ARTSN WW": { primary:{qualification:"Technician Wood Works",duration:"1350",credits:"45"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "Hair Dresser": { primary:{qualification:"N/A",duration:"N/A",credits:"N/A"},secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} },
+    "SP Staff": { primary:{qualification:"N/A",duration:"N/A",credits:"N/A"}, secondary:{qualification:"Security Guard (Armed)",duration:"1350",credits:"45"} }
+  };
+
+  // ===== Get all elements =====
+  const tradeSelect = document.getElementById("trade");
+  const primaryQ = document.getElementById("primary_qualification");
+  const primaryD = document.getElementById("primary_duration");
+  const primaryC = document.getElementById("primary_credits");
+  const secondaryQ = document.getElementById("secondary_qualification");
+  const secondaryD = document.getElementById("secondary_duration");
+  const secondaryC = document.getElementById("secondary_credits");
+
+  // Camera elements
+  const openCameraBtn = document.getElementById("openCameraBtn");
+  const video = document.getElementById("camera");
+  const captureBtn = document.getElementById("captureBtn");
+  const canvas = document.getElementById("snapshot");
+  const fileInput = document.getElementById("fileInput");
+
+  // Form elements
+  const armyNoInput = document.querySelector('input[name="army_no"]');
+  const dobInput = document.querySelector('input[name="dob"]');
+  const usernameHidden = document.getElementById('username_hidden');
+  const passwordHidden = document.getElementById('password_hidden');
+
+  // Step elements
+  const steps = Array.from(document.querySelectorAll('.form-step'));
+  const stepDots = Array.from(document.querySelectorAll('.stepper .step'));
+  let current = 0;
+  let stream = null;
+
+  // ===== Trade mapping function =====
+  function applyTradeMapping() {
+    const selectedOption = tradeSelect.options[tradeSelect.selectedIndex];
+    const tradeCode = selectedOption ? selectedOption.dataset.code : "";
+    const data = tradeMapping[tradeCode];
+
+    if (!data) {
+      primaryQ.value = primaryD.value = primaryC.value = "";
+      secondaryQ.value = secondaryD.value = secondaryC.value = "";
+      return;
+    }
+
+    if (data.primary) {
+      primaryQ.value = data.primary.qualification || "";
+      primaryD.value = data.primary.duration || "";
+      primaryC.value = data.primary.credits || "";
+    } else {
+      primaryQ.value = primaryD.value = primaryC.value = "";
+    }
+
+    if (data.secondary) {
+      secondaryQ.value = data.secondary.qualification || "";
+      secondaryD.value = data.secondary.duration || "";
+      secondaryC.value = data.secondary.credits || "";
+    } else {
+      secondaryQ.value = secondaryD.value = secondaryC.value = "";
+    }
+
+    // Validate the readonly fields after updating
+    [primaryQ, primaryD, primaryC, secondaryQ, secondaryD, secondaryC].forEach(el => {
+      if (el) validateField(el);
+    });
+
+    // Update buttons after trade mapping to ensure validation runs properly
+    setTimeout(updateButtons, 100);
+  }
+
+  // ===== Auto-numeric typing only (Mobile & Aadhaar) =====
+  function allowOnlyNumbers(el, maxLength) {
+    if (!el) return;
+
+    // Block non-numeric key presses
+    el.addEventListener('keypress', e => {
+      if (!/[0-9]/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+
+    // Clean pasted or autofilled input
+    el.addEventListener('input', () => {
+      el.value = el.value.replace(/\D/g, '').slice(0, maxLength);
+    });
+  }
+
+  // Apply to mobile number
+  const mobileInput = document.querySelector('input[name="mobile_no"]');
+  allowOnlyNumbers(mobileInput,10);
+
+  // Apply to APAAR ID
+  const apaarInput = document.querySelector('input[name="apaar_id"]');
+  allowOnlyNumbers(apaarInput,12);
+
+  // (Optional but recommended) Apply to Aadhaar too
+  const aadharInput = document.querySelector('input[name="aadhar_number"]');
+  allowOnlyNumbers(aadharInput,12);
+
+  // ===== Camera logic =====
+  openCameraBtn.addEventListener("click", async () => {
+    try {
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "user"
+          }
+        });
+
+        video.srcObject = stream;
+        video.style.display = "block";
+        captureBtn.style.display = "inline-block";
+        canvas.style.display = "none";
+
+        // Wait for video to be ready
+        await new Promise(resolve => {
+          video.addEventListener('loadedmetadata', resolve, { once: true });
+        });
+      }
+    } catch (error) {
+      console.error("Camera error:", error);
+      alert("Camera access denied. Please allow permission or use file upload.");
+    }
+  });
+
+  captureBtn.addEventListener("click", async () => {
+    try {
+      // Ensure video is playing and has dimensions
+      if (!video.videoWidth || !video.videoHeight) {
+        alert("Camera is not ready. Please wait a moment and try again.");
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Draw the current video frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Show the captured image
+      canvas.style.display = "block";
+      canvas.style.width = "250px";
+      canvas.style.height = "auto";
+
+      // Create blob from canvas
+      const blob = await new Promise(resolve => {
+        canvas.toBlob(resolve, "image/jpeg", 0.8);
+      });
+
+      if (blob) {
+        // Create file from blob
+        const file = new File([blob], "captured_photo.jpg", {
+          type: "image/jpeg",
+          lastModified: Date.now()
+        });
+
+        // Assign file to input
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+
+        // Trigger events
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        fileInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+        console.log("Photo captured successfully!", file);
+
+        // Stop camera stream
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          stream = null;
+        }
+
+        // Hide camera UI
+        video.style.display = "none";
+        captureBtn.style.display = "none";
+
+        // Update validation
+        setTimeout(updateButtons, 200);
+
+        alert("Photo captured successfully!");
+      } else {
+        throw new Error("Failed to create image blob");
+      }
+
+    } catch (error) {
+      console.error("Capture error:", error);
+      alert("Error capturing photo: " + error.message);
+    }
+  });
+
+  // ===== show preview when user selects a file from input =====
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) {
+      canvas.style.display = 'none';
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const ctx = canvas.getContext('2d');
+      // size to fit element width while keeping aspect ratio
+      const maxW = 1024;
+      const w = Math.min(img.width, maxW);
+      const h = Math.round(w * (img.height / img.width));
+      canvas.width = w;
+      canvas.height = h;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      canvas.style.display = 'block';
+      canvas.style.width = '100%';
+      // hide camera if visible
+      if (stream) {
+        // don't stop stream automatically; up to user - but we hide video
+        video.style.display = 'none';
+        captureBtn.style.display = 'none';
+      }
+    };
+    img.src = URL.createObjectURL(f);
+  });
+
+  // ===== Hidden username/password sync =====
+  function syncCreds() {
+    if (usernameHidden) usernameHidden.value = (armyNoInput?.value || '').trim();
+    if (passwordHidden) passwordHidden.value = (dobInput?.value || '');
+  }
+
+  [armyNoInput, dobInput].forEach(el => el && el.addEventListener('input', syncCreds));
+  syncCreds(); // initial
+
+  // ===== Validation function =====
+  function validateField(el) {
+    const errorEl = document.getElementById(`error-${el.name}`);
+    let message = '';
+
+    if (el.required) {
+      if (el.type === 'file') {
+        if (!el.files || el.files.length === 0) {
+          message = 'This field is required.';
+        }
+      } else if (el.tagName === 'SELECT') {
+        if (!el.value) {
+          message = 'Please select an option.';
+        }
+      } else {
+        if (!el.value.trim()) {
+          message = 'This field is required.';
+        }
+      }
+    }
+
+    // Extra validations
+    if (el.name === 'aadhar_number') {
+      const val = el.value.trim();
+      if (val && !/^\d{12}$/.test(val)) {
+        message = 'Must be exactly 12 digits.';
+      }
+    }
+
+    if (el.name === 'mobile_no') {
+      const val = el.value.trim();
+      if (val && !/^\d{10}$/.test(val)) {
+        message = 'Must be exactly 10 digits.';
+      }
+    }
+
+    if (el.name === 'apaar_id') {
+      const val = el.value.trim();
+      if (val && !/^\d{12}$/.test(val)) {
+        message = 'Must be exactly 12 digits.';
+      }
+    }
+
+    if (el.name === 'doe') {
+      const val = el.value;
+      if (val) {
+        const selectedDate = new Date(val);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate >= today) {
+          message = 'Date must be before today.';
+        }
+      }
+    }
+
+    if (el.name === 'dob') {
+      const val = el.value.trim();
+      if (val && !/^\d{2}-\d{2}-\d{4}$/.test(val)) {
+        message = 'Format: dd-mm-yyyy';
+      }
+    }
+
+    if (message) {
+      el.classList.add('invalid');
+      if (errorEl) errorEl.textContent = message;
+    } else {
+      el.classList.remove('invalid');
+      if (errorEl) errorEl.textContent = '';
+    }
+
+    return !message;
+  }
+
+  // ===== Section validation =====
+  function isSectionValid(section) {
+    let isValid = true;
+
+    section.querySelectorAll('input, select, textarea').forEach(el => {
+      isValid = validateField(el) && isValid;
+    });
+
+    return isValid;
+  }
+
+  // ===== Button update function =====
+  function updateButtons() {
+    steps.forEach((section, idx) => {
+      const nextBtn = section.querySelector('[data-next]');
+      const submitBtn = section.querySelector('[type="submit"]');
+      const prevBtn = section.querySelector('[data-prev]');
+
+      const sectionValid = isSectionValid(section);
+
+      if (prevBtn) prevBtn.disabled = idx === 0;
+      if (nextBtn) nextBtn.disabled = !sectionValid;
+      if (submitBtn) submitBtn.disabled = !sectionValid;
+    });
+  }
+
+  // ===== Step navigation =====
+  function showStep(i) {
+    steps.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    stepDots.forEach((d, idx) => d.classList.toggle('active', idx <= i));
+    current = i;
+
+    // Delay button update to ensure all fields are populated
+    setTimeout(updateButtons, 200);
+  }
+
+  // ===== Event listeners for navigation =====
+  document.querySelectorAll('[data-next]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      if (isSectionValid(steps[current])) {
+        showStep(Math.min(current + 1, steps.length - 1));
+      }
+    })
+  );
+
+  document.querySelectorAll('[data-prev]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      showStep(Math.max(current - 1, 0));
+    })
+  );
+
+  // ===== Live validation =====
+  document.querySelectorAll('.form-step input, .form-step select, .form-step textarea')
+    .forEach(el => el.addEventListener('input', () => {
+      validateField(el);
+      setTimeout(updateButtons, 50);
+    }));
+
+  document.querySelectorAll('.form-step input[type="file"]')
+    .forEach(el => el.addEventListener('change', () => {
+      validateField(el);
+      setTimeout(updateButtons, 50);
+    }));
+
+  // ===== Training center autofill =====
+  const tc = document.getElementById('training_center');
+  const state = document.getElementById('state');
+  const district = document.getElementById('district');
+
+  function applyCenter(v) {
+    if (v === '1 Signal Training Center') {
+      state.value = 'MP';
+      district.value = 'Jabalpur';
+    } else if (v === '2 Signal Training Center') {
+      state.value = 'Goa';
+      district.value = 'Goa';
+    } else {
+      state.value = '';
+      district.value = '';
+    }
+    // Validate after update
+    [state, district].forEach(el => {
+      if (el) validateField(el);
+    });
+    setTimeout(updateButtons, 50);
+  }
+
+  if (tc) {
+    tc.addEventListener('change', e => applyCenter(e.target.value));
+    applyCenter(tc.value || '');
+  }
+
+  // ===== Optional qualification block (guarded) =====
+  const qualificationSelect = document.getElementById('qualification');
+  const durationInput = document.getElementById('duration');
+  const creditsInput = document.getElementById('credits');
+  const qualificationData = window.qualificationData || {};
+
+  function applyQualificationData(qualification) {
+    if (!qualificationSelect || !durationInput || !creditsInput) return;
+    if (qualification && qualificationData[qualification]) {
+      durationInput.value = qualificationData[qualification].duration;
+      creditsInput.value = qualificationData[qualification].credits;
+    } else {
+      durationInput.value = '';
+      creditsInput.value = '';
+    }
+  }
+
+  if (qualificationSelect) {
+    qualificationSelect.addEventListener('change', e => applyQualificationData(e.target.value));
+    applyQualificationData(qualificationSelect.value);
+  }
+
+  // ===== Trade select event listener =====
+  if (tradeSelect) {
+    tradeSelect.addEventListener("change", applyTradeMapping);
+    applyTradeMapping(); // run once on load
+  }
+
+  // ===== Final sync on submit =====
+  document.getElementById('regForm').addEventListener('submit', syncCreds);
+
+  // ===== Set max date for doe =====
+  const doeInput = document.querySelector('input[name="doe"]');
+  if (doeInput) {
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 86400000);
+    doeInput.max = yesterday.toISOString().split('T')[0];
+  }
+
+  // ===== On load, check for pre-filled errors and validate =====
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.form-step input, .form-step select').forEach(el => {
+      const errorEl = document.getElementById(`error-${el.name}`);
+      if (errorEl && errorEl.textContent.trim()) {
+        el.classList.add('invalid');
+      }
+      validateField(el);
+    });
+    updateButtons();
+  });
+
+  // ===== Start at step 0 =====
+  showStep(0);
+</script>
+
+</body>
+</html>

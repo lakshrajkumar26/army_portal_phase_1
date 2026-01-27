@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Portal</title>
+    
+    <!-- Bootstrap 5 CSS (offline) -->
+    <style>
+        :root {
+            --primary: #4e73df;
+            --secondary: #6c757d;
+            --success: #1cc88a;
+            --info: #36b9cc;
+            --warning: #f6c23e;
+            --danger: #e74a3b;
+            --light: #f8f9fc;
+            --dark: #5a5c69;
+            --sidebar-width: 250px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fc;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .exam-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styling */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary) 0%, #224abe 100%);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-header h4 {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .nav-item {
+            margin: 5px 0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            padding: 12px 20px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link.active {
+            border-left: 4px solid white;
+        }
+        
+        /* Main Content Styling */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s;
+        }
+        
+        .tab-content {
+            padding: 20px 0;
+        }
+        
+        /* Card Styling */
+        .question-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .question-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .question-card .card-header {
+            background: linear-gradient(180deg, white 0%, #f8f9fc 100%);
+            border-bottom: 1px solid #e3e6f0;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        
+        .question-card .card-body {
+            padding: 20px;
+        }
+        
+        .question-number {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .marks-badge {
+            float: right;
+            background: var(--success);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        /* Form Styling */
+        .form-check {
+            margin: 10px 0;
+            padding-left: 0;
+        }
+        
+        .form-check-input {
+            margin-right: 10px;
+        }
+        
+        .form-check-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        
+        .form-check-label:hover {
+            background-color: #f0f4ff;
+        }
+        
+        textarea.form-control {
+            border-radius: 5px;
+            border: 1px solid #d1d3e2;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+        
+        textarea.form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+        
+        /* Button Styling */
+        .btn-submit {
+            background: var(--success);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .btn-submit:hover {
+            background: #17a673;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        }
+        
+        .progress {
+            height: 10px;
+            margin-top: 10px;
+        }
+        
+        /* Timer */
+        .timer {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .exam-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="exam-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h4>Exam Sections</h4>
+            </div>
+            <ul class="nav flex-column">
+                {% if part_a %}
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#partA">
+                        <i class="fas fa-folder-open me-2"></i> Part A (Category)
+                    </a>
+                </li>
+                {% endif %}
+                {% if part_b %}
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#partB">
+                        <i class="fas fa-folder me-2"></i> Part B (Common)
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Timer -->
+            <div class="timer">
+                <i class="fas fa-clock me-2"></i> Time Remaining: <span id="countdown">01:30:00</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="d-flex justify-content-between">
+                    <span>Exam Progress</span>
+                    <span>50%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+
+            <div class="tab-content">
+                {% if part_a %}
+                <div class="tab-pane fade show active" id="partA">
+                    <h3 class="mb-4">{{ part_a.title }}</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="paper_id" value="{{ part_a.id }}">
+                        {% for question in part_a.questions.all %}
+                        <div class="card question-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <span class="question-number">{{ forloop.counter }}</span>
+                                    {{ question.text }}
+                                </h5>
+                                <span class="marks-badge">{{ question.marks }} Mark{{ question.marks|pluralize }}</span>
+                            </div>
+                            <div class="card-body">
+                                {% if question.part in "ABC" %}
+                                <div class="options-container">
+                                    {% for choice in question.options.choices %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="q{{ question.id }}_opt{{ forloop.counter }}" value="{{ choice }}">
+                                        <label class="form-check-label" for="q{{ question.id }}_opt{{ forloop.counter }}">
+                                            {{ choice }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <textarea name="question_{{ question.id }}" rows="4" class="form-control" placeholder="Type your answer here..."></textarea>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-submit">
+                                <i class="fas fa-paper-plane me-2"></i> Submit Part A
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if part_b %}
+                <div class="tab-pane fade" id="partB">
+                    <h3 class="mb-4">{{ part_b.title }}</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="paper_id" value="{{ part_b.id }}">
+                        {% for question in part_b.questions.all %}
+                        <div class="card question-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <span class="question-number">{{ forloop.counter }}</span>
+                                    {{ question.text }}
+                                </h5>
+                                <span class="marks-badge">{{ question.marks }} Mark{{ question.marks|pluralize }}</span>
+                            </div>
+                            <div class="card-body">
+                                {% if question.part in "ABC" %}
+                                <div class="options-container">
+                                    {% for choice in question.options.choices %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="q{{ question.id }}_opt{{ forloop.counter }}" value="{{ choice }}">
+                                        <label class="form-check-label" for="q{{ question.id }}_opt{{ forloop.counter }}">
+                                            {{ choice }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <textarea name="question_{{ question.id }}" rows="4" class="form-control" placeholder="Type your answer here..."></textarea>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-submit">
+                                <i class="fas fa-paper-plane me-2"></i> Submit Part B
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap and jQuery JS (offline) -->
+    <script>
+        // Simple timer implementation
+        function startTimer(duration, display) {
+            let timer = duration, hours, minutes, seconds;
+            setInterval(function () {
+                hours = parseInt(timer / 3600, 10);
+                minutes = parseInt((timer % 3600) / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+                
+                hours = hours < 10 ? "0" + hours : hours;
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+                
+                display.textContent = hours + ":" + minutes + ":" + seconds;
+                
+                if (--timer < 0) {
+                    timer = duration;
+                }
+            }, 1000);
+        }
+        
+        window.onload = function () {
+            const ninetyMinutes = 90 * 60;
+            const display = document.querySelector('#countdown');
+            startTimer(ninetyMinutes, display);
+        };
+        
+        // Tab switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const triggerTabList = [].slice.call(document.querySelectorAll('.nav-link'))
+            triggerTabList.forEach(function(triggerEl) {
+                triggerEl.addEventListener('click', function(event) {
+                    event.preventDefault()
+                    const target = document.querySelector(triggerEl.getAttribute('href'))
+                    
+                    // Remove active class from all tabs and panes
+                    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'))
+                    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('show', 'active'))
+                    
+                    // Add active class to clicked tab and corresponding pane
+                    triggerEl.classList.add('active')
+                    target.classList.add('show', 'active')
+                })
+            })
+        })
+    </script>
+</body>
+</html>

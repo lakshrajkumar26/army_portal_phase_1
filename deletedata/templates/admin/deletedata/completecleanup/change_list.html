@@ -1,0 +1,124 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+<div class="cleanup-interface" style="padding: 20px;">
+    
+    <div class="cleanup-header" style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #dc3545; margin-bottom: 10px;">🚨 Complete System Cleanup</h1>
+        <p style="color: #666; font-size: 16px;">Complete system reset - deletes ALL data including user registrations</p>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="danger-zone" style="background: #f8d7da; border: 2px solid #f5c6cb; border-radius: 8px; padding: 30px; text-align: center; margin-bottom: 30px;">
+        <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+        <h2 style="color: #721c24; margin-bottom: 20px;">DANGER ZONE</h2>
+        <p style="color: #721c24; font-size: 18px; margin-bottom: 25px; line-height: 1.6;">
+            This will delete <strong>EVERYTHING</strong> including:<br><br>
+            ❌ All user registrations and profiles<br>
+            ❌ All exam data, questions, and papers<br>
+            ❌ All exam sessions and answers<br>
+            ❌ All uploaded files and media<br><br>
+            <strong>Only admin/superuser accounts will be preserved</strong>
+        </p>
+        
+        <button onclick="cleanEverything()" 
+                style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px;">
+            🗑️ DELETE EVERYTHING
+        </button>
+    </div>
+
+    <!-- What Will Be Deleted -->
+    <div class="deletion-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        
+        <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px;">
+            <h4 style="color: #721c24; margin-bottom: 15px;">🗑️ Will Be Deleted</h4>
+            <ul style="color: #721c24; margin: 0; padding-left: 20px;">
+                <li>All candidate registrations and profiles</li>
+                <li>All user accounts (except superusers)</li>
+                <li>All questions and question papers</li>
+                <li>All exam sessions and results</li>
+                <li>All candidate answers</li>
+                <li>All uploaded files and photos</li>
+                <li>All exam slots and activations</li>
+            </ul>
+        </div>
+
+        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 20px;">
+            <h4 style="color: #155724; margin-bottom: 15px;">✅ Will Be Preserved</h4>
+            <ul style="color: #155724; margin: 0; padding-left: 20px;">
+                <li>Admin/superuser accounts</li>
+                <li>Database structure and tables</li>
+                <li>Application code and settings</li>
+                <li>Reference data (trades, centers)</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- Multiple Warnings -->
+    <div class="warning-section" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h4 style="color: #856404; margin-bottom: 15px;">⚠️ CRITICAL WARNINGS</h4>
+        <div style="color: #856404;">
+            <p style="margin-bottom: 10px;"><strong>🚫 THIS ACTION CANNOT BE UNDONE!</strong></p>
+            <p style="margin-bottom: 10px;"><strong>💾 MAKE SURE YOU HAVE A COMPLETE BACKUP!</strong></p>
+            <p style="margin-bottom: 10px;"><strong>👥 ALL CANDIDATE DATA WILL BE LOST!</strong></p>
+            <p style="margin-bottom: 0;"><strong>🔄 SYSTEM WILL BE RESET TO INITIAL STATE!</strong></p>
+        </div>
+    </div>
+
+    <!-- Alternative Options -->
+    <div style="background: #e9ecef; border: 1px solid #ced4da; padding: 20px; border-radius: 8px;">
+        <h5 style="color: #495057; margin-bottom: 15px;">🤔 Looking for Less Destructive Options?</h5>
+        <p style="color: #6c757d; margin-bottom: 15px;">
+            If you don't need to delete user registrations, consider these alternatives:
+        </p>
+        <div style="display: flex; gap: 15px;">
+            <a href="{% url 'admin:deletedata_examdatacleanup_changelist' %}" 
+               style="background: #17a2b8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                🗃️ Clean Exam Data Only
+            </a>
+            <a href="{% url 'admin:index' %}" 
+               style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                🏠 Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function cleanEverything() {
+    if (confirm('🚨 DANGER ZONE 🚨\n\nThis will delete EVERYTHING including all user registrations!\n\nOnly admin accounts will be preserved.\n\nAre you absolutely sure?')) {
+        if (confirm('🔴 FINAL WARNING: This will delete ALL DATA including candidate registrations!\n\nThis action cannot be undone and will reset the system completely.\n\nClick OK to proceed or Cancel to abort.')) {
+            var confirmation = prompt('Type "DELETE EVERYTHING" to confirm complete system reset:');
+            if (confirmation === 'DELETE EVERYTHING') {
+                window.location.href = '{% url "admin:deletedata_completecleanup_clean_everything" %}';
+            } else {
+                alert('❌ Operation cancelled - incorrect confirmation text.');
+            }
+        }
+    }
+}
+</script>
+
+<style>
+.danger-zone {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% { border-color: #f5c6cb; }
+    50% { border-color: #dc3545; }
+    100% { border-color: #f5c6cb; }
+}
+
+.danger-zone button:hover {
+    background: #c82333 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    transition: all 0.3s ease;
+}
+</style>
+
+{% endblock %}

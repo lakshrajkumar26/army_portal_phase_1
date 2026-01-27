@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Exam Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+        .debug-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; background: #f9f9f9; }
+        .question-debug { border: 1px solid #ddd; margin: 10px; padding: 10px; background: white; }
+        pre { background: #f0f0f0; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Exam Data</h1>
+    
+    {% if error %}
+        <div class="error">ERROR: {{ error }}</div>
+    {% else %}
+        <div class="success">✓ Data loaded successfully</div>
+        
+        <div class="debug-section">
+            <h2>Basic Info</h2>
+            <p><strong>Candidate:</strong> {{ candidate.name }} ({{ candidate.user.username }})</p>
+            <p><strong>Trade:</strong> {{ candidate.trade }}</p>
+            <p><strong>Paper:</strong> {{ paper.question_paper }}</p>
+            <p><strong>Session ID:</strong> {{ session.id }}</p>
+            <p><strong>Questions count:</strong> {{ questions|length }}</p>
+            <p><strong>Activation:</strong> {{ activation.paper_type }} ({{ activation.trade }})</p>
+        </div>
+        
+        <div class="debug-section">
+            <h2>Session Questions Query</h2>
+            <p><strong>session.questions.count():</strong> {{ session.questions.count }}</p>
+            <p><strong>session.questions.all():</strong> {{ questions|length }} items</p>
+        </div>
+        
+        <div class="debug-section">
+            <h2>Questions Debug (First 5)</h2>
+            {% for question in questions %}
+                <div class="question-debug">
+                    <h3>Question {{ forloop.counter }}</h3>
+                    <p><strong>ExamQuestion ID:</strong> {{ question.id }}</p>
+                    <p><strong>Order:</strong> {{ question.order }}</p>
+                    <p><strong>Question Object:</strong> {{ question.question }}</p>
+                    <p><strong>Question ID:</strong> {{ question.question.id }}</p>
+                    <p><strong>Question Text:</strong> "{{ question.question.text|slice:":200" }}"</p>
+                    <p><strong>Question Part:</strong> {{ question.question.part }}</p>
+                    <p><strong>Question Marks:</strong> {{ question.question.marks }}</p>
+                    <p><strong>Question Trade:</strong> {{ question.question.trade }}</p>
+                    <p><strong>Question Paper Type:</strong> {{ question.question.paper_type }}</p>
+                    <p><strong>Question Options:</strong></p>
+                    <pre>{{ question.question.options|pprint }}</pre>
+                </div>
+                {% if forloop.counter >= 5 %}
+                    <p><strong>... (showing first 5 questions only)</strong></p>
+                    {% break %}
+                {% endif %}
+            {% empty %}
+                <div class="error">NO QUESTIONS FOUND!</div>
+            {% endfor %}
+        </div>
+        
+        <div class="debug-section">
+            <h2>Template Test</h2>
+            <p>Testing template access patterns:</p>
+            {% for question in questions|slice:":1" %}
+                <p><strong>question:</strong> {{ question }}</p>
+                <p><strong>question.question:</strong> {{ question.question }}</p>
+                <p><strong>question.question.text:</strong> "{{ question.question.text }}"</p>
+                <p><strong>question.question.id:</strong> {{ question.question.id }}</p>
+                <p><strong>question.question.part:</strong> {{ question.question.part }}</p>
+            {% endfor %}
+        </div>
+        
+        <div class="debug-section">
+            <h2>Raw Database Query</h2>
+            <p>Let's check what's in the database directly:</p>
+            <p><strong>Questions for this trade in DB:</strong> 
+                {% if candidate.trade %}
+                    {{ candidate.trade.name }} - checking questions...
+                {% else %}
+                    No trade assigned
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="debug-section">
+            <h2>Actions</h2>
+            <p><a href="{% url 'exam_interface' %}">Go to Exam Interface</a></p>
+            <p><a href="{% url 'candidate_dashboard' %}">Back to Dashboard</a></p>
+        </div>
+    {% endif %}
+</body>
+</html>

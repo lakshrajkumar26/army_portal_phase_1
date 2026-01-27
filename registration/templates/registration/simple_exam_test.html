@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Exam Test</title>
+    <style>
+        .question { border: 1px solid #ccc; margin: 10px; padding: 10px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Simple Exam Test</h1>
+    
+    <div>
+        <p><strong>Questions Count:</strong> {{ questions|length }}</p>
+        <p><strong>Session ID:</strong> {{ session.id }}</p>
+        <p><strong>Paper:</strong> {{ paper.question_paper }}</p>
+    </div>
+    
+    <div id="questions-container">
+        {% for question in questions %}
+            <div class="question" id="q-{{ forloop.counter0 }}">
+                <h3>Question {{ forloop.counter }}</h3>
+                <p><strong>ID:</strong> {{ question.question.id }}</p>
+                <p><strong>Text:</strong> {{ question.question.text }}</p>
+                <p><strong>Part:</strong> {{ question.question.part }}</p>
+                <p><strong>Marks:</strong> {{ question.question.marks }}</p>
+                
+                {% if question.question.part in "AB" %}
+                    <p><strong>Options:</strong></p>
+                    {% if question.question.options and question.question.options.choices %}
+                        {% for choice in question.question.options.choices %}
+                            <label>
+                                <input type="radio" name="q{{ question.question.id }}" value="{{ choice }}">
+                                {{ choice }}
+                            </label><br>
+                        {% endfor %}
+                    {% elif question.question.options %}
+                        {% for choice in question.question.options %}
+                            <label>
+                                <input type="radio" name="q{{ question.question.id }}" value="{{ choice }}">
+                                {{ choice }}
+                            </label><br>
+                        {% endfor %}
+                    {% else %}
+                        {% for choice in "ABCD" %}
+                            <label>
+                                <input type="radio" name="q{{ question.question.id }}" value="Option {{ choice }}">
+                                Option {{ choice }}
+                            </label><br>
+                        {% endfor %}
+                    {% endif %}
+                {% elif question.question.part == "C" %}
+                    <textarea name="q{{ question.question.id }}" rows="3" cols="50"></textarea>
+                {% elif question.question.part == "D" %}
+                    <input type="text" name="q{{ question.question.id }}">
+                {% elif question.question.part == "E" %}
+                    <textarea name="q{{ question.question.id }}" rows="4" cols="50"></textarea>
+                {% elif question.question.part == "F" %}
+                    <label><input type="radio" name="q{{ question.question.id }}" value="True"> True</label><br>
+                    <label><input type="radio" name="q{{ question.question.id }}" value="False"> False</label>
+                {% endif %}
+            </div>
+            {% if forloop.counter >= 5 %}
+                <p><strong>... (showing first 5 questions only)</strong></p>
+                {% break %}
+            {% endif %}
+        {% empty %}
+            <p style="color: red; font-size: 20px;">NO QUESTIONS FOUND!</p>
+        {% endfor %}
+    </div>
+    
+    <script>
+        console.log("Questions count:", {{ questions|length|default:0 }});
+        console.log("Questions container:", document.getElementById('questions-container'));
+        console.log("All question divs:", document.querySelectorAll('.question'));
+    </script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2 Signal Training Centre Online Exam Portal</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Trebuchet MS', sans-serif;
+            background: url("{% static 'registration/army.jpg' %}") no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        /* Navbar */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #444; /* gray background */
+    padding: 20px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+.navbar-left {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.navbar-right a {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 8px;
+    color: black;
+}
+
+        /* Keep your button colors */
+        .btn-warning { background-color: #FFD700; color: #000; }
+        .btn-success { background-color: #28a745; color: #fff; }
+        .btn-danger { background-color: #dc3545; color: #fff; }
+
+
+        /* Top-right buttons container */
+        .top-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .top-buttons a {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            margin-left: 8px;
+            color: black;
+        }
+
+        .btn-warning {
+            background-color: #FFD700;
+            color: #000;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+        }
+
+        /* Login container */
+        .login-container {
+            background-color: rgba(15, 40, 15, 0.92);
+            padding: 50px 40px;
+            border-radius: 14px;
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 20px rgba(0,0,0,0.7);
+            width: 420px;   /* bigger than before */
+            text-align: center;
+        }
+
+        .login-container input {
+            width: 90%;
+            margin: 12px auto;
+            padding: 14px;
+            border: 2px solid #FFD700;
+            border-radius: 6px;
+            font-size: 15px;
+            background-color: #111;
+            color: #fff;
+            display: block;
+        }
+
+        .login-container button {
+            width: 75%;
+            margin: 18px auto;
+            padding: 14px;
+            font-size: 16px;
+            background-color: #FFD700;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            display: block;
+            transition: background 0.3s;
+        }
+
+        .login-container button:hover {
+            background-color: #e6c200;
+        }
+
+        /* Logo Badge */
+        .logo-badge {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border: 3px solid #FFD700;
+            border-radius: 50%;
+            margin: -80px auto 25px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
+
+        .logo-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        h2 {
+            color: #FFD700;
+            margin-bottom: 12px;
+            font-size: 22px;
+        }
+
+        p {
+            color: #ddd;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .footer-container {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.footer-note {
+  color: var(--army-gold);
+  background: rgba(230, 212, 5, 0.9);
+  padding: 6px 14px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  margin-top: 6px;
+  font-weight: 700;
+}
+
+/* bigger for "Developed by" */
+.footer-note.developed {
+  font-size: 16px;
+}
+
+/* slightly smaller for "All Rights Reserved" */
+.footer-note.reserved {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+
+    </style>
+</head>
+<body>
+    <!-- Top-right corner buttons -->
+    {% comment %} <div class="top-buttons">
+        <a href="/admin" class="btn-warning">OIC Exam Center</a>
+        <a href="/candidate/register" class="btn-success">Registration</a>
+        <a href="/admin" class="btn-danger">PO Exam Center</a>
+    </div> {% endcomment %}
+
+    <!-- NAVBAR -->
+<div class="navbar">
+    <div class="navbar-left">
+        2 SIGNAL TRAINING CENTER EXAM PORTAL
+    </div>
+    <div class="navbar-right top-buttons">
+        <a href="/admin" class="btn-warning">OIC Exam Center</a>
+        <a href="/candidate/register" class="btn-success">Registration</a>
+        <a href="/admin" class="btn-danger">PO Exam Center</a>
+    </div>
+</div>
+
+{% if show_no_exam_banner %}
+  <div style="
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(30,46,34,0.95); color:#d4af37;
+      border:1px solid #d4af37; border-radius:10px;
+      padding:10px 16px; box-shadow:0 6px 16px rgba(0,0,0,0.5); z-index:9999;">
+      Warning: No exam is active right now.
+  </div>
+{% endif %}
+
+{% if show_no_slot_banner %}
+  <div style="
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(220,53,69,0.95); color:#fff;
+      border:1px solid #dc3545; border-radius:10px;
+      padding:10px 16px; box-shadow:0 6px 16px rgba(0,0,0,0.5); z-index:9999;">
+      <strong>No Exam Slot:</strong> Contact admin to assign an exam slot before attempting to login.
+  </div>
+{% endif %}
+
+{% if show_slot_consumed_banner %}
+  <div style="
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,193,7,0.95); color:#000;
+      border:1px solid #ffc107; border-radius:10px;
+      padding:10px 16px; box-shadow:0 6px 16px rgba(0,0,0,0.5); z-index:9999;">
+      <strong>Slot Used:</strong> Your exam slot has been consumed. Contact admin to assign a new slot.
+  </div>
+{% endif %}
+
+
+    {% if messages %}
+  <div style="
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(30,46,34,0.95); color:#d4af37;
+      border:1px solid #d4af37; border-radius:10px;
+      padding:10px 16px; box-shadow:0 6px 16px rgba(0,0,0,0.5); z-index:9999;">
+    {% for message in messages %}
+      <div style="font-weight:700;">
+        {% if message.tags %}<span style="opacity:.9; margin-right:8px;">{{ message.tags|title }}:</span>{% endif %}
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+    <!-- Login Card -->
+    <div class="login-container">
+        <div class="logo-badge">
+            <img src="{% static 'registration/shield.jpg' %}" alt="Army Shield">
+        </div>
+        <h2>Candidate Login</h2>
+        <p>Serve with courage. Access your exam portal account.</p>
+        
+        {% if form.non_field_errors %}
+            <p style="color: red; font-weight: bold;">
+                {{ form.non_field_errors.0 }}
+            </p>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Army Number" required>
+            <input type="password" name="password" placeholder="Date of Birth (dd-mm-yyyy)" required>
+            <button type="submit">Login to Exam Portal</button>
+        </form>
+    </div>
+    <div class="footer-container">
+  <div class="footer-note developed">
+    Developed by SLOG Solutions Pvt Ltd and 2STC
+  </div>
+  <div class="footer-note reserved">
+    All Rights Reserved @ SLOG Solutions Pvt Ltd
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,487 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Dashboard</title>
+    <style>
+        :root {
+            --army-green: #2c4c2c;
+            --army-gold: #c8b072;
+            --army-dark: #1a2e1a;
+            --army-light: #3d6b3d;
+            --text-light: #f0f0f0;
+            --text-muted: #cccccc;
+            --card-bg: rgba(34, 49, 34, 0.85);
+            --success: #5cb85c;
+            --warning: #f0ad4e;
+            --danger: #d9534f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url("{% static 'registration/army.jpg' %}") no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-light);
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .overlay {
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8));
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(26, 46, 26, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--army-gold);
+        }
+        
+        .welcome {
+            flex: 1;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--army-gold);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .welcome span {
+            font-size: 16px;
+            color: var(--text-light);
+            margin-top: 5px;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        
+        .profile {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .profile img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--army-gold);
+            object-fit: cover;
+            transition: all 0.3s ease;
+        }
+        
+        .profile:hover img {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px var(--army-gold);
+        }
+        
+        .profile-details {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 55px;
+            background: rgba(26, 46, 26, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            width: 220px;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--army-gold);
+        }
+        
+        .profile:hover .profile-details {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .profile-details p {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .profile-details strong {
+            color: var(--army-gold);
+        }
+        
+        .dashboard-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            border-left: 4px solid var(--army-gold);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .card h2 {
+            margin-bottom: 20px;
+            color: var(--army-gold);
+            border-bottom: 2px solid var(--army-gold);
+            padding-bottom: 10px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .exam-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(200, 176, 114, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .exam-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(200, 176, 114, 0.2);
+        }
+        
+        .exam-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: var(--army-gold);
+        }
+        
+        .value {
+            color: var(--text-light);
+            text-align: right;
+        }
+        
+        .exam-action {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .confirm-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            color: var(--text-light);
+        }
+        
+        .start-btn {
+            background: linear-gradient(to right, var(--army-gold), #d6c28e);
+            color: #1a2e1a;
+            font-weight: bold;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .start-btn:hover {
+            background: linear-gradient(to right, #d6c28e, var(--army-gold));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .start-btn.disabled {
+            background: rgba(128, 128, 128, 0.7);
+            color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .start-btn.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .instructions-list {
+            padding-left: 20px;
+            line-height: 1.7;
+        }
+        
+        .instructions-list li {
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .instructions-list li:before {
+            content: "•";
+            color: var(--army-gold);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+        
+        .motivation-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(26, 46, 26, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--army-gold);
+        }
+        
+        .motivation-section h3 {
+            color: var(--army-gold);
+            font-size: 28px;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .motivation-text {
+            font-size: 18px;
+            font-style: italic;
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .footer-container {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+        }
+        
+        .footer-note {
+            color: var(--army-gold);
+            background: rgba(30, 46, 34, 0.9);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+            margin-top: 8px;
+            font-weight: 700;
+            border: 1px solid rgba(200, 176, 114, 0.3);
+        }
+        
+        .footer-note.developed {
+            font-size: 16px;
+        }
+        
+        .footer-note.reserved {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .dashboard-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .welcome {
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .profile {
+                margin-top: 10px;
+            }
+            
+            .welcome {
+                font-size: 22px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <header>
+            <div class="welcome">
+                Candidate Dashboard
+                <span>Welcome, {{ candidate.name }}</span>
+            </div>
+            {% comment %} <h2 style="color: red; text-align: center;">
+                {{ message }}
+            </h2> {% endcomment %}
+            <div class="profile">
+                <img src="{{ candidate.photograph.url }}" alt="Profile">
+                <div class="profile-details">
+                    <p><strong>Name:</strong> <span>{{ candidate.name }}</span></p>
+                    <p><strong>Army No:</strong> <span>{{ candidate.army_no }}</span></p>
+                    <p><strong>Trade:</strong> <span>{{ candidate.trade }}</span></p>
+                    <p><strong>Exam Center:</strong> <span>{{ candidate.exam_center }}</span></p>
+                    <hr style="margin: 10px 0; border-color: rgba(200, 176, 114, 0.3);">
+                    <a href="{% url 'login' %}" 
+                       style="display: block; margin-top: 10px; padding: 10px; text-align: center; 
+                              background: var(--army-gold); color: var(--army-dark); border-radius: 6px; 
+                              text-decoration: none; font-weight: bold; transition: all 0.3s ease;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div class="motivation-section">
+            <h3>All the Best !!</h3>
+            <p class="motivation-text">"Success is the sum of small efforts, repeated day in and day out. Give your best and make yourself proud!"</p>
+        </div>
+
+        <div class="dashboard-section">
+            <!-- Scheduled Exams -->
+            <div class="card">
+                <h2><i class="fas fa-calendar-alt"></i> Scheduled Exams</h2>
+                {% if candidate %}
+                <div class="exam-card">
+                    <div class="exam-detail">
+                        <span class="label">Army Number:</span>
+                        <span class="value">{{ candidate.army_no }}</span>
+                    </div>
+                    <div class="exam-detail">
+                        <span class="label">Name:</span>
+                        <span class="value">{{ candidate.name }}</span>
+                    </div>
+                    <div class="exam-detail">
+                        <span class="label">Trade:</span>
+                        <span class="value">{{ candidate.trade }}</span>
+                    </div>
+                    <div class="exam-detail">
+                        <span class="label">Center:</span>
+                        <span class="value">{{ candidate.exam_center }}</span>
+                    </div>
+                    <div class="exam-detail">
+                        <span class="label">Shift:</span>
+                        <span class="value">{{ candidate.shift }}</span>
+                    </div>
+                    <div class="exam-action">
+                        {% if candidate.can_start_exam %}
+                            <div class="confirm-wrapper">
+                                <input type="checkbox" id="confirm-details" name="correct_detail">
+                                <label for="confirm-details">I confirm the details are correct.</label>
+                            </div>
+                            <button id="start-exam-btn" class="start-btn disabled" disabled onclick="window.location.href='{% url 'clear_shift_and_start_exam' %}'">
+                                <i class="fas fa-play-circle"></i> Start Exam
+                            </button>
+                        {% else %}
+                            <button class="start-btn disabled" disabled>
+                                <i class="fas fa-clock"></i> Start Exam (Not Yet Available)
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                    <p>No scheduled exams</p>
+                {% endif %}
+            </div>
+
+            <!-- Instructions -->
+            <div class="card">
+                <h2><i class="fas fa-info-circle"></i> Instructions</h2>
+                <div class="exam-card">
+                    <ol class="instructions-list">
+                        <li>There are total 05 parts in the Question paper – Part A, Part B, Part C, Part D and Part E.</li>
+                        <li>Part A/B MCQ</li>
+                        <li>Part C Short Answer Questions</li>
+                        <li>Part D – Fill in the blanks/Short answer</li>
+                        <li>Part E – Long Answer</li>
+                        <li>Part F – True/False</li>
+                        <li>All questions are compulsory. You have to attempt all questions.</li>
+                        <li>Max marks for each question is shown.</li>
+                        <li>Do not Press any function keys (F1 to F12) or esc during the exam.</li>
+                        <li>Do not Press Refresh/Reload button during the exam.</li>
+                        <li>Do not Press Back button during the exam.</li>
+                        <li>The total time for the exam is displayed on top. Stick to the timeline for the exam.</li>
+                        <li>You can mark the question to revisit at the end.</li>
+                        <li>Finish your exam on time.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer-container">
+        <div class="footer-note developed">
+            Developed by SLOG Solutions Pvt Ltd and 2STC
+        </div>
+        <div class="footer-note reserved">
+            All Rights Reserved @ SLOG Solutions Pvt Ltd
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkbox = document.getElementById('confirm-details');
+            const startBtn = document.getElementById('start-exam-btn');
+            if (checkbox && startBtn) {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        startBtn.classList.remove('disabled');
+                        startBtn.removeAttribute('disabled');
+                    } else {
+                        startBtn.classList.add('disabled');
+                        startBtn.setAttribute('disabled', 'disabled');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

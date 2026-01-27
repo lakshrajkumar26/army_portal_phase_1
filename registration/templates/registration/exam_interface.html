@@ -1,0 +1,1992 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Military Examination Portal</title>
+    <link href="{% static 'css/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <script src="{% static 'css/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> -->
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <style>
+        :root {
+            --army-green: #2c4c2c;
+            --army-dark-green: #1a2e1a;
+            --army-gold: #c8b072;
+            --army-tan: #d6c28e;
+            --army-light: #3d6b3d;
+            --text-light: #f0f0f0;
+            --text-muted: #cccccc;
+            --card-bg: rgba(34, 49, 34, 0.92);
+            --sidebar-bg: rgba(26, 46, 26, 0.95);
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --current: #2196f3;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a2e1a url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2' fill='%233d6b3d' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Enhanced Fullscreen Controls Prevention */
+        body:fullscreen,
+        body:-webkit-full-screen,
+        body:-moz-full-screen {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            overflow: hidden;
+        }
+        
+        /* Hide fullscreen controls completely */
+        body:fullscreen::backdrop,
+        body:-webkit-full-screen::backdrop,
+        body:-moz-full-screen::backdrop {
+            background: #000;
+        }
+
+        /* Block top area hover effects with larger area */
+        body:fullscreen::before,
+        body:-webkit-full-screen::before,
+        body:-moz-full-screen::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: transparent;
+            z-index: 9999999;
+            pointer-events: auto;
+            display: block;
+        }
+
+        /* Force hide any browser UI */
+        body:fullscreen *:hover,
+        body:-webkit-full-screen *:hover,
+        body:-moz-full-screen *:hover {
+            cursor: default !important;
+        }
+
+        /* Prevent any scrolling in fullscreen */
+        body:fullscreen,
+        body:-webkit-full-screen,
+        body:-moz-full-screen {
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Hide scrollbars completely in fullscreen */
+        body:fullscreen::-webkit-scrollbar,
+        body:-webkit-full-screen::-webkit-scrollbar,
+        body:-moz-full-screen::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* Block any potential browser UI elements */
+        body:fullscreen *[title],
+        body:-webkit-full-screen *[title],
+        body:-moz-full-screen *[title] {
+            title: "" !important;
+        }
+
+        /* Prevent text selection in fullscreen */
+        body:fullscreen *,
+        body:-webkit-full-screen *,
+        body:-moz-full-screen * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
+        /* Allow text selection only in input fields */
+        body:fullscreen input,
+        body:fullscreen textarea,
+        body:-webkit-full-screen input,
+        body:-webkit-full-screen textarea,
+        body:-moz-full-screen input,
+        body:-moz-full-screen textarea {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+        }
+        
+        .exam-container {
+            display: flex;
+            flex: 1;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            padding: 20px 15px;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            border-right: 2px solid var(--army-gold);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(200, 176, 114, 0.3);
+        }
+        
+        .sidebar-header h2 {
+            color: var(--army-gold);
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .time-remaining {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+            border: 1px solid var(--army-gold);
+        }
+        
+        .time-remaining span {
+            font-weight: bold;
+            color: var(--army-gold);
+            font-size: 1.4rem;
+            display: block;
+            margin-top: 5px;
+            letter-spacing: 1px;
+        }
+        
+        .question-nav-container {
+            flex: 1;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .question-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .question-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: var(--army-dark-green);
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .question-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--army-gold);
+        }
+        
+        .question-btn.current {
+            border: 2px solid var(--current);
+            background: var(--current);
+            color: white;
+            box-shadow: 0 0 8px var(--current);
+        }
+        
+        .question-btn.answered {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        
+        .question-btn.flagged {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+        
+        .question-status {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 6px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .status-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .status-answered {
+            background: var(--success);
+        }
+        
+        .status-flagged {
+            background: var(--danger);
+        }
+        
+        .status-current {
+            background: var(--current);
+        }
+        
+        .status-not-answered {
+            background: var(--army-dark-green);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: rgba(26, 46, 26, 0.7);
+        }
+        
+        .exam-header {
+            background: var(--card-bg);
+            padding: 18px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--army-gold);
+        }
+        
+        .exam-title {
+            color: var(--army-gold);
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.6rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .question-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 25px;
+            border: 1px solid rgba(200, 176, 114, 0.2);
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            flex: 1;
+            line-height: 1.5;
+        }
+        
+        .marks-badge {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--army-dark-green);
+            color: var(--army-gold);
+            white-space: nowrap;
+            border: 1px solid var(--army-gold);
+        }
+        
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        @media (min-width: 768px) {
+            .options-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .form-check {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 0;
+            border-radius: 8px;
+            border: 1px solid rgba(200, 176, 114, 0.2);
+            background: rgba(26, 46, 26, 0.7);
+            transition: all 0.2s ease;
+        }
+        
+        .form-check:hover {
+            background: rgba(40, 70, 40, 0.8);
+            border-color: var(--army-gold);
+        }
+        
+        .form-check-input {
+            margin-right: 12px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .form-check-label {
+            width: 100%;
+            cursor: pointer;
+            font-size: 1.05rem;
+            color: var(--text-light);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(200, 176, 114, 0.3);
+            background: rgba(26, 46, 26, 0.7);
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--army-gold);
+            box-shadow: 0 0 0 2px rgba(200, 176, 114, 0.3);
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .nav-controls {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: var(--army-dark-green);
+            color: var(--army-gold);
+            border: 1px solid var(--army-gold);
+        }
+        
+        .btn-primary {
+            background: var(--army-gold);
+            color: var(--army-dark-green);
+            border: 1px solid var(--army-gold);
+        }
+        
+        .btn-warning {
+            background: var(--danger);
+            color: white;
+            border: 1px solid var(--danger);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+            border: 1px solid var(--success);
+        }
+        
+        .question-page {
+            display: none;
+        }
+        
+        .question-page:first-child {
+            display: block;
+        }
+        
+        /* Icons */
+        .fas, .far {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Confirmation Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.9);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            margin: 15% auto;
+            padding: 30px;
+            border: 2px solid var(--army-gold);
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .modal h3 {
+            color: var(--army-gold);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .modal p {
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            line-height: 1.4;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn-confirm {
+            background: var(--success);
+            color: white;
+        }
+
+        .modal-btn-cancel {
+            background: var(--danger);
+            color: white;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Top area overlay to prevent fullscreen controls */
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            z-index: 9999998;
+            background: rgba(0, 0, 0, 0.01);
+            pointer-events: auto;
+            display: none;
+        }
+
+        body:fullscreen .fullscreen-overlay,
+        body:-webkit-full-screen .fullscreen-overlay,
+        body:-moz-full-screen .fullscreen-overlay {
+            display: block;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .exam-container {
+                flex-direction: column;
+            }
+            
+            .options-container {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Additional security measures */
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Re-enable selection for input fields */
+        input, textarea, [contenteditable="true"] {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+        }
+        
+        /* Prevent image dragging */
+        img {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+            pointer-events: none;
+        }
+        
+        /* Prevent text highlighting on double-click */
+        * {
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Hide scrollbars to prevent right-click on them */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--army-dark-green);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--army-gold);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--army-tan);
+        }
+        
+        /* Prevent outline on focus that might be used for navigation */
+        *:focus {
+            outline: 2px solid var(--army-gold) !important;
+            outline-offset: 2px;
+        }
+        
+        /* Disable pointer events on non-interactive elements */
+        .question-text, .marks-badge, .sidebar-header h2 {
+            pointer-events: none;
+        }
+        
+        /* Ensure interactive elements remain clickable */
+        button, input, textarea, .form-check-input, .form-check-label, .question-btn {
+            pointer-events: auto !important;
+        }
+        
+        /* Additional fullscreen protection */
+        body:fullscreen, body:-webkit-full-screen, body:-moz-full-screen {
+            overflow: hidden !important;
+        }
+        
+        /* Prevent text cursor on non-editable content */
+        body, div, span, p, h1, h2, h3, h4, h5, h6 {
+            cursor: default !important;
+        }
+        
+        /* Maintain proper cursor for interactive elements */
+        button, .question-btn, .form-check-input, .form-check-label {
+            cursor: pointer !important;
+        }
+        
+        input, textarea {
+            cursor: text !important;
+        }
+        
+        /* Prevent selection of placeholder text */
+        ::placeholder {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Hide any potential browser UI elements */
+        body:fullscreen *::-webkit-media-controls,
+        body:fullscreen *::-webkit-media-controls-enclosure {
+            display: none !important;
+        }
+
+    </style>
+</head>
+
+<body>
+
+     <div id="fullscreenOverlay" style="
+        position:fixed;top:0;left:0;width:100%;height:100%;
+        background:#000;color:#fff;z-index:9999;
+        display:flex;align-items:center;justify-content:center;
+        flex-direction:column;text-align:center;">
+        <h2 style="margin-bottom:20px;">Your exam will start in Fullscreen Mode</h2>
+        <button id="enterFullscreenBtn" style="
+            font-size:20px;padding:15px 25px;
+            background:#c8b072;color:#000;
+            border:none;border-radius:8px;cursor:pointer;">
+            🚀 Start Exam
+        </button>
+    </div>
+
+    <!-- Top overlay to block fullscreen controls -->
+    <div class="fullscreen-overlay" id="topOverlay"></div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <h3>⚠️ Submit Exam Confirmation</h3>
+            <p>Are you sure you want to submit your exam?<br>
+            Once submitted, you cannot make any changes.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-confirm" id="confirmSubmit">
+                    ✓ Yes, Submit Exam
+                </button>
+                <button class="modal-btn modal-btn-cancel" id="cancelSubmit">
+                    ✗ Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Modal for Exit Attempts -->
+    <div id="warningModal" class="modal" style="z-index: 10000001;">
+        <div class="modal-content" style="border: 3px solid #f44336; background: linear-gradient(135deg, #2c4c2c, #1a2e1a);">
+            <h3 style="color: #f44336; font-size: 1.8rem; margin-bottom: 20px;">
+                🚨 EXAM SECURITY WARNING
+            </h3>
+            <p style="font-size: 1.2rem; line-height: 1.5; margin-bottom: 25px; color: #fff;">
+                <strong>You attempted to exit fullscreen mode or switch away from the exam!</strong><br><br>
+                This action is not allowed during the examination for security reasons.<br>
+                Your activity has been logged.
+            </p>
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 1rem; color: #c8b072;">
+                    <strong>Choose your action:</strong><br>
+                    • <strong>Back to Exam:</strong> Continue your examination<br>
+                    • <strong>Exit Exam:</strong> Save your current progress and terminate the exam
+                </p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn" id="backToExam" style="background: #4caf50; color: white; font-size: 1.1rem; padding: 15px 25px;">
+                    🔙 Back to Exam
+                </button>
+                <button class="modal-btn" id="exitExam" style="background: #f44336; color: white; font-size: 1.1rem; padding: 15px 25px;">
+                    🚪 Exit Exam
+                </button>
+            </div>
+        </div>
+    </div>
+
+<div id="examContent" style="display:none;">
+    <div class="exam-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Question Navigator</h2>
+                <div class="time-remaining">
+                    <i class="far fa-clock"></i> Time Left: <span id="timer">03:00:00</span>
+                </div>
+            </div>
+
+            <div class="question-nav-container">
+                <div class="question-nav">
+                    {% for question in questions %}
+                    <button type="button"
+                            class="question-btn {% if forloop.first %}current{% endif %}"
+                            id="nav-btn-{{ question.question.id }}"
+                            onclick="showQuestion({{ forloop.counter0 }})">
+                        {{ forloop.counter }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="question-status">
+                <div class="status-item"><div class="status-color status-current"></div> Current Question</div>
+                <div class="status-item"><div class="status-color status-answered"></div> Answered</div>
+                <div class="status-item"><div class="status-color status-flagged"></div> Flagged</div>
+                <div class="status-item"><div class="status-color status-not-answered"></div> Not Answered</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="exam-header">
+                <h1 class="exam-title">{{ paper.question_paper }}{% if paper.trade %} — {{ paper.trade }}{% endif %}</h1>
+            </div>
+
+            <form method="post" id="exam-form" action="{% url 'exam_interface' %}">
+                {% csrf_token %}
+                <input type="hidden" name="session_id" value="{{ session.id }}">
+                <input type="hidden" name="paper_id" value="{{ paper.id }}">
+
+                {% for question in questions %}
+                <!-- DEBUG: Question {{ forloop.counter }} - ID: {{ question.question.id }} -->
+                <div class="question-card question-page" id="question-{{ forloop.counter0 }}" style="{% if not forloop.first %}display:none{% endif %}">
+                    <div class="question-header">
+                        <h2 class="question-text">Q{{ forloop.counter }}. {{ question.question.text }}</h2>
+                        <span class="marks-badge">{{ question.question.marks }} Marks</span>
+                    </div>
+
+                    <div class="options-container">
+                        {# MCQ parts A/B: Always show 4 multiple choice options #}
+                        {% if question.question.part in "AB" %}
+                            {% if question.question.options and question.question.options.choices %}
+                                {# Use actual options if available #}
+                                {% for choice in question.question.options.choices %}
+                                    {% if choice %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio"
+                                               name="question_{{ question.question.id }}"
+                                               id="q{{ question.question.id }}_opt{{ forloop.counter }}"
+                                               value="{{ choice }}"
+                                               onchange="markAnswered({{ question.question.id }})">
+                                        <label class="form-check-label" for="q{{ question.question.id }}_opt{{ forloop.counter }}">{{ choice }}</label>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% elif question.question.options %}
+                                {# Options might be a list/array directly #}
+                                {% for choice in question.question.options %}
+                                    {% if choice %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio"
+                                               name="question_{{ question.question.id }}"
+                                               id="q{{ question.question.id }}_opt{{ forloop.counter }}"
+                                               value="{{ choice }}"
+                                               onchange="markAnswered({{ question.question.id }})">
+                                        <label class="form-check-label" for="q{{ question.question.id }}_opt{{ forloop.counter }}">{{ choice }}</label>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {# No options available - provide standard A, B, C, D options #}
+                                {% for choice in "ABCD" %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio"
+                                               name="question_{{ question.question.id }}"
+                                               id="q{{ question.question.id }}_opt{{ forloop.counter }}"
+                                               value="Option {{ choice }}"
+                                               onchange="markAnswered({{ question.question.id }})">
+                                        <label class="form-check-label" for="q{{ question.question.id }}_opt{{ forloop.counter }}">Option {{ choice }}</label>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        
+                        {% elif question.question.part == "C" %}
+                            {# Short answer text area #}
+                            <textarea name="question_{{ question.question.id }}" 
+                                      rows="3" 
+                                      class="form-control long-answer-input"
+                                      data-question-index="{{ forloop.counter0 }}"
+                                      placeholder="Type your detailed answer (30-50 words)" 
+                                      onchange="markAnswered({{ question.question.id }})"></textarea>
+                        {% elif question.question.part == "D" %}
+                            {# Fill in the blanks - must be textbox (Part D) #}
+                            <input type="text" 
+                                   name="question_{{ question.question.id }}" 
+                                   class="form-control fill-blank-input"
+                                   data-question-index="{{ forloop.counter0 }}"
+                                   placeholder="Enter your answer" 
+                                   onchange="markAnswered({{ question.question.id }})">
+                        {% elif question.question.part == "E" %}
+                            {# Long answer text area #}
+                            <textarea name="question_{{ question.question.id }}" 
+                                      rows="4" 
+                                      class="form-control long-answer-input"
+                                      data-question-index="{{ forloop.counter0 }}"
+                                      placeholder="Type your detailed answer (100-120 words)" 
+                                      onchange="markAnswered({{ question.question.id }})"></textarea>
+                        {% elif question.question.part == "F" %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question_{{ question.question.id }}" id="q{{ question.question.id }}_true" value="True." onchange="markAnswered({{ question.question.id }})">
+                                <label class="form-check-label" for="q{{ question.question.id }}_true">True</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question_{{ question.question.id }}" id="q{{ question.question.id }}_false" value="False." onchange="markAnswered({{ question.question.id }})">
+                                <label class="form-check-label" for="q{{ question.question.id }}_false">False</label>
+                            </div>
+                        {% else %}
+                            {# Catch-all fallback #}
+                            <input type="text" name="question_{{ question.question.id }}" class="form-control" onchange="markAnswered({{ question.question.id }})">
+                        {% endif %}
+                    </div>
+
+                    <div class="nav-controls">
+                        {% if not forloop.first %}
+                        <button type="button" class="btn btn-secondary" onclick="prevQuestion({{ forloop.counter0 }})">
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
+                        {% endif %}
+                        <button type="button" class="btn btn-warning" onclick="flagQuestion({{ question.question.id }})">
+                            <i class="fas fa-flag"></i> Flag
+                        </button>
+                        {% if not forloop.last %}
+                        <button type="button" class="btn btn-primary" onclick="nextQuestion({{ forloop.counter0 }})">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-success" id="final-submit">
+                            <i class="fas fa-paper-plane"></i> Submit Exam
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  let examSubmitted = false;
+  let isWindowFocused = true;
+  let altPressed = false;
+  let warningCount = 0;
+  let maxWarnings = 3;
+  let isWarningModalOpen = false;
+
+  // ---------------------------
+  // Fullscreen helpers (always return a Promise)
+  // ---------------------------
+  function enterFullScreen() {
+    const el = document.documentElement;
+    const fn =
+      el.requestFullscreen ||
+      el.mozRequestFullScreen ||
+      el.webkitRequestFullscreen ||
+      el.msRequestFullscreen;
+
+    if (!fn) return Promise.reject(new Error("Fullscreen API not supported"));
+    try {
+      const maybe = fn.call(el);
+      return (maybe && typeof maybe.then === "function") ? maybe : Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  function exitFullScreen() {
+    const fn =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.mozCancelFullScreen ||
+      document.msExitFullscreen;
+
+    if (!fn) return Promise.resolve();
+    try {
+      const maybe = fn.call(document);
+      return (maybe && typeof maybe.then === "function") ? maybe : Promise.resolve();
+    } catch {
+      return Promise.resolve();
+    }
+  }
+
+  // ---------------------------
+  // Warning Modal Functions
+  // ---------------------------
+  function showWarningModal(reason = "security violation") {
+    if (examSubmitted || isWarningModalOpen) return;
+    
+    isWarningModalOpen = true;
+    warningCount++;
+    
+    console.warn(`Security warning ${warningCount}: ${reason}`);
+    
+    // Log the security violation
+    logSecurityViolation(reason);
+    
+    document.getElementById('warningModal').style.display = 'block';
+    
+    // Auto-terminate after max warnings
+    if (warningCount >= maxWarnings) {
+      setTimeout(() => {
+        if (isWarningModalOpen) {
+          alert(`Maximum security violations (${maxWarnings}) reached. Exam will be terminated automatically.`);
+          forceExitExam();
+        }
+      }, 5000);
+    }
+  }
+
+  function hideWarningModal() {
+    isWarningModalOpen = false;
+    document.getElementById('warningModal').style.display = 'none';
+  }
+
+  function logSecurityViolation(reason) {
+    // Log security violation (could be sent to server in real implementation)
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] SECURITY VIOLATION: ${reason} (Count: ${warningCount}/${maxWarnings})`);
+    
+    // Store in localStorage for audit trail
+    const violations = JSON.parse(localStorage.getItem('examViolations') || '[]');
+    violations.push({
+      timestamp,
+      reason,
+      count: warningCount,
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    });
+    localStorage.setItem('examViolations', JSON.stringify(violations));
+  }
+
+  function forceExitExam() {
+    examSubmitted = true;
+    hideWarningModal();
+    
+    // Save current progress
+    saveCurrentProgress();
+    
+    alert("Exam terminated due to security violations. Your current progress has been saved.");
+    
+    // Submit the form
+    document.getElementById("exam-form")?.submit();
+  }
+
+  function saveCurrentProgress() {
+    // Collect all current answers
+    const formData = new FormData(document.getElementById("exam-form"));
+    const answers = {};
+    
+    for (let [key, value] of formData.entries()) {
+      if (key.startsWith('question_')) {
+        answers[key] = value;
+      }
+    }
+    
+    // Store in localStorage as backup
+    localStorage.setItem('examProgress', JSON.stringify({
+      timestamp: new Date().toISOString(),
+      answers: answers,
+      warningCount: warningCount,
+      reason: 'Security violation - forced exit'
+    }));
+    
+    console.log('Progress saved:', Object.keys(answers).length, 'answers');
+  }
+
+  // Warning modal event listeners
+  document.getElementById('backToExam').addEventListener('click', () => {
+    hideWarningModal();
+    
+    // Force back to fullscreen
+    enterFullScreen().then(() => {
+      // Re-focus on exam content
+      document.getElementById('examContent').focus();
+    }).catch(err => {
+      console.error('Failed to re-enter fullscreen:', err);
+      showWarningModal('Failed to return to fullscreen mode');
+    });
+  });
+
+  document.getElementById('exitExam').addEventListener('click', () => {
+    // User chose to exit - save progress and submit
+    examSubmitted = true;
+    hideWarningModal();
+    
+    saveCurrentProgress();
+    
+    alert("Your exam progress has been saved. You will now be logged out.");
+    
+    // Submit the form
+    document.getElementById("exam-form")?.submit();
+  });
+
+  // ---------------------------
+  // Enhanced fullscreen control blocking
+  // ---------------------------
+  function blockFullscreenControls() {
+    // Block mouse events near top of screen with more aggressive prevention
+    document.addEventListener('mousemove', (e) => {
+      const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
+                          document.mozFullScreenElement || document.msFullscreenElement;
+      
+      if (isFullscreen && e.clientY < 80) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        
+        // Force cursor away from top and show warning
+        document.body.style.cursor = 'none';
+        
+        // Move cursor to center of screen
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        
+        // Create invisible element to capture focus
+        const focusElement = document.createElement('div');
+        focusElement.style.position = 'fixed';
+        focusElement.style.left = centerX + 'px';
+        focusElement.style.top = centerY + 'px';
+        focusElement.style.width = '1px';
+        focusElement.style.height = '1px';
+        focusElement.style.opacity = '0';
+        focusElement.tabIndex = -1;
+        document.body.appendChild(focusElement);
+        focusElement.focus();
+        
+        setTimeout(() => {
+          document.body.style.cursor = 'default';
+          document.body.removeChild(focusElement);
+        }, 500);
+        
+        if (!examSubmitted && !isWarningModalOpen) {
+          showWarningModal("Attempted to access browser controls");
+        }
+        return false;
+      }
+    }, { passive: false, capture: true });
+
+    // Block all mouse events in top area
+    ['mouseenter', 'mouseover', 'hover', 'mouseup', 'mousedown', 'click', 'dblclick'].forEach(eventType => {
+      document.addEventListener(eventType, (e) => {
+        const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
+                            document.mozFullScreenElement || document.msFullscreenElement;
+        
+        if (isFullscreen && e.clientY < 80) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+          return false;
+        }
+      }, { passive: false, capture: true });
+    });
+
+    // Continuously monitor and force fullscreen
+    setInterval(() => {
+      const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
+                          document.mozFullScreenElement || document.msFullscreenElement;
+      
+      if (!isFullscreen && !examSubmitted && !isWarningModalOpen) {
+        // Attempt to re-enter fullscreen immediately
+        enterFullScreen().catch(() => {
+          showWarningModal("Fullscreen mode is required for the exam");
+        });
+      }
+    }, 1000);
+
+    // Block F11 key specifically (fullscreen toggle)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        
+        if (!examSubmitted && !isWarningModalOpen) {
+          showWarningModal("F11 key is blocked during exam");
+        }
+        return false;
+      }
+    }, { passive: false, capture: true });
+
+    // Override browser's fullscreen exit attempts
+    const originalExitFullscreen = document.exitFullscreen;
+    const originalWebkitExitFullscreen = document.webkitExitFullscreen;
+    const originalMozCancelFullScreen = document.mozCancelFullScreen;
+    const originalMsExitFullscreen = document.msExitFullscreen;
+
+    // Intercept fullscreen exit calls
+    if (originalExitFullscreen) {
+      document.exitFullscreen = function() {
+        if (!examSubmitted && !isWarningModalOpen) {
+          showWarningModal("Attempted to exit fullscreen programmatically");
+          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
+        }
+        return originalExitFullscreen.call(this);
+      };
+    }
+
+    if (originalWebkitExitFullscreen) {
+      document.webkitExitFullscreen = function() {
+        if (!examSubmitted && !isWarningModalOpen) {
+          showWarningModal("Attempted to exit fullscreen programmatically");
+          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
+        }
+        return originalWebkitExitFullscreen.call(this);
+      };
+    }
+
+    if (originalMozCancelFullScreen) {
+      document.mozCancelFullScreen = function() {
+        if (!examSubmitted && !isWarningModalOpen) {
+          showWarningModal("Attempted to exit fullscreen programmatically");
+          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
+        }
+        return originalMozCancelFullScreen.call(this);
+      };
+    }
+
+    if (originalMsExitFullscreen) {
+      document.msExitFullscreen = function() {
+        if (!examSubmitted && !isWarningModalOpen) {
+          showWarningModal("Attempted to exit fullscreen programmatically");
+          return Promise.reject(new Error("Fullscreen exit blocked during exam"));
+        }
+        return originalMsExitFullscreen.call(this);
+      };
+    }
+  }
+
+  // ---------------------------
+  // Start Exam button
+  // ---------------------------
+  const startBtn = document.getElementById("enterFullscreenBtn");
+  if (startBtn) {
+    startBtn.addEventListener("click", () => {
+      enterFullScreen()
+        .then(() => {
+          document.getElementById("fullscreenOverlay").style.display = "none";
+          document.getElementById("examContent").style.display = "block";
+          blockFullscreenControls();
+        })
+        .catch(err => {
+          alert("Fullscreen is required to start the exam. Please allow fullscreen.");
+          console.error(err);
+        });
+    });
+  }
+
+  // ---------------------------
+  // Enhanced fullscreen exit detection
+  // ---------------------------
+  function onFsChange() {
+    const inFs =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement;
+
+    if (!inFs && !examSubmitted && !isWarningModalOpen) {
+      // User exited fullscreen - show warning
+      showWarningModal("Attempted to exit fullscreen mode");
+    }
+  }
+  
+  document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("webkitfullscreenchange", onFsChange);
+  document.addEventListener("mozfullscreenchange", onFsChange);
+  document.addEventListener("MSFullscreenChange", onFsChange);
+
+  // ---------------------------
+  // Enhanced keyboard blocking with Esc key warning
+  // ---------------------------
+  document.addEventListener('keydown', (e) => {
+    // Handle Escape key specially
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to press Escape key");
+      }
+      return false;
+    }
+    
+    if (e.key === 'Alt') {
+      altPressed = true;
+    }
+    
+    // Block Alt+Tab, Alt+Shift+Tab, Cmd+Tab (Mac)
+    if ((e.altKey && e.key === 'Tab') || 
+        (e.metaKey && e.key === 'Tab') ||
+        (altPressed && e.key === 'Tab')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to switch windows/tabs using Alt+Tab");
+      }
+      return false;
+    }
+    
+    // Enhanced key blocking
+    const blockedKeys = [
+      // Function keys
+      "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+      // System keys
+      "PrintScreen", "ScrollLock", "Pause", "Insert", "Delete", "Home", "End", "PageUp", "PageDown",
+      // Windows/Cmd keys
+      "Meta", "ContextMenu",
+    ];
+    
+    // Block individual keys
+    if (blockedKeys.includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal(`Attempted to press blocked key: ${e.key}`);
+      }
+      return false;
+    }
+    
+    // Block dangerous key combinations
+    const dangerousCombinations = [
+      // Developer tools
+      { ctrl: true, shift: true, key: "I" }, // DevTools
+      { ctrl: true, shift: true, key: "J" }, // Console
+      { ctrl: true, shift: true, key: "C" }, // Inspector
+      { ctrl: true, shift: true, key: "K" }, // Console (Firefox)
+      { ctrl: true, key: "U" }, // View Source
+      
+      // Window/Tab management
+      { ctrl: true, key: "W" }, // Close tab
+      { ctrl: true, key: "T" }, // New tab
+      { ctrl: true, key: "N" }, // New window
+      { ctrl: true, shift: true, key: "N" }, // New incognito window
+      { ctrl: true, key: "R" }, // Refresh
+      { ctrl: true, shift: true, key: "R" }, // Hard refresh
+      { ctrl: true, key: "H" }, // History
+      { ctrl: true, shift: true, key: "Delete" }, // Clear browsing data
+      
+      // Navigation
+      { ctrl: true, key: "Tab" }, // Switch tabs
+      { ctrl: true, shift: true, key: "Tab" }, // Switch tabs reverse
+      { ctrl: true, key: "PageUp" }, // Previous tab
+      { ctrl: true, key: "PageDown" }, // Next tab
+      
+      // Copy/Paste/Select (except in input fields)
+      { ctrl: true, key: "A" }, // Select all
+      { ctrl: true, key: "C" }, // Copy
+      { ctrl: true, key: "V" }, // Paste
+      { ctrl: true, key: "X" }, // Cut
+      { ctrl: true, key: "Z" }, // Undo
+      { ctrl: true, key: "Y" }, // Redo
+      { ctrl: true, shift: true, key: "Z" }, // Redo
+      
+      // Find
+      { ctrl: true, key: "F" }, // Find
+      { ctrl: true, key: "G" }, // Find next
+      { ctrl: true, shift: true, key: "G" }, // Find previous
+      
+      // Zoom
+      { ctrl: true, key: "+" }, // Zoom in
+      { ctrl: true, key: "-" }, // Zoom out
+      { ctrl: true, key: "0" }, // Reset zoom
+      
+      // Print
+      { ctrl: true, key: "P" }, // Print
+      
+      // Mac specific
+      { meta: true, key: "Tab" }, // Cmd+Tab (Mac)
+      { meta: true, shift: true, key: "Tab" }, // Cmd+Shift+Tab (Mac)
+      { meta: true, key: "W" }, // Close tab (Mac)
+      { meta: true, key: "T" }, // New tab (Mac)
+      { meta: true, key: "N" }, // New window (Mac)
+      { meta: true, key: "R" }, // Refresh (Mac)
+      { meta: true, key: "Q" }, // Quit application (Mac)
+      { meta: true, key: "H" }, // Hide application (Mac)
+      { meta: true, alt: true, key: "I" }, // DevTools (Mac)
+      
+      // Additional Windows combinations
+      { alt: true, key: "F4" }, // Close window
+      { alt: true, key: "Space" }, // System menu
+      { alt: true, key: "Enter" }, // Properties
+      { ctrl: true, alt: true, key: "Delete" }, // Task manager
+      { ctrl: true, shift: true, key: "Escape" }, // Task manager
+    ];
+    
+    // Check for dangerous combinations
+    for (const combo of dangerousCombinations) {
+      let matches = true;
+      
+      if (combo.ctrl && !e.ctrlKey) matches = false;
+      if (combo.shift && !e.shiftKey) matches = false;
+      if (combo.alt && !e.altKey) matches = false;
+      if (combo.meta && !e.metaKey) matches = false;
+      if (combo.key && e.key !== combo.key) matches = false;
+      
+      if (matches) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (!examSubmitted && !isWarningModalOpen) {
+          showWarningModal(`Attempted to use blocked keyboard shortcut: ${JSON.stringify(combo)}`);
+        }
+        return false;
+      }
+    }
+    
+    // Allow certain keys for input fields
+    const allowedKeys = ['Enter', 'Backspace', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'];
+    const isInputField = e.target.matches('input, textarea');
+    
+    // Block remaining Ctrl combinations (except for input fields)
+    if (e.ctrlKey && !allowedKeys.includes(e.key) && !isInputField) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal(`Attempted to use Ctrl+${e.key} shortcut`);
+      }
+      return false;
+    }
+    
+    // Block remaining Alt combinations
+    if (e.altKey && !allowedKeys.includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal(`Attempted to use Alt+${e.key} shortcut`);
+      }
+      return false;
+    }
+    
+    // Block remaining Meta (Windows/Cmd) combinations
+    if (e.metaKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal(`Attempted to use system key combination`);
+      }
+      return false;
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (e.key === 'Alt') {
+      altPressed = false;
+    }
+  });
+
+  // ---------------------------
+  // Enhanced window focus monitoring
+  // ---------------------------
+  window.addEventListener('blur', () => {
+    if (!examSubmitted && isWindowFocused && !isWarningModalOpen) {
+      isWindowFocused = false;
+      setTimeout(() => {
+        if (!isWindowFocused && !examSubmitted && !isWarningModalOpen) {
+          showWarningModal("Switched away from exam window");
+        }
+      }, 1000);
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    isWindowFocused = true;
+  });
+
+  // ---------------------------
+  // Enhanced visibility change detection
+  // ---------------------------
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && !examSubmitted && !isWarningModalOpen) {
+      setTimeout(() => {
+        if (document.hidden && !examSubmitted && !isWarningModalOpen) {
+          showWarningModal("Tab/window became hidden");
+        }
+      }, 1500);
+    }
+  });
+
+  // ---------------------------
+  // Enhanced Anti-Cheating Measures
+  // ---------------------------
+  
+  // Prevent right-click context menu
+  document.addEventListener("contextmenu", e => {
+    e.preventDefault();
+    if (!examSubmitted && !isWarningModalOpen) {
+      showWarningModal("Attempted to right-click (context menu)");
+    }
+    return false;
+  });
+  
+  // Prevent text selection in exam content
+  document.addEventListener("selectstart", e => {
+    if (!e.target.matches('input, textarea')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+  
+  // Prevent drag and drop
+  document.addEventListener("dragstart", e => {
+    e.preventDefault();
+    if (!examSubmitted && !isWarningModalOpen) {
+      showWarningModal("Attempted to drag content");
+    }
+    return false;
+  });
+  
+  document.addEventListener("drop", e => {
+    e.preventDefault();
+    return false;
+  });
+  
+  document.addEventListener("dragover", e => {
+    e.preventDefault();
+    return false;
+  });
+  
+  // Block mouse combinations that could be used for cheating
+  document.addEventListener("mousedown", e => {
+    // Block middle mouse button (often used for new tab)
+    if (e.button === 1) {
+      e.preventDefault();
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to use middle mouse button");
+      }
+      return false;
+    }
+    
+    // Block right mouse button with additional check
+    if (e.button === 2) {
+      e.preventDefault();
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to right-click");
+      }
+      return false;
+    }
+    
+    // Block mouse button 4 and 5 (back/forward buttons)
+    if (e.button === 3 || e.button === 4) {
+      e.preventDefault();
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to use navigation mouse buttons");
+      }
+      return false;
+    }
+  });
+  
+  // Prevent mouse wheel with Ctrl (zoom)
+  document.addEventListener("wheel", e => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to zoom using Ctrl+Scroll");
+      }
+      return false;
+    }
+  });
+  
+  // Prevent clipboard access
+  document.addEventListener("copy", e => {
+    if (!e.target.matches('input, textarea')) {
+      e.preventDefault();
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to copy content");
+      }
+      return false;
+    }
+  });
+  
+  document.addEventListener("cut", e => {
+    if (!e.target.matches('input, textarea')) {
+      e.preventDefault();
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to cut content");
+      }
+      return false;
+    }
+  });
+  
+  document.addEventListener("paste", e => {
+    // Allow paste only in input fields for legitimate use
+    if (!e.target.matches('input[type="text"], textarea')) {
+      e.preventDefault();
+      if (!examSubmitted && !isWarningModalOpen) {
+        showWarningModal("Attempted to paste content outside input fields");
+      }
+      return false;
+    }
+  });
+  
+  // Monitor for suspicious activity
+  let suspiciousActivityCount = 0;
+  const maxSuspiciousActivity = 5;
+  
+  function logSuspiciousActivity(activity) {
+    suspiciousActivityCount++;
+    console.warn(`Suspicious activity detected: ${activity} (Count: ${suspiciousActivityCount})`);
+    
+    if (suspiciousActivityCount >= maxSuspiciousActivity) {
+      showWarningModal(`Multiple suspicious activities detected (${suspiciousActivityCount}). Exam may be terminated.`);
+    }
+  }
+  
+  // Monitor for rapid key presses (potential automation)
+  let lastKeyTime = 0;
+  let rapidKeyCount = 0;
+  
+  document.addEventListener("keydown", e => {
+    const currentTime = Date.now();
+    if (currentTime - lastKeyTime < 50) { // Less than 50ms between keys
+      rapidKeyCount++;
+      if (rapidKeyCount > 10) {
+        logSuspiciousActivity("Rapid key presses detected (possible automation)");
+        rapidKeyCount = 0;
+      }
+    } else {
+      rapidKeyCount = 0;
+    }
+    lastKeyTime = currentTime;
+  });
+  
+  // Monitor for multiple rapid clicks (potential automation)
+  let lastClickTime = 0;
+  let rapidClickCount = 0;
+  
+  document.addEventListener("click", e => {
+    const currentTime = Date.now();
+    if (currentTime - lastClickTime < 100) { // Less than 100ms between clicks
+      rapidClickCount++;
+      if (rapidClickCount > 5) {
+        logSuspiciousActivity("Rapid clicking detected (possible automation)");
+        rapidClickCount = 0;
+      }
+    } else {
+      rapidClickCount = 0;
+    }
+    lastClickTime = currentTime;
+  });
+  
+  // Prevent opening new windows/tabs via JavaScript
+  const originalOpen = window.open;
+  window.open = function() {
+    if (!examSubmitted && !isWarningModalOpen) {
+      showWarningModal("Attempted to open new window via JavaScript");
+    }
+    return null;
+  };
+  
+  // Enhanced developer tools detection
+  let devToolsOpen = false;
+  setInterval(() => {
+    const threshold = 160;
+    if (window.outerHeight - window.innerHeight > threshold || 
+        window.outerWidth - window.innerWidth > threshold) {
+      if (!devToolsOpen && !examSubmitted && !isWarningModalOpen) {
+        devToolsOpen = true;
+        showWarningModal("Developer tools detected");
+      }
+    } else {
+      devToolsOpen = false;
+    }
+  }, 1000);
+  
+  // Block print
+  window.addEventListener('beforeprint', function(e) {
+    e.preventDefault();
+    if (!examSubmitted && !isWarningModalOpen) {
+      showWarningModal("Attempted to print exam content");
+    }
+    return false;
+  });
+  
+  // Enhanced beforeunload warning
+  window.addEventListener("beforeunload", e => {
+    if (!examSubmitted) {
+      e.preventDefault();
+      e.returnValue = "Are you sure you want to leave the exam? Your progress may be lost.";
+      return "Are you sure you want to leave the exam? Your progress may be lost.";
+    }
+  });
+
+  // ---------------------------
+  // Confirmation Modal Functions
+  // ---------------------------
+  function showConfirmationModal() {
+    document.getElementById('confirmationModal').style.display = 'block';
+  }
+
+  function hideConfirmationModal() {
+    document.getElementById('confirmationModal').style.display = 'none';
+  }
+
+  // Modal event listeners
+  document.getElementById('confirmSubmit').addEventListener('click', () => {
+    hideConfirmationModal();
+    examSubmitted = true;
+    exitFullScreen();
+    document.getElementById("exam-form").submit();
+  });
+
+  document.getElementById('cancelSubmit').addEventListener('click', () => {
+    hideConfirmationModal();
+  });
+
+  // Close modal when clicking outside
+  document.getElementById('confirmationModal').addEventListener('click', (e) => {
+    if (e.target.id === 'confirmationModal') {
+      hideConfirmationModal();
+    }
+  });
+
+  // ---------------------------
+  // Submit (manual + auto)
+  // ---------------------------
+  const finalSubmitBtn = document.getElementById("final-submit");
+  if (finalSubmitBtn) {
+    finalSubmitBtn.addEventListener("click", () => {
+      showConfirmationModal();
+    });
+  }
+
+  const examForm = document.getElementById("exam-form");
+  if (examForm) {
+    examForm.addEventListener("submit", (e) => {
+      if (!examSubmitted) {
+        e.preventDefault();
+        showConfirmationModal();
+        return false;
+      }
+      examSubmitted = true;
+      exitFullScreen();
+    });
+  }
+
+  // Used by timer or external triggers
+  window.endExam = function () {
+    examSubmitted = true;
+    exitFullScreen();
+    alert("Time is up! Submitting your exam.");
+    document.getElementById("exam-form")?.submit();
+  };
+
+  // ---------------------------
+  // Question navigation & state (exposed for inline onclick handlers)
+  // ---------------------------
+  let currentIndex = 0;
+  const answeredQuestions = new Set();
+  const flaggedQuestions = new Set();
+
+  window.showQuestion = function (index) {
+    document.querySelectorAll(".question-page").forEach(q => q.style.display = "none");
+    const target = document.getElementById("question-" + index);
+    if (target) target.style.display = "block";
+
+    document.querySelectorAll(".question-btn").forEach((btn, i) => {
+      btn.classList.toggle("current", i === index);
+    });
+
+    currentIndex = index;
+  };
+
+  window.nextQuestion = function (index) {
+    if (index + 1 < (window.totalQuestions || 0)) window.showQuestion(index + 1);
+  };
+
+  window.prevQuestion = function (index) {
+    if (index - 1 >= 0) window.showQuestion(index - 1);
+  };
+
+  window.flagQuestion = function (qid) {
+    const btn = document.getElementById("nav-btn-" + qid);
+    if (!btn) return;
+
+    if (flaggedQuestions.has(qid)) {
+      btn.classList.remove("flagged");
+      flaggedQuestions.delete(qid);
+      if (answeredQuestions.has(qid)) btn.classList.add("answered");
+    } else {
+      btn.classList.add("flagged");
+      btn.classList.remove("answered");
+      flaggedQuestions.add(qid);
+      answeredQuestions.delete(qid);
+    }
+  };
+
+  window.markAnswered = function (qid) {
+    const btn = document.getElementById("nav-btn-" + qid);
+    if (!btn) return;
+
+    if (!flaggedQuestions.has(qid)) {
+      btn.classList.add("answered");
+      btn.classList.remove("flagged");
+      answeredQuestions.add(qid);
+    }
+  };
+
+  // ---------------------------
+  // Timer
+  // ---------------------------
+  window.startTimer = function (duration, display) {
+    let timer = duration;
+    const intervalId = setInterval(() => {
+      const h = String(Math.floor(timer / 3600)).padStart(2, '0');
+      const m = String(Math.floor((timer % 3600) / 60)).padStart(2, '0');
+      const s = String(timer % 60).padStart(2, '0');
+      display.textContent = `${h}:${m}:${s}`;
+
+      if (timer === 5 * 60) {
+        display.style.color = 'red';
+        display.style.animation = 'blink 1s infinite';
+      }
+
+      if (timer <= 0) {
+        clearInterval(intervalId);
+        examSubmitted = true;
+        exitFullScreen();
+        alert("Time is up! Submitting your exam.");
+        document.getElementById("exam-form")?.submit();
+      }
+
+      timer -= 1;
+    }, 1000);
+  };
+
+  // ---------------------------
+  // Init (timer + first question + blink style)
+  // ---------------------------
+  (function init() {
+    const display = document.getElementById("timer");
+    const duration = {{ duration_seconds|default:0 }};
+
+    if (display && duration > 0) {
+      startTimer(duration, display);
+    }
+
+    // totalQuestions from Django; fall back to 0
+    window.totalQuestions = {{ questions|length|default:0 }};
+
+    if (window.totalQuestions > 0) showQuestion(0);
+
+    const style = document.createElement('style');
+    style.textContent = `@keyframes blink { 50% { opacity: 0.5; } }`;
+    document.head.appendChild(style);
+  })();
+});
+
+// Prevent back/forward navigation
+window.addEventListener("pageshow", function (e) {
+    const nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+    const viaBFCache = e.persisted || (nav && nav.type === "back_forward");
+    if (viaBFCache) location.reload();
+});
+
+// Enhanced fullscreen control prevention with multiple approaches
+document.addEventListener('DOMContentLoaded', function() {
+    let isInFullscreen = false;
+    let mouseBlockTimer = null;
+    
+    // Track fullscreen state
+    function updateFullscreenState() {
+        isInFullscreen = !!(document.fullscreenElement || 
+                           document.webkitFullscreenElement || 
+                           document.mozFullScreenElement || 
+                           document.msFullscreenElement);
+    }
+
+    // Listen for fullscreen changes
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+        .forEach(event => document.addEventListener(event, updateFullscreenState));
+
+    // Block top area completely with multiple event handlers
+    const blockEvents = ['mousemove', 'mouseenter', 'mouseover', 'hover', 'focus'];
+    
+    blockEvents.forEach(eventType => {
+      document.addEventListener(eventType, function(e) {
+          if (isInFullscreen && e.clientY < 60) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              
+              // Hide cursor temporarily
+              document.body.style.cursor = 'none';
+              
+              // Clear existing timer
+              if (mouseBlockTimer) clearTimeout(mouseBlockTimer);
+              
+              // Restore cursor after delay
+              mouseBlockTimer = setTimeout(() => {
+                  document.body.style.cursor = 'default';
+              }, 300);
+              
+              // Force focus back to document
+              if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                  document.activeElement.blur();
+              }
+              document.body.focus();
+              
+              return false;
+          }
+      }, { passive: false, capture: true });
+    });
+
+    // Additional protection against any hover events
+    document.addEventListener('pointerenter', function(e) {
+        if (isInFullscreen && e.clientY < 60) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            document.body.style.cursor = 'none';
+            setTimeout(() => {
+                document.body.style.cursor = 'default';
+            }, 200);
+            return false;
+        }
+    }, { passive: false, capture: true });
+
+    // Block any click events in top area
+    document.addEventListener('click', function(e) {
+        if (isInFullscreen && e.clientY < 60) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+        }
+    }, { passive: false, capture: true });
+
+    // Continuous monitoring and blocking
+    setInterval(() => {
+        if (isInFullscreen) {
+            const topOverlay = document.getElementById('topOverlay');
+            if (topOverlay) {
+                topOverlay.style.display = 'block';
+                topOverlay.style.zIndex = '9999999';
+            }
+        }
+    }, 100);
+});
+
+// Additional security measures
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden && !examSubmitted) {
+        setTimeout(() => {
+            if (document.hidden && !examSubmitted) {
+                alert("You switched away from the exam. Your exam has been terminated.");
+                examSubmitted = true;
+                window.location.replace("/candidate/login");
+            }
+        }, 1500);
+    }
+});
+
+// Block developer tools
+document.addEventListener('keydown', function(e) {
+    // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, etc.
+    if (e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+        e.stopPropagation();
+        alert("Developer tools are disabled during the exam.");
+        return false;
+    }
+});
+
+// Detect dev tools opening (basic detection)
+let devtools = {open: false, orientation: null};
+setInterval(function() {
+    if (window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200) {
+        if (!devtools.open && !examSubmitted) {
+            devtools.open = true;
+            alert("Developer tools detected. Your exam has been terminated.");
+            examSubmitted = true;
+            window.location.replace("/candidate/login");
+        }
+    } else {
+        devtools.open = false;
+    }
+}, 500);
+
+// Block text selection in fullscreen
+document.addEventListener('selectstart', function(e) {
+    if (document.fullscreenElement || document.webkitFullscreenElement || 
+        document.mozFullScreenElement || document.msFullscreenElement) {
+        e.preventDefault();
+    }
+});
+
+// Block drag and drop
+document.addEventListener('dragstart', function(e) {
+    e.preventDefault();
+});
+
+// Block print
+window.addEventListener('beforeprint', function(e) {
+    e.preventDefault();
+    alert("Printing is disabled during the exam.");
+    return false;
+});
+
+// Block Ctrl+P
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        alert("Printing is disabled during the exam.");
+        return false;
+    }
+});
+</script>
+
+</body>
+</html>

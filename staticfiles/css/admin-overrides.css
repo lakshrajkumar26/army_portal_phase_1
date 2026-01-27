@@ -1,0 +1,86 @@
+/* admin-overrides.css
+   Place this at: <your-project>/static/css/admin-overrides.css
+   (settings.py already points to "css/admin-overrides.css" via JAZZMIN_SETTINGS)
+*/
+
+/* ---------- 1) Fix login page large image ---------- */
+/* If the login page had a big background image or a huge logo, cap its size. */
+.login-logo,
+.login-logo img,
+.jazzmin .login-logo,
+.jazzmin .login-logo img {
+  max-width: 380px !important;   /* width limit for login logo */
+  max-height: 220px !important;  /* height cap */
+  width: auto !important;
+  height: auto !important;
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* If your login page used a background image that is filling whole page, constrain it */
+.login-page,
+.login-page .login-box {
+  background-size: contain !important;
+  background-position: center top !important;
+  background-repeat: no-repeat !important;
+}
+
+/* ---------- 2) Site header / navbar logo ---------- */
+/* Cap the brand/logo in the top navbar so it does not overflow */
+.brand-link img,
+.navbar-brand img,
+.jazzmin .brand-link img {
+  max-height: 46px !important;  /* small header logo */
+  max-width: 220px !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+/* ---------- 3) Sidebar brand/logo ---------- */
+.sidebar .brand-link img,
+.main-sidebar .brand-link img {
+  max-height: 40px !important;
+  max-width: 180px !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+/* ---------- 4) Sidebar font sizes (nicer, not huge) ---------- */
+.sidebar .nav-link,
+.sidebar .nav-treeview .nav-link {
+  font-size: 14px !important;   /* reasonable size (was 20px) */
+  line-height: 1.2 !important;
+}
+
+/* sidebar header */
+.sidebar .nav-header {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+/* Reset global anchor override from previous CSS that made everything big */
+a {
+  font-size: inherit !important;
+  text-decoration: none !important;
+}
+
+/* ---------- 5) Changelist / table cell inputs (marks inline) styling ---------- */
+.change-list .form-row .field-primary_viva_marks,
+.change-list .form-row .field-primary_practical_marks,
+.change-list .form-row .field-secondary_viva_marks,
+.change-list .form-row .field-secondary_practical_marks {
+  min-width: 70px;
+}
+
+/* Inputs in the list editable cells - keep them compact */
+.changelist-form td .admin-list-editable {
+  padding: 4px 6px !important;
+}
+
+/* ---------- 6) Small responsive tweaks ---------- */
+@media (max-width: 900px) {
+  .brand-link img, .navbar-brand img { max-height: 36px !important; }
+  .sidebar .nav-link { font-size: 13px !important; }
+  .login-logo img { max-width: 320px !important; max-height: 180px !important; }
+}

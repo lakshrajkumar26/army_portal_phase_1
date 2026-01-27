@@ -1,0 +1,19 @@
+/* Sidebar menu font size */
+.sidebar .nav-link,
+.sidebar .nav-treeview .nav-link {
+    font-size: 20px !important;   /* Increase as needed (default ~14px) */
+}
+
+
+.sidebar .nav-header {
+    font-size: 20px !important;   /* Default is smaller (~12px) */
+    font-weight: bold;
+}
+
+
+a {
+    font-size: 20px !important;   /* Increase link size */
+    text-decoration: none !important; /* remove underline */
+}
+
+

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>All Set</title>
+  <meta http-equiv="Cache-Control" content="no-store">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <style>
+    html,body{height:100%;margin:0}
+    body{display:flex;align-items:center;justify-content:center;background:#111;color:#eee;font-family:system-ui}
+    .box{background:#1b1b1b;padding:24px 28px;border-radius:12px;border:1px solid #333;text-align:center}
+    .muted{opacity:.8;font-size:14px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div>✅ Your exam response has been submitted.</div>
+    <div class="muted">You may safely close this tab.</div>
+  </div>
+
+  <script>
+    // Fill history and force forward on Back attempts
+    history.replaceState(null, '', location.href);
+    for (let i = 0; i < 20; i++) history.pushState(null, '', location.href);
+    window.addEventListener('popstate', () => history.go(1));
+
+    // Best-effort: block refresh keys
+    document.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'f5' || (e.ctrlKey && (k === 'r' || k === 'f5')) || (e.metaKey && k === 'r')) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

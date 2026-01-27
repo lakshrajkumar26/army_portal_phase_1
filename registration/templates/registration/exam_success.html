@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Exam Submitted</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <style>
+    body {
+      margin: 0; padding: 0;
+      background: url("{% static 'registration/army.jpg' %}") no-repeat center center fixed;
+      background-size: cover; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .overlay {
+      background: rgba(0, 0, 0, 0.65); min-height: 100vh;
+      display: flex; justify-content: center; align-items: center; color: #fff;
+    }
+    .card-box {
+      background: rgba(20,20,20,.7); backdrop-filter: blur(12px);
+      padding: 60px 70px; border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.2); box-shadow: 0 12px 40px rgba(0,0,0,.6);
+      text-align: center; max-width: 650px; width: 100%;
+    }
+    .card-box h2 { color: #4caf50; font-weight: 800; font-size: 28px; margin-bottom: 16px; }
+    .card-box p { font-size: 18px; color: #f0f0f0; margin: 0; }
+    .timer { margin-top: 14px; font-size: 20px; font-weight: 700; color: #ff4444; }
+    .footer-container {
+      position: fixed; bottom: 12px; left: 0; width: 100%;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 20px; box-sizing: border-box;
+    }
+    .footer-note { color: #000; background: rgba(230,212,5,.9); padding: 6px 14px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,.6); font-weight: 700; }
+    .footer-note.developed { font-size: 16px; }
+    .footer-note.reserved { font-size: 13px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <div class="card-box">
+      <h2>✅ You have successfully submitted your response</h2>
+      <p>You may now close the window.</p>
+      <div class="timer">This tab will close in <span id="countdown">10</span> seconds…</div>
+      <h4 style="margin-top:14px; font-size:22px; font-weight:bold; color:#ffcc00; letter-spacing:1px;">
+        <span style="color:#00c3ff;">Jai Hind</span>
+      </h4>
+    </div>
+  </div>
+
+  <div class="footer-container">
+    <div class="footer-note developed">Developed by SLOG Solutions Pvt Ltd and 2STC</div>
+    <div class="footer-note reserved">All Rights Reserved @ SLOG Solutions Pvt Ltd</div>
+  </div>
+
+  <script>
+(function () {
+  // --- Harden history on the success page (best-effort) ---
+  history.replaceState(null, "", location.href);
+  // Add a few dummy entries so Back keeps you here until redirect
+  for (let i = 0; i < 10; i++) history.pushState(null, "", location.href);
+  window.addEventListener("popstate", function () { history.go(1); });
+
+  // Block refresh keys (F5 / Ctrl+R / Cmd+R) best-effort
+  document.addEventListener("keydown", function (e) {
+    const k = (e.key || "").toLowerCase();
+    if (k === "f5" || (e.ctrlKey && (k === "r" || k === "f5")) || (e.metaKey && k === "r")) {
+      e.preventDefault();
+    }
+  });
+
+  // Ensure no unload prompt interferes with the redirect
+  window.onbeforeunload = null;
+
+  // --- Countdown + close/redirect ---
+  let counter = 10;
+  const el = document.getElementById("countdown");
+
+  function finish() {
+    // Try to close (will work only if this tab was opened by window.open)
+    try { window.open("", "_self"); window.close(); } catch (e) {}
+    // Fallback: replace with a same-origin goodbye page (no history entry added)
+    location.replace("{% url 'exam_goodbye' %}");
+  }
+
+  if (el) el.textContent = counter;
+
+  const timer = setInterval(function () {
+    counter -= 1;
+    if (el) el.textContent = counter;
+    if (counter <= 0) {
+      clearInterval(timer);
+      // small delay to allow last paint
+      setTimeout(finish, 100);
+    }
+  }, 1000);
+})();
+</script>
+
+</body>
+</html>
