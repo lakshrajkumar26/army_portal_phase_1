@@ -2,6 +2,7 @@ import io
 import json
 import logging
 import re
+import csv
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -14,6 +15,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from reference.models import Trade
 from .models import Question
+from .csv_processor import QuestionCSVProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +203,50 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
         })
 
     return rows
+
+
+def load_questions_from_csv_data(csv_bytes: bytes) -> Tuple[List[Dict], List[str]]:
+    """
+    Process CSV data using the new QuestionCSVProcessor.
+    Returns (questions_list, errors_list)
+    """
+    try:
+        # Create a file-like object from bytes
+        csv_file = io.BytesIO(csv_bytes)
+        
+        # Use the CSV processor
+        processor = QuestionCSVProcessor(csv_file)
+        success, questions_data = processor.validate_and_process()
+        
+        if success:
+            # Create questions and return count
+            created_count = processor.bulk_create_questions(questions_data)
+            return [{"created": created_count}], []
+        else:
+            # Return errors for display
+            return [], processor.errors
+            
+    except Exception as e:
+        return [], [f"CSV processing error: {str(e)}"]
+
+
+def detect_file_format(file_bytes: bytes) -> str:
+    """
+    Detect if the file is CSV or Excel format.
+    Returns 'csv' or 'excel'
+    """
+    try:
+        # Try to decode as text (CSV)
+        text_content = file_bytes.decode('utf-8')
+        # Simple heuristic: if it has comma-separated values and newlines, likely CSV
+        lines = text_content.split('\n')
+        if len(lines) > 1 and ',' in lines[0]:
+            return 'csv'
+    except UnicodeDecodeError:
+        pass
+    
+    # If not CSV, assume Excel
+    return 'excel'
 
 
 def _safe_json_or_text(val):

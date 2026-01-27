@@ -67,7 +67,7 @@ class Question(models.Model):
     text = models.TextField()
     part = models.CharField(max_length=1, choices=Part.choices, default="A")
     marks = models.DecimalField(max_digits=5, decimal_places=2, default=1)
-    options = models.JSONField(blank=True, null=True)
+    options = models.JSONField(blank=True, null=True)  # Will be deprecated
     correct_answer = models.JSONField(blank=True, null=True)
 
     trade = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True, blank=True)
@@ -80,14 +80,127 @@ class Question(models.Model):
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # New fields for enhanced functionality
+    question_set = models.CharField(
+        max_length=1, 
+        choices=[(chr(i), chr(i)) for i in range(ord('A'), ord('Z')+1)],
+        default='A',
+        help_text="Question set identifier (A-Z)"
+    )
+    
+    # New separate option fields (will replace options JSONField)
+    option_a = models.TextField(blank=True, null=True)
+    option_b = models.TextField(blank=True, null=True) 
+    option_c = models.TextField(blank=True, null=True)
+    option_d = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ["-created_at"]
         verbose_name = "QP Delete"
         verbose_name_plural = "3 QP Delete"
+        indexes = [
+            models.Index(fields=['trade', 'paper_type', 'question_set', 'is_active']),
+            models.Index(fields=['question_set', 'part']),
+        ]
 
     def __str__(self):
         return f"[{self.get_part_display()}] {self.text[:60]}..."
+
+
+class QuestionSetActivation(models.Model):
+    """Model to track which question sets are active for each trade and paper type"""
+    trade = models.ForeignKey(Trade, on_delete=models.CASCADE)
+    paper_type = models.CharField(
+        max_length=20, 
+        choices=[('PRIMARY', 'Primary'), ('SECONDARY', 'Secondary')]
+    )
+    question_set = models.CharField(
+        max_length=1,
+        choices=[(chr(i), chr(i)) for i in range(ord('A'), ord('Z')+1)]
+    )
+    is_active = models.BooleanField(default=False)
+    activated_at = models.DateTimeField(auto_now=True)
+    activated_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
+    
+    class Meta:
+        unique_together = [('trade', 'paper_type', 'question_set')]
+        indexes = [
+            models.Index(fields=['trade', 'paper_type', 'is_active']),
+        ]
+        verbose_name = "Question Set Activation"
+        verbose_name_plural = "Question Set Activations"
+    
+    def __str__(self):
+        return f"{self.trade} - {self.paper_type} - Set {self.question_set} ({'ACTIVE' if self.is_active else 'INACTIVE'})"
+    
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            # Deactivate all other sets for this trade and paper type
+            QuestionSetActivation.objects.filter(
+                trade=self.trade,
+                paper_type=self.paper_type,
+                is_active=True
+            ).exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
+
+
+class GlobalPaperTypeControl(models.Model):
+    """Model to manage global PRIMARY/SECONDARY activation"""
+    paper_type = models.CharField(
+        max_length=20,
+        choices=[('PRIMARY', 'Primary'), ('SECONDARY', 'Secondary')],
+        unique=True
+    )
+    is_active = models.BooleanField(default=False)
+    last_activated = models.DateTimeField(auto_now=True)
+    activated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    
+    class Meta:
+        verbose_name = "Global Paper Type Control"
+        verbose_name_plural = "Global Paper Type Controls"
+    
+    def __str__(self):
+        return f"{self.paper_type} ({'ACTIVE' if self.is_active else 'INACTIVE'})"
+    
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            # Deactivate the other paper type
+            GlobalPaperTypeControl.objects.exclude(pk=self.pk).update(is_active=False)
+            
+            # Update all trade activations to match this paper type
+            with transaction.atomic():
+                # Deactivate all activations for the opposite paper type
+                opposite_type = 'SECONDARY' if self.paper_type == 'PRIMARY' else 'PRIMARY'
+                QuestionSetActivation.objects.filter(
+                    paper_type=opposite_type,
+                    is_active=True
+                ).update(is_active=False)
+                
+                # Activate default set A for all trades with this paper type
+                for trade in Trade.objects.all():
+                    activation, created = QuestionSetActivation.objects.get_or_create(
+                        trade=trade,
+                        paper_type=self.paper_type,
+                        question_set='A',
+                        defaults={'is_active': True, 'activated_by': self.activated_by}
+                    )
+                    if not created:
+                        activation.is_active = True
+                        activation.activated_by = self.activated_by
+                        activation.save()
+        
+        super().save(*args, **kwargs)
 
 
 class QuestionUpload(models.Model):

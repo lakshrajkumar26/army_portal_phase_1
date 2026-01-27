@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from questions.models import Question, QuestionPaper, ExamSession, ExamQuestion, TradePaperActivation, QuestionUpload
 from results.models import CandidateAnswer
 from registration.models import CandidateProfile
+from centers.models import Center
 import os
 import logging
 from django.conf import settings
@@ -261,7 +262,10 @@ class Command(BaseCommand):
                 self.safe_delete_with_cascade(QuestionUpload, "question uploads", dry_run, debug)
                 self.safe_delete_with_cascade(TradePaperActivation, "trade paper activations", dry_run, debug)
                 
-                # 8. Delete users (except superusers for safety)
+                # 8. Delete exam centers
+                self.safe_delete_with_cascade(Center, "exam centers", dry_run, debug)
+                
+                # 9. Delete users (except superusers for safety)
                 try:
                     non_admin_users = User.objects.filter(is_superuser=False)
                     user_count = non_admin_users.count()
@@ -281,7 +285,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.ERROR(f"❌ Error deleting users: {str(e)}"))
                     raise
                 
-                # 9. Clean up uploaded files
+                # 10. Clean up uploaded files
                 self.cleanup_uploaded_files(debug)
                 self.cleanup_media_files(debug)
                 
@@ -296,6 +300,7 @@ class Command(BaseCommand):
             self.safe_delete_with_cascade(QuestionPaper, "question papers", dry_run, debug)
             self.safe_delete_with_cascade(QuestionUpload, "question uploads", dry_run, debug)
             self.safe_delete_with_cascade(TradePaperActivation, "trade paper activations", dry_run, debug)
+            self.safe_delete_with_cascade(Center, "exam centers", dry_run, debug)
             
             non_admin_users = User.objects.filter(is_superuser=False).count()
             superuser_count = User.objects.filter(is_superuser=True).count()

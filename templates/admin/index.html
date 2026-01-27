@@ -112,7 +112,7 @@ function deleteExamData() {
 }
 
 function deleteEverything() {
-    if (confirm('🚨 DANGER ZONE 🚨\n\nThis will delete EVERYTHING:\n- All user registrations\n- All exam data\n- All questions and papers\n- All uploaded files\n- Everything except admin accounts\n\nThis action cannot be undone and will reset the system completely.\n\nAre you absolutely sure?')) {
+    if (confirm('🚨 DANGER ZONE 🚨\n\nThis will delete EVERYTHING:\n- All user registrations\n- All exam data\n- All questions and papers\n- All exam centers\n- All uploaded files\n- Everything except admin accounts\n\nThis action cannot be undone and will reset the system completely.\n\nAre you absolutely sure?')) {
         if (confirm('🔴 FINAL WARNING: This will delete ALL DATA including candidate registrations!\n\nType "DELETE EVERYTHING" in the next prompt to confirm.')) {
             var confirmation = prompt('Type "DELETE EVERYTHING" to confirm complete system reset:');
             if (confirmation === 'DELETE EVERYTHING') {
