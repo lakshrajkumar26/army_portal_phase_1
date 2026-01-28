@@ -218,8 +218,17 @@ class CandidateProfile(models.Model):
     @property
     def can_start_exam(self):
         # First check if candidate has an available exam slot
-        if not self.has_exam_slot or self.slot_consumed_at is not None:
+        if not self.has_exam_slot:
             return False
+            
+        # Check if slot is consumed but a fresh slot was assigned after consumption
+        if self.slot_consumed_at:
+            if self.slot_assigned_at and self.slot_assigned_at > self.slot_consumed_at:
+                # Fresh slot assigned after consumption - allow exam
+                pass
+            else:
+                # Slot consumed and no fresh assignment
+                return False
             
         # Check if there's an active exam for this candidate's trade
         if not self.trade:

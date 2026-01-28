@@ -39,7 +39,7 @@ HARD_CODED_TRADE_CONFIG = {
     "SP STAFF": {"total_questions": 43, "part_distribution": {"A": 15, "B": 0, "C": 5, "D": 10, "E": 3, "F": 10}},
 }
 
-HARD_CODED_COMMON_DISTRIBUTION = {"A": 15, "B": 0, "C": 5, "D": 10, "E": 3, "F": 10}
+HARD_CODED_COMMON_DISTRIBUTION = {"A": 20, "B": 0, "C": 5, "D": 15, "E": 4, "F": 10}
 
 
 def _normalize_trade_name(name: str) -> str:

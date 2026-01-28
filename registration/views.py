@@ -112,9 +112,14 @@ def exam_interface(request):
                 logout(request)
                 return redirect(f"{reverse('login')}?no_slot=1")
             elif candidate.slot_consumed_at:
-                messages.error(request, f"Exam slot already used on {candidate.slot_consumed_at.strftime('%Y-%m-%d %H:%M')}. Contact admin to assign a new slot.")
-                logout(request)
-                return redirect(f"{reverse('login')}?slot_consumed=1")
+                # Check if this is a fresh slot (assigned after consumption)
+                if candidate.slot_assigned_at and candidate.slot_consumed_at and candidate.slot_assigned_at > candidate.slot_consumed_at:
+                    # Fresh slot assigned after consumption - allow exam
+                    pass
+                else:
+                    messages.error(request, f"Exam slot already used on {candidate.slot_consumed_at.strftime('%Y-%m-%d %H:%M')}. Contact admin to assign a new slot.")
+                    logout(request)
+                    return redirect(f"{reverse('login')}?slot_consumed=1")
             else:
                 messages.error(request, f"No active exam found for trade {trade}. Contact admin.")
                 logout(request)
