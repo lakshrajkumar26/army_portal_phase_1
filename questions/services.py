@@ -120,11 +120,18 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
 
     IMPORTANT:
     - Uses openpyxl engine explicitly to avoid pandas 'engine cannot be determined'.
+    - Enhanced with comprehensive error handling and validation
     """
+    if not excel_bytes:
+        raise ValidationError("Excel file content is empty.")
+    
     try:
         df = pd.read_excel(io.BytesIO(excel_bytes), engine="openpyxl")
     except Exception as e:
         raise ValidationError(f"File content is not a readable Excel file. Details: {e}")
+
+    if df.empty:
+        raise ValidationError("Excel file contains no data rows.")
 
     # Normalize columns
     df.columns = [str(c).strip() for c in df.columns]
@@ -195,9 +202,10 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
         else:
             is_common = bool(is_common_val)
 
-        # Default logic:
-        # - If paper_type column exists: use it
-        # - Else infer: If trade == ALL => SECONDARY else PRIMARY
+        # Enhanced logic with text-based SECONDARY detection:
+        # 1. If paper_type column exists: use it
+        # 2. If question text contains "SECONDARY": classify as SECONDARY
+        # 3. Else infer: If trade == ALL => SECONDARY else PRIMARY
         trade_norm = _norm(trade_val)
         paper_type_norm = _norm(paper_type_val)
 
@@ -205,6 +213,12 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
             paper_type = "PRIMARY"
         elif paper_type_norm in ("SECONDARY", "S"):
             paper_type = "SECONDARY"
+        elif "SECONDARY" in text.upper():
+            # Text-based SECONDARY detection - this is the critical fix
+            paper_type = "SECONDARY"
+            is_common = True  # Force is_common=True for text-detected secondary questions
+            trade_norm = ""   # Force NULL trade for secondary questions
+            logger.info(f"Text-based SECONDARY detection: '{text[:50]}...' classified as SECONDARY")
         else:
             paper_type = "SECONDARY" if trade_norm == "ALL" else "PRIMARY"
 
@@ -340,8 +354,21 @@ def import_questions_from_dicts(
             
             is_common_from_data = q.get("is_common", False)
 
+            # Enhanced classification logic with text-based SECONDARY detection
             trade_norm = _norm(q.get("trade", ""))
-            paper_type = _norm(q.get("paper_type", "")) or ("SECONDARY" if trade_norm == "ALL" else "PRIMARY")
+            paper_type = _norm(q.get("paper_type", ""))
+            
+            # Apply enhanced classification logic (same as in load_questions_from_excel_data)
+            if paper_type in ("PRIMARY", "P"):
+                paper_type = "PRIMARY"
+            elif paper_type in ("SECONDARY", "S"):
+                paper_type = "SECONDARY"
+            elif "SECONDARY" in text.upper():
+                # Text-based SECONDARY detection - this is the critical fix
+                paper_type = "SECONDARY"
+                logger.info(f"Text-based SECONDARY detection in import: '{text[:50]}...' classified as SECONDARY")
+            else:
+                paper_type = "SECONDARY" if trade_norm == "ALL" else "PRIMARY"
 
             # Apply legacy forced_trade override if admin selected it
             trade_obj = None
@@ -353,9 +380,14 @@ def import_questions_from_dicts(
                 if trade_norm == "ALL" or paper_type == "SECONDARY" or is_common_from_data:
                     is_common = True
             else:
-                if trade_norm == "ALL" or paper_type == "SECONDARY" or is_common_from_data:
+                # Enhanced logic: SECONDARY questions should have trade=NULL and is_common=True
+                if paper_type == "SECONDARY" or "SECONDARY" in text.upper() or trade_norm == "ALL" or is_common_from_data:
                     is_common = True
                     trade_obj = None
+                    # Force SECONDARY paper_type for consistency
+                    if paper_type == "SECONDARY" or "SECONDARY" in text.upper():
+                        paper_type = "SECONDARY"
+                        logger.info(f"Data integrity check: SECONDARY question '{text[:30]}...' - trade=NULL, is_common=True, paper_type=SECONDARY")
                 else:
                     trade_obj = trade_lookup.get(trade_norm)
 

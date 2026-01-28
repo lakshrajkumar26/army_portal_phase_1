@@ -2,6 +2,9 @@
 from django.contrib import admin, messages
 from django.urls import path
 from django.utils.html import format_html
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     Question,
@@ -199,11 +202,15 @@ class ActivateSetsAdmin(admin.ModelAdmin):
         # Get global paper type controls
         controls = list(GlobalPaperTypeControl.objects.all().order_by('paper_type'))
         
+        # Get available question sets for universal activator
+        available_question_sets = ['A', 'B', 'C', 'D', 'E']  # Standard question sets
+        
         extra_context = extra_context or {}
         extra_context.update({
             'trade_data': trade_data,
             'active_paper_type': active_paper_type,
             'controls': controls,
+            'available_question_sets': available_question_sets,
             'title': 'Unified Question Set Management',
         })
         
@@ -249,6 +256,10 @@ class ActivateSetsAdmin(admin.ModelAdmin):
             
             messages.success(request, "✅ SECONDARY papers activated globally for all trades.")
             
+        elif action == 'activate_universal_set':
+            # Handle universal question set activation
+            return self._handle_universal_activation(request)
+            
         elif 'trade_id' in request.POST and 'question_set' in request.POST:
             # Handle individual trade question set activation
             trade_id = request.POST.get('trade_id')
@@ -280,6 +291,70 @@ class ActivateSetsAdmin(admin.ModelAdmin):
         
         # Redirect back to the same page
         return HttpResponseRedirect(request.get_full_path())
+    
+    def _handle_universal_activation(self, request):
+        """Handle universal question set activation for all trades"""
+        from django.contrib import messages
+        from django.http import HttpResponseRedirect
+        from django.db import transaction
+        from reference.models import Trade
+        
+        question_set = request.POST.get('universal_question_set')
+        
+        # Input validation
+        if not question_set or question_set not in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']:
+            messages.error(request, "❌ Please select a valid question set.")
+            return HttpResponseRedirect(request.get_full_path())
+        
+        # Get active paper type
+        active_paper_type = self._get_active_paper_type()
+        if not active_paper_type:
+            messages.error(request, "❌ Please activate a paper type first.")
+            return HttpResponseRedirect(request.get_full_path())
+        
+        # Activate for all trades
+        updated_count = 0
+        try:
+            with transaction.atomic():
+                # Get all trades in one query for better performance
+                trades = list(Trade.objects.all())
+                
+                # Batch process all trades
+                for trade in trades:
+                    # Get or create ActivateSets record for this trade
+                    activate_sets = ActivateSets.get_or_create_for_trade(trade, request.user)
+                    
+                    # Update the appropriate field based on paper type
+                    if active_paper_type == 'PRIMARY':
+                        activate_sets.active_primary_set = question_set
+                    else:
+                        activate_sets.active_secondary_set = question_set
+                    
+                    activate_sets.updated_by = request.user
+                    activate_sets.save()  # This will sync with QuestionSetActivation automatically
+                    
+                    updated_count += 1
+                
+                logger.info(f"Universal activation completed: Set {question_set} activated for {updated_count} trades ({active_paper_type} papers)")
+            
+            messages.success(
+                request, 
+                f"🚀 Successfully activated Set {question_set} for {updated_count} trades ({active_paper_type} papers)."
+            )
+            
+        except Exception as e:
+            messages.error(request, f"❌ Error during universal activation: {str(e)}")
+            logger.error(f"Universal activation failed: {str(e)}", exc_info=True)
+        
+        return HttpResponseRedirect(request.get_full_path())
+    
+    def _get_active_paper_type(self):
+        """Get the currently active paper type"""
+        try:
+            active_control = GlobalPaperTypeControl.objects.get(is_active=True)
+            return active_control.paper_type
+        except GlobalPaperTypeControl.DoesNotExist:
+            return None
     
     def has_add_permission(self, request):
         # Prevent manual addition - records are auto-created

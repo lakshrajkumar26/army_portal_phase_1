@@ -547,26 +547,44 @@ class ActivateSets(models.Model):
     
     def get_available_sets(self, paper_type):
         """
-        Get available question sets for this trade and paper type
+        Get available question sets with paper-type-specific filtering
         """
-        available_sets = Question.objects.filter(
-            trade=self.trade,
-            paper_type=paper_type,
-            is_active=True
-        ).values_list('question_set', flat=True).distinct().order_by('question_set')
+        if paper_type == 'SECONDARY':
+            # Secondary questions: filter by paper_type and is_common only (no trade filter)
+            queryset = Question.objects.filter(
+                paper_type='SECONDARY',
+                is_common=True,
+                is_active=True
+            )
+        else:
+            # Primary questions: filter by trade and paper_type
+            queryset = Question.objects.filter(
+                trade=self.trade,
+                paper_type=paper_type,
+                is_active=True
+            )
         
+        available_sets = queryset.values_list('question_set', flat=True).distinct().order_by('question_set')
         return list(available_sets)
     
     def get_question_count(self, paper_type, question_set):
         """
-        Get count of questions for this trade, paper type, and question set
+        Get question count with paper-type-specific filtering
         """
-        return Question.objects.filter(
-            trade=self.trade,
-            paper_type=paper_type,
-            question_set=question_set,
-            is_active=True
-        ).count()
+        if paper_type == 'SECONDARY':
+            return Question.objects.filter(
+                paper_type='SECONDARY',
+                is_common=True,
+                question_set=question_set,
+                is_active=True
+            ).count()
+        else:
+            return Question.objects.filter(
+                trade=self.trade,
+                paper_type=paper_type,
+                question_set=question_set,
+                is_active=True
+            ).count()
 
 
 class ExamQuestion(models.Model):
