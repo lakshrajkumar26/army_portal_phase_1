@@ -1,326 +1,853 @@
 {% extends "admin/change_list.html" %}
-{% load admin_urls static admin_list %}
+{% load i18n admin_urls static admin_list %}
 
 {% block content_title %}
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        <h1 style="margin: 0 0 10px 0; font-size: 28px; font-weight: 300; display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 32px;">🎯</span>
-            Unified Question Set Management
-        </h1>
-        <p style="margin: 0; opacity: 0.9; font-size: 16px; line-height: 1.4;">
-            Centralized interface to manage active question sets across all trades. Configure paper types and question set assignments with ease.
-        </p>
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: 300;">🎯 Exam Configuration Center</h1>
+        <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Configure question sets and exam durations for all trades in one place</p>
     </div>
 {% endblock %}
 
 {% block result_list %}
-    <div class="results">
-        <!-- Global Paper Type Control Section -->
-        <div class="module" style="margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;">
-            <h2 style="background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%); color: white; padding: 20px; margin: 0; font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 24px;">📋</span>
-                Step 1: Choose Paper Type (PRIMARY or SECONDARY)
-            </h2>
-            <div style="padding: 25px; background: #fafbfc; border-bottom: 1px solid #e1e8ed;">
-                {% if controls %}
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px;">
-                        {% for control in controls %}
-                            <div style="padding: 20px; border: 2px solid {% if control.is_active %}#28a745{% else %}#dee2e6{% endif %}; border-radius: 12px; background: {% if control.is_active %}linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%){% else %}#ffffff{% endif %}; text-align: center; transition: all 0.3s ease; position: relative; overflow: hidden;">
-                                {% if control.is_active %}
-                                    <div style="position: absolute; top: 10px; right: 10px; background: #28a745; color: white; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold;">ACTIVE</div>
-                                {% endif %}
-                                <div style="font-size: 32px; margin-bottom: 10px;">
-                                    {% if control.is_active %}🟢{% else %}⚪{% endif %}
-                                </div>
-                                <h3 style="margin: 0 0 8px 0; color: {% if control.is_active %}#155724{% else %}#6c757d{% endif %}; font-size: 20px; font-weight: 600;">
-                                    {{ control.paper_type }} PAPERS
-                                </h3>
-                                <p style="margin: 0; font-size: 13px; color: #6c757d; line-height: 1.4;">
-                                    {% if control.is_active %}
-                                        <strong>Active since:</strong><br>
-                                        {{ control.last_activated|date:"M d, Y H:i" }}
-                                        {% if control.activated_by %}<br><small>by {{ control.activated_by.username }}</small>{% endif %}
-                                    {% else %}
-                                        Click the activation button below to enable this paper type
-                                    {% endif %}
-                                </p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div style="padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffeaa7; border-radius: 10px; margin-bottom: 25px; text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
-                        <h3 style="margin: 0 0 10px 0; color: #856404; font-weight: 600;">No Paper Type Controls Found</h3>
-                        <p style="margin: 0; color: #856404;">Use the activation buttons below to initialize PRIMARY or SECONDARY paper types.</p>
-                    </div>
-                {% endif %}
-                
-                <!-- Action Buttons -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 600px; margin: 0 auto;">
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="activate_primary_globally">
-                        <button type="submit" style="width: 100%; padding: 18px; background: linear-gradient(135deg, #007cba 0%, #005a87 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,124,186,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,124,186,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,124,186,0.3)'">
-                            <span style="font-size: 20px;">🔵</span>
-                            Activate PRIMARY Globally
-                        </button>
-                    </form>
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="activate_secondary_globally">
-                        <button type="submit" style="width: 100%; padding: 18px; background: linear-gradient(135deg, #e17009 0%, #b8570a 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(225,112,9,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(225,112,9,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(225,112,9,0.3)'">
-                            <span style="font-size: 20px;">🟠</span>
-                            Activate SECONDARY Globally
-                        </button>
-                    </form>
-                </div>
+    <div class="module">
+        <!-- Step 1: Paper Type Selection -->
+        <div class="config-section">
+            <div class="section-header">
+                <h2><span class="step-number">1</span> Select Exam Type</h2>
+                <p class="section-description">Choose which type of exam papers to activate for all trades</p>
             </div>
-        </div>
-
-        <!-- Universal Set Activation Section -->
-        {% if active_paper_type %}
-            <div class="module" style="margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;">
-                <h2 style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 20px; margin: 0; font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 24px;">🚀</span>
-                    Universal Question Set Activation - {{ active_paper_type }} Papers
-                </h2>
-                <div style="padding: 25px; background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border-bottom: 1px solid #feb2b2;">
-                    <div style="background: white; padding: 25px; border-radius: 12px; border: 2px solid #feb2b2; box-shadow: 0 2px 8px rgba(220,53,69,0.1);">
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                            <div style="font-size: 48px;">⚡</div>
-                            <div>
-                                <h3 style="margin: 0 0 5px 0; color: #721c24; font-size: 20px; font-weight: 600;">Smart Bulk Activation</h3>
-                                <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.4;">Intelligently activate the same question set for all trades that have it available. Trades without the selected set will be automatically skipped.</p>
-                            </div>
-                        </div>
-                        
-                        <form method="post" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; justify-content: center;">
+            
+            <div class="paper-type-grid">
+                {% for control in controls %}
+                    <div class="paper-type-card {% if control.is_active %}active{% endif %}">
+                        <form method="post" class="card-form">
                             {% csrf_token %}
-                            <label for="universal_question_set" style="font-weight: 600; color: #495057; font-size: 16px; white-space: nowrap;">
-                                Activate Set for All Trades:
-                            </label>
-                            <select name="universal_question_set" id="universal_question_set" style="padding: 12px 16px; border: 2px solid #ced4da; border-radius: 8px; font-size: 16px; min-width: 180px; background: white; color: #495057; font-weight: 500; transition: border-color 0.2s ease;" onfocus="this.style.borderColor='#dc3545'" onblur="this.style.borderColor='#ced4da'">
-                                <option value="">Select Question Set...</option>
-                                {% for set in available_question_sets %}
-                                    <option value="{{ set }}">Set {{ set }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" name="action" value="activate_universal_set" style="padding: 12px 24px; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(220,53,69,0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(220,53,69,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(220,53,69,0.3)'">
-                                <span style="margin-right: 8px;">🧠</span>
-                                Smart Activate for Available Trades
+                            <input type="hidden" name="action" value="activate_{{ control.paper_type|lower }}_globally">
+                            
+                            <div class="card-icon">
+                                {% if control.paper_type == "PRIMARY" %}
+                                    🔵
+                                {% else %}
+                                    🟣
+                                {% endif %}
+                            </div>
+                            
+                            <h3>{{ control.paper_type }} Papers</h3>
+                            <p class="card-description">
+                                {% if control.paper_type == "PRIMARY" %}
+                                    Trade-specific questions for specialized skills
+                                {% else %}
+                                    Common questions for general knowledge
+                                {% endif %}
+                            </p>
+                            
+                            <button type="submit" class="card-button {% if control.is_active %}active{% endif %}">
+                                {% if control.is_active %}
+                                    ✅ Currently Active
+                                {% else %}
+                                    🚀 Activate This Type
+                                {% endif %}
                             </button>
                         </form>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffeaa7; border-radius: 8px;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                <span style="font-size: 20px;">⚠️</span>
-                                <strong style="color: #856404; font-size: 16px;">Important Notice</strong>
-                            </div>
-                            <ul style="margin: 0; padding-left: 20px; color: #856404; font-size: 14px; line-height: 1.5;">
-                                <li>This will <strong>intelligently activate</strong> the selected question set only for trades that have it available</li>
-                                <li>Trades without the selected set will be <strong>automatically skipped</strong> (no changes made)</li>
-                                <li>You'll see a summary of which trades were activated and which were skipped</li>
-                                <li>Perfect for SECONDARY papers where only some trades (like OCC, DMV) have question sets</li>
-                            </ul>
-                        </div>
                     </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% if active_paper_type %}
+            <!-- Current Status Banner -->
+            <div class="status-banner success">
+                <div class="banner-icon">✅</div>
+                <div class="banner-content">
+                    <h3>{{ active_paper_type }} Papers Active</h3>
+                    <p>All trades are currently configured for {{ active_paper_type|lower }} examination mode</p>
                 </div>
             </div>
-        {% endif %}
-
-        <!-- Question Set Management Section -->
-        {% if active_paper_type %}
-            <div class="module" style="box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;">
-                <h2 style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; margin: 0; font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 24px;">🎯</span>
-                    Step 2: Configure Question Sets - {{ active_paper_type }} Papers Active
-                </h2>
-                <div style="padding: 25px; background: white;">
-                    {% if trade_data %}
-                        <div style="overflow-x: auto; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                            <table style="width: 100%; border-collapse: collapse; min-width: 800px; background: white;">
-                                <thead>
-                                    <tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
-                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: left; font-weight: 600; font-size: 14px; color: #495057; width: 25%;">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <span style="font-size: 18px;">📚</span>
-                                                Trade Information
-                                            </div>
-                                        </th>
-                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: center; font-weight: 600; font-size: 14px; color: #495057; width: 15%;">
-                                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                                <span style="font-size: 18px;">📊</span>
-                                                Questions
-                                            </div>
-                                        </th>
-                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: center; font-weight: 600; font-size: 14px; color: #495057; width: 20%;">
-                                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                                <span style="font-size: 18px;">✅</span>
-                                                Active Set
-                                            </div>
-                                        </th>
-                                        <th style="padding: 18px; border: 1px solid #dee2e6; text-align: center; font-weight: 600; font-size: 14px; color: #495057; width: 40%;">
-                                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                                <span style="font-size: 18px;">🔄</span>
-                                                Change Set
-                                            </div>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for data in trade_data %}
-                                        <tr style="{% cycle 'background: #ffffff;' 'background: #f8f9fa;' %} transition: background 0.2s ease;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='{% cycle '#ffffff' '#f8f9fa' %}'">
-                                            <td style="padding: 18px; border: 1px solid #dee2e6; vertical-align: middle;">
-                                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                                    <span style="font-weight: 600; font-size: 15px; color: #2c3e50;">{{ data.trade.name }}</span>
-                                                    <span style="font-size: 12px; color: #6c757d; background: #e9ecef; padding: 2px 8px; border-radius: 12px; display: inline-block; width: fit-content;">{{ data.trade.code }}</span>
-                                                </div>
-                                            </td>
-                                            <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
-                                                <div style="display: inline-flex; align-items: center; gap: 6px; background: {% if data.question_count > 0 %}linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%){% else %}linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%){% endif %}; padding: 10px 15px; border-radius: 20px; font-weight: 600; color: {% if data.question_count > 0 %}#495057{% else %}#721c24{% endif %}; border: 1px solid {% if data.question_count > 0 %}#ced4da{% else %}#f1aeb5{% endif %};">
-                                                    <span style="font-size: 16px;">{% if data.question_count > 0 %}📝{% else %}❌{% endif %}</span>
-                                                    <span>{% if data.question_count > 0 %}{{ data.question_count }}{% else %}Not Available{% endif %}</span>
-                                                </div>
-                                            </td>
-                                            <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
-                                                {% if data.active_set %}
-                                                    <div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724; padding: 12px 20px; border-radius: 25px; font-weight: 600; font-size: 15px; border: 1px solid #c3e6cb; box-shadow: 0 2px 4px rgba(40,167,69,0.2);">
-                                                        <span style="font-size: 18px;">🟢</span>
-                                                        <span>Set {{ data.active_set }}</span>
-                                                    </div>
-                                                {% else %}
-                                                    <div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); color: #721c24; padding: 12px 20px; border-radius: 25px; font-weight: 600; border: 1px solid #f1aeb5;">
-                                                        <span style="font-size: 18px;">⚪</span>
-                                                        <span>No Active Set</span>
-                                                    </div>
-                                                {% endif %}
-                                            </td>
-                                            <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
-                                                {% if data.available_sets %}
-                                                    <form method="post" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="trade_id" value="{{ data.trade.id }}">
-                                                        <input type="hidden" name="paper_type" value="{{ active_paper_type }}">
-                                                        <select name="question_set" style="padding: 12px 16px; border: 2px solid #ced4da; border-radius: 8px; font-size: 14px; min-width: 140px; background: white; color: #495057; font-weight: 500; transition: border-color 0.2s ease;" onfocus="this.style.borderColor='#80bdff'" onblur="this.style.borderColor='#ced4da'">
-                                                            <option value="">Select Set...</option>
-                                                            {% for set in data.available_sets %}
-                                                                <option value="{{ set }}" {% if set == data.active_set %}selected{% endif %}>
-                                                                    Set {{ set }}
-                                                                </option>
-                                                            {% endfor %}
-                                                        </select>
-                                                        <button type="submit" style="padding: 12px 24px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(40,167,69,0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(40,167,69,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(40,167,69,0.2)'">
-                                                            Activate
-                                                        </button>
-                                                    </form>
-                                                {% else %}
-                                                    <div style="color: #6c757d; font-style: italic; padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
-                                                        <span style="font-size: 16px; margin-right: 6px;">📭</span>
-                                                        No {{ active_paper_type|lower }} sets available for this trade
-                                                    </div>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
+            
+            <!-- Step 2: Question Set Selection -->
+            <div class="config-section">
+                <div class="section-header">
+                    <h2><span class="step-number">2</span> Choose Question Set</h2>
+                    <p class="section-description">Select which question set all candidates will receive during their exam</p>
+                </div>
+                
+                <div class="question-set-selector">
+                    <form method="post" class="selector-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="activate_universal_set">
+                        
+                        <div class="form-group">
+                            <label for="universal_question_set">Question Set for All Trades:</label>
+                            <div class="select-wrapper">
+                                <select name="universal_question_set" id="universal_question_set" class="form-select">
+                                    <option value="">-- Choose a Question Set --</option>
+                                    {% for set_label in available_question_sets %}
+                                        <option value="{{ set_label }}" 
+                                                {% if universal_settings.is_universal_set_active and universal_settings.universal_set_label == set_label %}selected{% endif %}>
+                                            📚 Question Set {{ set_label }}
+                                        </option>
                                     {% endfor %}
-                                </tbody>
-                            </table>
+                                </select>
+                                <div class="select-arrow">▼</div>
+                            </div>
                         </div>
                         
-                        <div style="margin-top: 25px; padding: 20px; background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%); border: 1px solid #b3d9ff; border-radius: 12px;">
-                            <h4 style="margin: 0 0 15px 0; color: #0056b3; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 24px;">💡</span>
-                                How to Use This Interface
-                            </h4>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                                <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
-                                    <strong style="color: #0056b3; display: block; margin-bottom: 5px;">Step 1:</strong>
-                                    <span style="color: #0056b3;">Choose PRIMARY (trade-specific) or SECONDARY (common) papers above</span>
+                        <button type="submit" class="action-button primary">
+                            <span class="button-icon">🚀</span>
+                            Apply to All Trades
+                        </button>
+                        
+                        {% if universal_settings.is_universal_set_active and universal_settings.universal_set_label %}
+                            <div class="current-setting">
+                                <span class="setting-icon">📚</span>
+                                Currently using: <strong>Set {{ universal_settings.universal_set_label }}</strong> (Applied to all trades)
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Step 3: Duration Management -->
+            <div class="config-section">
+                <div class="section-header">
+                    <h2><span class="step-number">3</span> Set Exam Duration</h2>
+                    <p class="section-description">Configure how long candidates have to complete their exam</p>
+                </div>
+                
+                <div class="duration-selector">
+                    <form method="post" class="duration-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="activate_universal_duration">
+                        
+                        <div class="duration-inputs">
+                            <div class="time-input-group">
+                                <label for="duration_hours">Hours</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="duration_hours" name="duration_hours" 
+                                           min="0" max="8" value="3" class="time-input">
+                                    <span class="input-unit">h</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
-                                    <strong style="color: #0056b3; display: block; margin-bottom: 5px;">Step 2:</strong>
-                                    <span style="color: #0056b3;">For each trade, select which question set (A, B, C, etc.) should be active</span>
+                            </div>
+                            
+                            <div class="time-separator">:</div>
+                            
+                            <div class="time-input-group">
+                                <label for="duration_minutes">Minutes</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="duration_minutes" name="duration_minutes" 
+                                           min="0" max="59" value="0" class="time-input">
+                                    <span class="input-unit">m</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
-                                    <strong style="color: #0056b3; display: block; margin-bottom: 5px;">Result:</strong>
-                                    <span style="color: #0056b3;">Candidates will only see questions from the active set for their trade</span>
+                            </div>
+                            
+                            <div class="time-separator">:</div>
+                            
+                            <div class="time-input-group">
+                                <label for="duration_seconds">Seconds</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="duration_seconds" name="duration_seconds" 
+                                           min="0" max="59" value="0" class="time-input">
+                                    <span class="input-unit">s</span>
                                 </div>
                             </div>
                         </div>
-                    {% else %}
-                        <div style="padding: 40px; text-align: center; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffeaa7; border-radius: 12px;">
-                            <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
-                            <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 24px; font-weight: 600;">No Trades Found</h3>
-                            <p style="margin: 0; color: #856404; font-size: 16px; line-height: 1.5;">Please ensure trades are properly configured in the system before managing question sets.</p>
+                        
+                        <div class="duration-presets">
+                            <p class="presets-label">Quick Presets:</p>
+                            <div class="preset-buttons">
+                                <button type="button" class="preset-btn" onclick="setDuration(1,0,0)">1 Hour</button>
+                                <button type="button" class="preset-btn" onclick="setDuration(2,0,0)">2 Hours</button>
+                                <button type="button" class="preset-btn" onclick="setDuration(3,0,0)">3 Hours</button>
+                                <button type="button" class="preset-btn" onclick="setDuration(4,0,0)">4 Hours</button>
+                            </div>
                         </div>
-                    {% endif %}
+                        
+                        <button type="submit" class="action-button warning">
+                            <span class="button-icon">🕒</span>
+                            Set Duration for All Trades
+                        </button>
+                        
+                        {% if universal_settings.is_universal_duration_active and universal_settings.universal_duration_minutes %}
+                            <div class="current-setting">
+                                <span class="setting-icon">🕒</span>
+                                Current duration: <strong>{{ universal_settings.universal_duration_minutes }} minutes</strong> (Applied to all trades)
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Step 4: Individual Trade Overrides -->
+            <div class="config-section">
+                <div class="section-header">
+                    <h2><span class="step-number">4</span> Individual Trade Settings <span class="optional-badge">Optional</span></h2>
+                    <p class="section-description">Override universal settings for specific trades if needed</p>
+                </div>
+                
+                <div class="trade-table-container">
+                    <table class="trade-table">
+                        <thead>
+                            <tr>
+                                <th>Trade Name</th>
+                                <th>Active Question Set</th>
+                                <th>Available Questions</th>
+                                <th>Custom Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trade_info in trade_data %}
+                                <tr class="trade-row">
+                                    <td class="trade-name">
+                                        <div class="trade-info">
+                                            <strong>{{ trade_info.trade.name }}</strong>
+                                            <small>{{ trade_info.trade.code }}</small>
+                                        </div>
+                                    </td>
+                                    <td class="question-set">
+                                        {% if trade_info.active_set %}
+                                            <span class="set-badge active">📚 Set {{ trade_info.active_set }}</span>
+                                        {% else %}
+                                            <span class="set-badge inactive">❌ No Set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="question-count">
+                                        {% if trade_info.question_count > 0 %}
+                                            <span class="count-good">✅ {{ trade_info.question_count }} questions</span>
+                                        {% else %}
+                                            <span class="count-bad">⚠️ 0 questions</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="duration-cell">
+                                        <form method="post" class="inline-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="trade_id" value="{{ trade_info.trade.id }}">
+                                            <input type="hidden" name="paper_type" value="{{ active_paper_type }}">
+                                            <div class="duration-input-mini">
+                                                <input type="number" name="duration_hours" placeholder="H" min="0" max="8" class="mini-input">
+                                                <span>:</span>
+                                                <input type="number" name="duration_minutes" placeholder="M" min="0" max="59" class="mini-input">
+                                                <span>:</span>
+                                                <input type="number" name="duration_seconds" placeholder="S" min="0" max="59" class="mini-input">
+                                            </div>
+                                            <button type="submit" class="mini-button">Set</button>
+                                        </form>
+                                    </td>
+                                    <td class="actions-cell">
+                                        <form method="post" class="inline-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="trade_id" value="{{ trade_info.trade.id }}">
+                                            <input type="hidden" name="paper_type" value="{{ active_paper_type }}">
+                                            
+                                            <div class="action-group">
+                                                <select name="question_set" class="mini-select">
+                                                    <option value="">-- Select Set --</option>
+                                                    {% for set_label in trade_info.available_sets %}
+                                                        <option value="{{ set_label }}" 
+                                                                {% if set_label == trade_info.active_set %}selected{% endif %}>
+                                                            Set {{ set_label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                
+                                                <button type="submit" class="mini-button primary">Activate</button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         {% else %}
-            <div class="module" style="box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden;">
-                <h2 style="background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; padding: 20px; margin: 0; font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 24px;">⚠️</span>
-                    No Active Paper Type
-                </h2>
-                <div style="padding: 40px; background: #f8f9fa; text-align: center;">
-                    <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.7;">📋</div>
-                    <h3 style="color: #6c757d; margin: 0 0 15px 0; font-size: 24px; font-weight: 600;">Please Activate a Paper Type First</h3>
-                    <p style="margin: 0; color: #6c757d; font-size: 16px; line-height: 1.5;">Use the activation buttons above to enable either PRIMARY or SECONDARY papers, then you can manage question sets for each trade.</p>
+            <!-- No Paper Type Selected -->
+            <div class="status-banner warning">
+                <div class="banner-icon">⚠️</div>
+                <div class="banner-content">
+                    <h3>No Exam Type Selected</h3>
+                    <p>Please select either PRIMARY or SECONDARY papers above to continue with exam configuration</p>
                 </div>
             </div>
         {% endif %}
     </div>
 
     <style>
-        /* Enhanced hover effects and animations */
-        .module {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* Modern Professional Styling */
+        .config-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+            overflow: hidden;
         }
         
-        .module:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
+        .section-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px 24px;
+            border-bottom: 1px solid #dee2e6;
         }
         
-        /* Responsive design improvements */
+        .section-header h2 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .optional-badge {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: normal;
+            margin-left: auto;
+        }
+        
+        .section-description {
+            margin: 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        /* Paper Type Cards */
+        .paper-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 24px;
+        }
+        
+        .paper-type-card {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .paper-type-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+        }
+        
+        .paper-type-card.active {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .card-form {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .paper-type-card h3 {
+            margin: 0 0 12px 0;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .card-description {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+        
+        .card-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .card-button:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .card-button.active {
+            background: #28a745;
+        }
+        
+        /* Status Banners */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            padding: 16px 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .status-banner.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .status-banner.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .banner-icon {
+            font-size: 24px;
+            margin-right: 16px;
+        }
+        
+        .banner-content h3 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .banner-content p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Question Set Selector */
+        .question-set-selector {
+            padding: 24px;
+        }
+        
+        .selector-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .select-wrapper {
+            position: relative;
+            display: inline-block;
+            max-width: 300px;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            appearance: none;
+            cursor: pointer;
+        }
+        
+        .form-select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        
+        .select-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #6c757d;
+        }
+        
+        /* Action Buttons */
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .action-button.primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .action-button.primary:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .action-button.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .action-button.warning:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+        
+        .button-icon {
+            font-size: 16px;
+        }
+        
+        /* Current Settings Display */
+        .current-setting {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .setting-icon {
+            font-size: 16px;
+        }
+        
+        /* Duration Selector */
+        .duration-selector {
+            padding: 24px;
+        }
+        
+        .duration-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .duration-inputs {
+            display: flex;
+            align-items: end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .time-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .time-input-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .time-input {
+            width: 60px;
+            padding: 12px 8px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .time-input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        
+        .input-unit {
+            position: absolute;
+            right: 8px;
+            font-size: 12px;
+            color: #6c757d;
+            pointer-events: none;
+        }
+        
+        .time-separator {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6c757d;
+            margin: 0 4px;
+        }
+        
+        .duration-presets {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .presets-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+        
+        .preset-btn:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+        }
+        
+        /* Trade Table */
+        .trade-table-container {
+            padding: 24px;
+            overflow-x: auto;
+        }
+        
+        .trade-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        .trade-table th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 14px;
+        }
+        
+        .trade-table td {
+            padding: 16px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+        
+        .trade-row:hover {
+            background: #f8f9fa;
+        }
+        
+        .trade-info strong {
+            display: block;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .trade-info small {
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .set-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .set-badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .set-badge.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .count-good {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .count-bad {
+            color: #dc3545;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .inline-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .duration-input-mini {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .mini-input {
+            width: 35px;
+            padding: 4px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .mini-select {
+            padding: 4px 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .mini-button {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .mini-button:hover {
+            background: #f8f9fa;
+        }
+        
+        .mini-button.primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .mini-button.primary:hover {
+            background: #0056b3;
+        }
+        
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .results > div {
-                margin: 15px 0;
+            .paper-type-grid {
+                grid-template-columns: 1fr;
             }
             
-            table {
+            .duration-inputs {
+                justify-content: center;
+            }
+            
+            .preset-buttons {
+                justify-content: center;
+            }
+            
+            .trade-table-container {
+                padding: 12px;
+            }
+            
+            .trade-table {
                 font-size: 12px;
             }
             
-            th, td {
-                padding: 12px 8px !important;
-            }
-            
-            /* Stack buttons vertically on mobile */
-            div[style*="grid-template-columns: 1fr 1fr"] {
-                grid-template-columns: 1fr !important;
-            }
-            
-            /* Stack info cards vertically on mobile */
-            div[style*="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))"] {
-                grid-template-columns: 1fr !important;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 24px !important;
-            }
-            
-            h2 {
-                font-size: 18px !important;
-                padding: 15px !important;
-            }
-            
-            .results {
-                padding: 0 10px;
+            .trade-table th,
+            .trade-table td {
+                padding: 8px;
             }
         }
     </style>
+
+    <script>
+        function setDuration(hours, minutes, seconds) {
+            document.getElementById('duration_hours').value = hours;
+            document.getElementById('duration_minutes').value = minutes;
+            document.getElementById('duration_seconds').value = seconds;
+        }
+        
+        // Auto-calculate total minutes for form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const durationForm = document.querySelector('.duration-form');
+            if (durationForm) {
+                durationForm.addEventListener('submit', function(e) {
+                    const hours = parseInt(document.getElementById('duration_hours').value) || 0;
+                    const minutes = parseInt(document.getElementById('duration_minutes').value) || 0;
+                    const seconds = parseInt(document.getElementById('duration_seconds').value) || 0;
+                    
+                    const totalMinutes = (hours * 60) + minutes + (seconds / 60);
+                    
+                    // Add hidden input with total minutes
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'universal_duration_minutes';
+                    hiddenInput.value = Math.round(totalMinutes);
+                    durationForm.appendChild(hiddenInput);
+                });
+            }
+            
+            // Set current duration values if available
+            {% if universal_settings.is_universal_duration_active and universal_settings.universal_duration_minutes %}
+                const totalMinutes = {{ universal_settings.universal_duration_minutes }};
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                
+                document.getElementById('duration_hours').value = hours;
+                document.getElementById('duration_minutes').value = minutes;
+                document.getElementById('duration_seconds').value = 0;
+            {% endif %}
+        });
+    </script>
 {% endblock %}
 
-{% block pagination %}{% endblock %}
+{% block pagination %}
+    <!-- Remove pagination for this custom view -->
+{% endblock %}

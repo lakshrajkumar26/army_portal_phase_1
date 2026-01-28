@@ -626,9 +626,23 @@ export_evaluation_results_dat.short_description = "Export Evaluation Results (.d
 # Slot Management Actions
 # -------------------------
 def assign_exam_slots(modeladmin, request, queryset):
-    """Assign exam slots to selected candidates"""
+    """Assign exam slots to selected candidates with session cleanup"""
+    from questions.models import ExamSession
+    
     count = 0
+    sessions_cleared = 0
+    
     for candidate in queryset:
+        # Clear incomplete sessions before assigning new slot
+        incomplete_sessions = ExamSession.objects.filter(
+            user=candidate.user,
+            completed_at__isnull=True
+        )
+        cleared_count = incomplete_sessions.count()
+        if cleared_count > 0:
+            incomplete_sessions.delete()
+            sessions_cleared += cleared_count
+        
         if candidate.assign_exam_slot(assigned_by_user=request.user):
             count += 1
     
@@ -637,15 +651,96 @@ def assign_exam_slots(modeladmin, request, queryset):
     else:
         message = f"{count} exam slots were assigned."
     
+    if sessions_cleared > 0:
+        message += f" Cleared {sessions_cleared} incomplete sessions to prevent question set conflicts."
+    
     modeladmin.message_user(request, message)
 
-assign_exam_slots.short_description = "Assign Exam Slots"
+assign_exam_slots.short_description = "🔄 Assign Exam Slots (with cleanup)"
+
+
+def create_exam_slots_for_all_candidates(modeladmin, request, queryset):
+    """Create exam slots for ALL candidates (regardless of selection)"""
+    from django.contrib import messages
+    
+    # Get all candidates without slots
+    all_candidates = CandidateProfile.objects.filter(has_exam_slot=False)
+    count = 0
+    
+    for candidate in all_candidates:
+        if candidate.assign_exam_slot(assigned_by_user=request.user):
+            count += 1
+    
+    if count == 0:
+        messages.info(request, "All candidates already have exam slots assigned.")
+    elif count == 1:
+        messages.success(request, "1 exam slot was created and assigned.")
+    else:
+        messages.success(request, f"{count} exam slots were created and assigned to all candidates.")
+
+create_exam_slots_for_all_candidates.short_description = "🚀 Create Exam Slots for ALL Candidates"
+
+
+def create_exam_slots_by_trade(modeladmin, request, queryset):
+    """Create exam slots for candidates by trade (based on selected candidates' trades)"""
+    from django.contrib import messages
+    
+    # Get unique trades from selected candidates
+    selected_trades = set()
+    for candidate in queryset:
+        if candidate.trade:
+            selected_trades.add(candidate.trade)
+    
+    if not selected_trades:
+        messages.warning(request, "No trades found in selected candidates.")
+        return
+    
+    total_count = 0
+    trade_summary = []
+    
+    for trade in selected_trades:
+        # Get all candidates of this trade without slots
+        trade_candidates = CandidateProfile.objects.filter(
+            trade=trade,
+            has_exam_slot=False
+        )
+        
+        count = 0
+        for candidate in trade_candidates:
+            if candidate.assign_exam_slot(assigned_by_user=request.user):
+                count += 1
+        
+        total_count += count
+        if count > 0:
+            trade_summary.append(f"{trade.name}: {count} slots")
+    
+    if total_count == 0:
+        messages.info(request, "All candidates in selected trades already have exam slots.")
+    else:
+        summary_text = ", ".join(trade_summary)
+        messages.success(request, f"Created {total_count} exam slots by trade ({summary_text})")
+
+create_exam_slots_by_trade.short_description = "🎯 Create Exam Slots by Trade (from selection)"
 
 
 def reset_exam_slots(modeladmin, request, queryset):
-    """Reset/clear exam slots for selected candidates"""
+    """Reset/clear exam slots for selected candidates with session cleanup"""
+    from questions.models import ExamSession
+    
     count = 0
+    sessions_cleared = 0
+    
     for candidate in queryset:
+        # Clear incomplete sessions before resetting slot
+        incomplete_sessions = ExamSession.objects.filter(
+            user=candidate.user,
+            completed_at__isnull=True
+        )
+        cleared_count = incomplete_sessions.count()
+        if cleared_count > 0:
+            incomplete_sessions.delete()
+            sessions_cleared += cleared_count
+        
         if candidate.reset_exam_slot():
             count += 1
     
@@ -654,15 +749,32 @@ def reset_exam_slots(modeladmin, request, queryset):
     else:
         message = f"{count} exam slots were reset."
     
+    if sessions_cleared > 0:
+        message += f" Cleared {sessions_cleared} incomplete sessions."
+    
     modeladmin.message_user(request, message)
 
-reset_exam_slots.short_description = "Reset Exam Slots"
+reset_exam_slots.short_description = "🗑️ Reset Exam Slots (with cleanup)"
 
 
 def reassign_exam_slots(modeladmin, request, queryset):
-    """Reassign exam slots to selected candidates (reset + assign)"""
+    """Reassign exam slots to selected candidates (reset + assign) with session cleanup"""
+    from questions.models import ExamSession
+    
     count = 0
+    sessions_cleared = 0
+    
     for candidate in queryset:
+        # Clear incomplete sessions before reassigning
+        incomplete_sessions = ExamSession.objects.filter(
+            user=candidate.user,
+            completed_at__isnull=True
+        )
+        cleared_count = incomplete_sessions.count()
+        if cleared_count > 0:
+            incomplete_sessions.delete()
+            sessions_cleared += cleared_count
+        
         candidate.reset_exam_slot()
         if candidate.assign_exam_slot(assigned_by_user=request.user):
             count += 1
@@ -672,9 +784,40 @@ def reassign_exam_slots(modeladmin, request, queryset):
     else:
         message = f"{count} exam slots were reassigned."
     
+    if sessions_cleared > 0:
+        message += f" Cleared {sessions_cleared} incomplete sessions to ensure fresh question sets."
+    
     modeladmin.message_user(request, message)
 
-reassign_exam_slots.short_description = "Reassign Exam Slots"
+reassign_exam_slots.short_description = "🔄 Reassign Exam Slots (with cleanup)"
+
+
+def clear_incomplete_sessions(modeladmin, request, queryset):
+    """Clear incomplete exam sessions for selected candidates"""
+    from questions.models import ExamSession
+    
+    total_cleared = 0
+    candidates_affected = 0
+    
+    for candidate in queryset:
+        incomplete_sessions = ExamSession.objects.filter(
+            user=candidate.user,
+            completed_at__isnull=True
+        )
+        cleared_count = incomplete_sessions.count()
+        if cleared_count > 0:
+            incomplete_sessions.delete()
+            total_cleared += cleared_count
+            candidates_affected += 1
+    
+    if total_cleared > 0:
+        message = f"Cleared {total_cleared} incomplete sessions for {candidates_affected} candidates. They will get fresh question sets on next exam attempt."
+    else:
+        message = "No incomplete sessions found for selected candidates."
+    
+    modeladmin.message_user(request, message)
+
+clear_incomplete_sessions.short_description = "🧹 Clear Incomplete Exam Sessions"
 
 
 # -------------------------
@@ -725,8 +868,11 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         export_marks_excel,  # include new marks export as an action
         export_evaluation_results_dat,  # New PO-specific evaluation export
         assign_exam_slots,
+        create_exam_slots_for_all_candidates,  # New automated slot creation
+        create_exam_slots_by_trade,  # New trade-based slot creation
         reset_exam_slots,
         reassign_exam_slots,
+        clear_incomplete_sessions,  # New session cleanup action
         delete_selected_candidates,  # New delete action
     ]
 
@@ -767,6 +913,18 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 status_html = format_html(
                     '<div style="text-align: center;">'
                     '<span style="color: #fd7e14; font-weight: bold; background: #fffaf0; padding: 4px 8px; border-radius: 4px; border: 1px solid #fbd38d; display: inline-block; margin-bottom: 4px;">🔒 Consumed</span>'
+                    '<br><small style="color: #6c757d;">{}</small>'
+                    '</div>',
+                    date_str
+                )
+            elif "Attempting" in status:
+                # Extract date from status
+                import re
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2})', status)
+                date_str = date_match.group(1) if date_match else "Unknown"
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #007bff; font-weight: bold; background: #e7f3ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #b3d7ff; display: inline-block; margin-bottom: 4px;">📝 Attempting</span>'
                     '<br><small style="color: #6c757d;">{}</small>'
                     '</div>',
                     date_str
@@ -1012,12 +1170,28 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             }
         elif self._is_oic(request):
             # OIC can export everything EXCEPT Excel and CSV answers (only PO exports sensitive exam data)
+            # OIC can also manage exam slots
             blocked = {"export_candidates_excel", "export_evaluation_results_dat"}
-            return {k: v for k, v in actions.items() if k not in blocked}
+            allowed_actions = {k: v for k, v in actions.items() if k not in blocked}
+            # Add slot management actions for OIC
+            slot_actions = {
+                k: v for k, v in actions.items() 
+                if k in ["assign_exam_slots", "create_exam_slots_for_all_candidates", "create_exam_slots_by_trade", "reset_exam_slots", "reassign_exam_slots", "clear_incomplete_sessions"]
+            }
+            allowed_actions.update(slot_actions)
+            return allowed_actions
         else:
             # Other users cannot export sensitive data including Excel and CSV answers
+            # But they can manage exam slots
             blocked = {"export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_candidates_excel", "export_evaluation_results_dat"}
-            return {k: v for k, v in actions.items() if k not in blocked}
+            allowed_actions = {k: v for k, v in actions.items() if k not in blocked}
+            # Add slot management actions for other users
+            slot_actions = {
+                k: v for k, v in actions.items() 
+                if k in ["assign_exam_slots", "create_exam_slots_for_all_candidates", "create_exam_slots_by_trade", "reset_exam_slots", "reassign_exam_slots", "clear_incomplete_sessions"]
+            }
+            allowed_actions.update(slot_actions)
+            return allowed_actions
 
     # ---------- change form (add/change page) ----------
     def get_fields(self, request, obj=None):
@@ -1171,6 +1345,12 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "<int:candidate_id>/reset-slot/",
                 self.admin_site.admin_view(self.reset_individual_slot),
                 name="registration_candidateprofile_reset_slot",
+            ),
+            # NEW: Bulk Exam Slot Management Interface
+            path(
+                "bulk-slot-management/",
+                self.admin_site.admin_view(self.bulk_slot_management_view),
+                name="registration_candidateprofile_bulk_slot_management",
             ),
         ]
         return custom_urls + urls
@@ -1326,6 +1506,65 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                         parentLi.parentNode.appendChild(exportWrapper);
                     }
                 }
+                
+                // Add Slot Management section for OIC and above (always show)
+                if (isPO || true) { // Show for all users for now, can be restricted later
+                    // Create slot management wrapper
+                    var slotWrapper = document.createElement('div');
+                    slotWrapper.className = 'slot-management-section';
+                    slotWrapper.style.padding = '8px 0 6px 0';
+                    slotWrapper.style.borderTop = '1px solid #444';
+                    slotWrapper.style.marginTop = '10px';
+
+                    // Section title
+                    var slotTitle = document.createElement('div');
+                    slotTitle.innerText = '🚀 Exam Slots';
+                    slotTitle.style.color = '#007bff';
+                    slotTitle.style.fontWeight = 'bold';
+                    slotTitle.style.marginBottom = '6px';
+                    slotTitle.style.marginLeft = '10px';
+                    slotTitle.style.fontSize = '12px';
+                    slotTitle.style.textTransform = 'uppercase';
+                    slotWrapper.appendChild(slotTitle);
+
+                    // Bulk slot management button
+                    var slotButton = document.createElement('a');
+                    slotButton.href = "{BULK_SLOT_URL}";
+                    slotButton.style.display = 'block';
+                    slotButton.style.padding = '6px 12px';
+                    slotButton.style.fontSize = '11px';
+                    slotButton.style.marginTop = '4px';
+                    slotButton.style.marginLeft = '18px';
+                    slotButton.style.borderRadius = '4px';
+                    slotButton.style.background = '#007bff';
+                    slotButton.style.color = '#fff';
+                    slotButton.style.textDecoration = 'none';
+                    slotButton.style.fontWeight = '600';
+                    slotButton.style.transition = 'all 0.2s ease';
+                    slotButton.innerText = '⚡ Bulk Slot Management';
+                    
+                    slotButton.addEventListener('mouseover', function() {
+                        this.style.transform = 'translateX(4px)';
+                        this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                        this.style.background = '#0056b3';
+                    });
+                    
+                    slotButton.addEventListener('mouseout', function() {
+                        this.style.transform = 'translateX(0)';
+                        this.style.boxShadow = 'none';
+                        this.style.background = '#007bff';
+                    });
+                    
+                    slotWrapper.appendChild(slotButton);
+
+                    // Insert slot management section
+                    var insertAfter = isPO ? exportWrapper : parentLi;
+                    if (insertAfter.nextSibling) {
+                        insertAfter.parentNode.insertBefore(slotWrapper, insertAfter.nextSibling);
+                    } else {
+                        insertAfter.parentNode.appendChild(slotWrapper);
+                    }
+                }
             } catch (e) {
                 console.error('export-links-injection-error', e);
             }
@@ -1343,6 +1582,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         js = js.replace("{IMG_URL}", img_url)
         js = js.replace("{MARKS_URL}", marks_url)
         js = js.replace("{EVAL_URL}", eval_url)
+        js = js.replace("{BULK_SLOT_URL}", bulk_slot_url)
         js = js.replace("{DAT_LABEL}", dat_label.replace('"', '\\"'))
         js = js.replace("{IMG_LABEL}", img_label.replace('"', '\\"'))
         js = js.replace("{MARKS_LABEL}", marks_label.replace('"', '\\"'))
@@ -1369,6 +1609,9 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         clear_results_url = reverse("admin:registration_candidateprofile_clear_exam_results")
         clear_content_url = reverse("admin:registration_candidateprofile_clear_exam_content")
         reset_slots_url = reverse("admin:registration_candidateprofile_reset_all_slots")
+        
+        # Bulk Slot Management URL (for OIC and above)
+        bulk_slot_url = reverse("admin:registration_candidateprofile_bulk_slot_management")
 
         dat_label = export_candidates_dat.short_description or "Export All Answers"
         img_label = export_candidate_images.short_description or "Export All Photos"
@@ -1655,6 +1898,121 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             messages.error(request, f'Error resetting slot: {str(e)}')
         
         return redirect('admin:registration_candidateprofile_changelist')
+
+    def bulk_slot_management_view(self, request):
+        """Bulk exam slot management interface"""
+        from django.shortcuts import render
+        from django.contrib import messages
+        from reference.models import Trade
+        
+        # Only allow OIC and above to access this
+        if not (self._is_oic(request) or request.user.is_superuser):
+            return HttpResponseForbidden("Access denied. OIC permissions required.")
+        
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            trade_id = request.POST.get('trade_id')
+            
+            # Build queryset based on trade selection
+            if trade_id and trade_id != 'all':
+                try:
+                    trade = Trade.objects.get(id=trade_id)
+                    candidates = CandidateProfile.objects.filter(trade=trade)
+                    trade_name = trade.name
+                except Trade.DoesNotExist:
+                    messages.error(request, 'Selected trade not found.')
+                    return redirect(request.path)
+            else:
+                candidates = CandidateProfile.objects.all()
+                trade_name = "All Trades"
+            
+            if action == 'create_slots':
+                # Create slots for candidates without them
+                candidates_without_slots = candidates.filter(has_exam_slot=False)
+                count = 0
+                for candidate in candidates_without_slots:
+                    if candidate.assign_exam_slot(assigned_by_user=request.user):
+                        count += 1
+                
+                if count == 0:
+                    messages.info(request, f'All candidates in {trade_name} already have exam slots.')
+                else:
+                    messages.success(request, f'✅ Created {count} exam slots for {trade_name}. Candidates can now take exams!')
+            
+            elif action == 'reset_all_slots':
+                # Reset all slots for selected candidates
+                candidates_with_slots = candidates.filter(has_exam_slot=True)
+                count = 0
+                for candidate in candidates_with_slots:
+                    if candidate.reset_exam_slot():
+                        count += 1
+                
+                if count == 0:
+                    messages.info(request, f'No exam slots to reset for {trade_name}.')
+                else:
+                    messages.warning(request, f'⚠️ Reset {count} exam slots for {trade_name}.')
+            
+            elif action == 'reassign_all_slots':
+                # Reset and reassign all slots
+                count = 0
+                for candidate in candidates:
+                    candidate.reset_exam_slot()
+                    if candidate.assign_exam_slot(assigned_by_user=request.user):
+                        count += 1
+                
+                messages.success(request, f'🔄 Reassigned {count} exam slots for {trade_name}.')
+            
+            return redirect(request.path)
+        
+        # GET request - show the management interface
+        trades = Trade.objects.all().order_by('name')
+        
+        # Get statistics
+        total_candidates = CandidateProfile.objects.count()
+        candidates_with_slots = CandidateProfile.objects.filter(has_exam_slot=True).count()
+        candidates_without_slots = total_candidates - candidates_with_slots
+        consumed_slots = CandidateProfile.objects.filter(
+            has_exam_slot=True, 
+            slot_consumed_at__isnull=False
+        ).count()
+        available_slots = candidates_with_slots - consumed_slots
+        
+        # Trade-wise statistics
+        trade_stats = []
+        for trade in trades:
+            trade_total = CandidateProfile.objects.filter(trade=trade).count()
+            trade_with_slots = CandidateProfile.objects.filter(trade=trade, has_exam_slot=True).count()
+            trade_without_slots = trade_total - trade_with_slots
+            trade_consumed = CandidateProfile.objects.filter(
+                trade=trade, 
+                has_exam_slot=True, 
+                slot_consumed_at__isnull=False
+            ).count()
+            trade_available = trade_with_slots - trade_consumed
+            
+            trade_stats.append({
+                'trade': trade,
+                'total': trade_total,
+                'with_slots': trade_with_slots,
+                'without_slots': trade_without_slots,
+                'consumed': trade_consumed,
+                'available': trade_available,
+            })
+        
+        context = {
+            'title': 'Bulk Exam Slot Management',
+            'trades': trades,
+            'trade_stats': trade_stats,
+            'total_candidates': total_candidates,
+            'candidates_with_slots': candidates_with_slots,
+            'candidates_without_slots': candidates_without_slots,
+            'consumed_slots': consumed_slots,
+            'available_slots': available_slots,
+            'opts': self.model._meta,
+            'has_view_permission': True,
+        }
+        
+        return render(request, 'admin/registration/bulk_slot_management.html', context)
 
     # Ensure the admin loads our small JS file (served by export_links_js)
     @property

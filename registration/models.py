@@ -84,6 +84,7 @@ class CandidateProfile(models.Model):
     has_exam_slot = models.BooleanField(default=False, verbose_name="Has Exam Slot")
     slot_assigned_at = models.DateTimeField(null=True, blank=True, verbose_name="Slot Assigned At")
     slot_consumed_at = models.DateTimeField(null=True, blank=True, verbose_name="Slot Consumed At")
+    slot_attempting_at = models.DateTimeField(null=True, blank=True, verbose_name="Exam Attempt Started At")
     slot_assigned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -221,7 +222,7 @@ class CandidateProfile(models.Model):
         if not self.has_exam_slot:
             return False
             
-        # Check if slot is consumed but a fresh slot was assigned after consumption
+        # Check if slot is fully consumed (exam completed)
         if self.slot_consumed_at:
             if self.slot_assigned_at and self.slot_assigned_at > self.slot_consumed_at:
                 # Fresh slot assigned after consumption - allow exam
@@ -229,6 +230,9 @@ class CandidateProfile(models.Model):
             else:
                 # Slot consumed and no fresh assignment
                 return False
+        
+        # Allow access if slot is available or currently being attempted
+        # (slot_attempting_at is set but slot_consumed_at is not)
             
         # Check if there's an active exam for this candidate's trade
         if not self.trade:
@@ -242,8 +246,16 @@ class CandidateProfile(models.Model):
         
         return active_exam
     
+    def start_exam_attempt(self):
+        """Mark that the candidate has started attempting the exam (entered exam interface)"""
+        if self.has_exam_slot and self.slot_attempting_at is None:
+            self.slot_attempting_at = timezone.now()
+            self.save(update_fields=['slot_attempting_at'])
+            return True
+        return False
+    
     def consume_exam_slot(self):
-        """Mark the exam slot as consumed when user enters exam interface"""
+        """Mark the exam slot as consumed when exam is actually submitted/completed"""
         if self.has_exam_slot and self.slot_consumed_at is None:
             self.slot_consumed_at = timezone.now()
             self.save(update_fields=['slot_consumed_at'])
@@ -251,21 +263,53 @@ class CandidateProfile(models.Model):
         return False
     
     def assign_exam_slot(self, assigned_by_user=None):
-        """Assign a new exam slot to the candidate"""
+        """
+        Assign a new exam slot to the candidate
+        CRITICAL FIX: Clear incomplete exam sessions to prevent old question set persistence
+        """
+        from questions.models import ExamSession
+        
+        # Clear any incomplete exam sessions to prevent old question set binding
+        incomplete_sessions = ExamSession.objects.filter(
+            user=self.user,
+            completed_at__isnull=True
+        )
+        cleared_count = incomplete_sessions.count()
+        if cleared_count > 0:
+            incomplete_sessions.delete()
+            print(f"✅ Cleared {cleared_count} incomplete sessions for {self.army_no} during slot assignment")
+        
         self.has_exam_slot = True
         self.slot_assigned_at = timezone.now()
         self.slot_consumed_at = None  # Clear any previous consumption
+        self.slot_attempting_at = None  # Clear any previous attempt
         self.slot_assigned_by = assigned_by_user
-        self.save(update_fields=['has_exam_slot', 'slot_assigned_at', 'slot_consumed_at', 'slot_assigned_by'])
+        self.save(update_fields=['has_exam_slot', 'slot_assigned_at', 'slot_consumed_at', 'slot_attempting_at', 'slot_assigned_by'])
         return True
     
     def reset_exam_slot(self):
-        """Reset/clear the exam slot"""
+        """
+        Reset/clear the exam slot
+        CRITICAL FIX: Clear incomplete exam sessions to prevent old question set persistence
+        """
+        from questions.models import ExamSession
+        
+        # Clear any incomplete exam sessions to prevent old question set binding
+        incomplete_sessions = ExamSession.objects.filter(
+            user=self.user,
+            completed_at__isnull=True
+        )
+        cleared_count = incomplete_sessions.count()
+        if cleared_count > 0:
+            incomplete_sessions.delete()
+            print(f"✅ Cleared {cleared_count} incomplete sessions for {self.army_no} during slot reset")
+        
         self.has_exam_slot = False
         self.slot_assigned_at = None
         self.slot_consumed_at = None
+        self.slot_attempting_at = None
         self.slot_assigned_by = None
-        self.save(update_fields=['has_exam_slot', 'slot_assigned_at', 'slot_consumed_at', 'slot_assigned_by'])
+        self.save(update_fields=['has_exam_slot', 'slot_assigned_at', 'slot_consumed_at', 'slot_attempting_at', 'slot_assigned_by'])
         return True
     
     @property
@@ -279,6 +323,11 @@ class CandidateProfile(models.Model):
                     return f"Consumed on {self.slot_consumed_at.strftime('%Y-%m-%d %H:%M')}"
                 except (AttributeError, TypeError):
                     return "Consumed (date unknown)"
+            elif self.slot_attempting_at:
+                try:
+                    return f"Attempting since {self.slot_attempting_at.strftime('%Y-%m-%d %H:%M')}"
+                except (AttributeError, TypeError):
+                    return "Currently Attempting"
             elif self.slot_assigned_at:
                 try:
                     return f"Available (assigned {self.slot_assigned_at.strftime('%Y-%m-%d %H:%M')})"

@@ -190,11 +190,10 @@ def exam_interface(request):
 
         if not session:
             try:
-                # CONSUME SLOT WHEN CREATING NEW SESSION (FIRST TIME LOGIN TO EXAM)
-                if not candidate.consume_exam_slot():
-                    messages.error(request, "Failed to consume exam slot. Contact admin.")
-                    logout(request)
-                    return redirect("login")
+                # MARK EXAM ATTEMPT START (FIRST TIME LOGIN TO EXAM)
+                if not candidate.start_exam_attempt():
+                    # If already attempting, that's fine - continue with existing attempt
+                    pass
                 
                 session = paper.generate_for_candidate(
                     user=request.user,
@@ -248,11 +247,8 @@ def exam_interface(request):
                 session.completed_at = timezone.now()
                 session.save(update_fields=["completed_at"])
                 
-                # CRITICAL: Mark exam slot as consumed on submission/termination
-                # This prevents the candidate from retaking the exam
-                if not candidate.slot_consumed_at:  # Only set if not already consumed
-                    candidate.slot_consumed_at = timezone.now()
-                    candidate.save(update_fields=['slot_consumed_at'])
+                # CONSUME SLOT ONLY WHEN EXAM IS ACTUALLY SUBMITTED/COMPLETED
+                candidate.consume_exam_slot()
                 
                 # Log termination if applicable
                 if exam_terminated:
@@ -260,6 +256,8 @@ def exam_interface(request):
                     messages.warning(request, f"Exam was terminated: {termination_reason}")
 
             logout(request)
+            # Show success message
+            messages.success(request, "🎉 Your exam has been submitted successfully! Thank you for participating.")
             return redirect("exam_success")
 
         # -----------------------------

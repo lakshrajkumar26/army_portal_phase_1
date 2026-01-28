@@ -12,21 +12,26 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from .security_config import SecurityConfig, EnvironmentLoader
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file if it exists
+EnvironmentLoader.load_env_file(BASE_DIR / '.env')
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# =============================================================================
+# SECURITY CONFIGURATION - Using Environment Variables
+# =============================================================================
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1hh)2)lf-ld%vd7)f84o-6t5f*4e36u_sn#2i)5)w(d2b!9+(d'
+# SECURITY: Load secret key from environment variables
+SECRET_KEY = SecurityConfig.load_secret_key()
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# SECURITY: Debug mode controlled by environment
+DEBUG = SecurityConfig.is_debug_enabled()
 
-ALLOWED_HOSTS = ['*']
+# SECURITY: Allowed hosts from environment variables
+ALLOWED_HOSTS = SecurityConfig.get_allowed_hosts()
 
 
 # Application definition
@@ -41,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "import_export",
     "django_filters",
+    "config",  # Add config app for management commands
     "accounts",
     "reference.apps.ReferenceConfig",
     "centers",
@@ -52,16 +58,44 @@ INSTALLED_APPS = [
     "syncops",
 ]
 
+# =============================================================================
+# SECURITY MIDDLEWARE - Enhanced Security Headers
+# =============================================================================
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# =============================================================================
+# HTTPS AND SECURITY HEADERS
+# =============================================================================
+
+# HTTPS Configuration
+SECURE_SSL_REDIRECT = EnvironmentLoader.get_bool_env('SECURE_SSL_REDIRECT', False)
+SECURE_HSTS_SECONDS = EnvironmentLoader.get_int_env('SECURE_HSTS_SECONDS', 0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = EnvironmentLoader.get_bool_env('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+SECURE_HSTS_PRELOAD = EnvironmentLoader.get_bool_env('SECURE_HSTS_PRELOAD', False)
+
+# Security Headers
+SECURE_CONTENT_TYPE_NOSNIFF = EnvironmentLoader.get_bool_env('SECURE_CONTENT_TYPE_NOSNIFF', True)
+SECURE_BROWSER_XSS_FILTER = EnvironmentLoader.get_bool_env('SECURE_BROWSER_XSS_FILTER', True)
+X_FRAME_OPTIONS = EnvironmentLoader.get_env_var('X_FRAME_OPTIONS', 'DENY')
+
+# Session and CSRF Security
+SESSION_COOKIE_SECURE = EnvironmentLoader.get_bool_env('SESSION_COOKIE_SECURE', False)
+CSRF_COOKIE_SECURE = EnvironmentLoader.get_bool_env('CSRF_COOKIE_SECURE', False)
+SESSION_COOKIE_HTTPONLY = EnvironmentLoader.get_bool_env('SESSION_COOKIE_HTTPONLY', True)
+CSRF_COOKIE_HTTPONLY = EnvironmentLoader.get_bool_env('CSRF_COOKIE_HTTPONLY', True)
+
+# Session Configuration
+SESSION_COOKIE_AGE = 3600  # 1 hour
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 ROOT_URLCONF = 'config.urls'
 
@@ -83,19 +117,30 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# =============================================================================
+# DATABASE CONFIGURATION - Using Environment Variables
+# =============================================================================
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'exam_portal',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',   # or '127.0.0.1' or remote host
-        'PORT': '3306',
+# SECURITY: Database configuration from environment variables
+try:
+    DATABASES = {
+        'default': SecurityConfig.get_database_config()
     }
-}
+except Exception as e:
+    # Fallback for development if environment variables are not set
+    if DEBUG:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': 'exam_portal',
+                'USER': 'root',
+                'PASSWORD': 'root',
+                'HOST': 'localhost',
+                'PORT': '3306',
+            }
+        }
+    else:
+        raise e
 
 
 
@@ -143,11 +188,19 @@ LOGIN_URL = "login"
 
 
 
+# =============================================================================
+# MONGODB CONFIGURATION - Using Environment Variables
+# =============================================================================
+
 from mongoengine import connect
 
+# MongoDB configuration from environment variables
+MONGO_DB_NAME = EnvironmentLoader.get_env_var('MONGO_DB_NAME', 'examportal')
+MONGO_URI = EnvironmentLoader.get_env_var('MONGO_URI', f'mongodb://localhost:27017/{MONGO_DB_NAME}')
+
 connect(
-    db="examportal",
-    host="mongodb://localhost:27017/examportal"  # or your MongoDB Atlas URI
+    db=MONGO_DB_NAME,
+    host=MONGO_URI
 )
 
 
@@ -250,8 +303,124 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success"
     }
 }
-EXAM_UNIFIED_DAT_ENABLED = True   # turn TRUE only after verification
-# settings.py
-CONVERTER_PASSPHRASE = os.environ.get("CONVERTER_PASSPHRASE", "bharat")
-DATA_UPLOAD_MAX_NUMBER_FIELDS=100000
+# =============================================================================
+# FILE UPLOAD CONFIGURATION - Using Environment Variables
+# =============================================================================
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = EnvironmentLoader.get_int_env('FILE_UPLOAD_MAX_MEMORY_SIZE', 104857600)  # 100MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = EnvironmentLoader.get_int_env('DATA_UPLOAD_MAX_MEMORY_SIZE', 104857600)  # 100MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = EnvironmentLoader.get_int_env('DATA_UPLOAD_MAX_NUMBER_FIELDS', 100000)
+
+# =============================================================================
+# EXAM PORTAL SPECIFIC CONFIGURATION - Using Environment Variables
+# =============================================================================
+
+EXAM_UNIFIED_DAT_ENABLED = EnvironmentLoader.get_bool_env('EXAM_UNIFIED_DAT_ENABLED', True)
+CONVERTER_PASSPHRASE = EnvironmentLoader.get_env_var('CONVERTER_PASSPHRASE', 'bharat')
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+LOG_LEVEL = EnvironmentLoader.get_env_var('LOG_LEVEL', 'INFO')
+LOG_FILE_PATH = EnvironmentLoader.get_env_var('LOG_FILE_PATH', 'logs/exam_portal.log')
+
+# Ensure log directory exists
+import os
+log_dir = os.path.dirname(LOG_FILE_PATH)
+if log_dir and not os.path.exists(log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': LOG_LEVEL,
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': LOG_LEVEL,
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'questions': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'registration': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+    },
+}
+
+# Add file handler only if we can write to the log file
+try:
+    # Test if we can write to the log file
+    with open(LOG_FILE_PATH, 'a') as f:
+        pass
     
+    # Add file handler if successful
+    LOGGING['handlers']['file'] = {
+        'level': LOG_LEVEL,
+        'class': 'logging.FileHandler',
+        'filename': LOG_FILE_PATH,
+        'formatter': 'verbose',
+    }
+    
+    # Update handlers to include file logging
+    for logger_config in LOGGING['loggers'].values():
+        logger_config['handlers'].append('file')
+    LOGGING['root']['handlers'].append('file')
+    
+except (OSError, PermissionError):
+    # If we can't write to the log file, just use console logging
+    pass
+    
+
+# =============================================================================
+# SECURITY VALIDATION
+# =============================================================================
+
+# Validate security settings on startup
+if not DEBUG:
+    try:
+        SecurityConfig.validate_security_settings()
+        
+        # Additional production validation
+        from .security_config import SecureSettingsValidator
+        validation_errors = SecureSettingsValidator.validate_production_settings(locals())
+        
+        if validation_errors:
+            import sys
+            print("SECURITY VALIDATION ERRORS:")
+            for error in validation_errors:
+                print(f"  - {error}")
+            print("\nPlease fix these security issues before running in production.")
+            sys.exit(1)
+            
+    except Exception as e:
+        import sys
+        print(f"SECURITY CONFIGURATION ERROR: {e}")
+        print("Please check your environment variables and configuration.")
+        sys.exit(1)

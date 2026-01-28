@@ -52,13 +52,14 @@ def debug_exam_issues():
                     )
                     print(f"Active question set: {qs_activation.question_set}")
                     
-                    # Check available questions
+                    # Check available questions (using same logic as generate_for_candidate)
                     if active_activation.paper_type == "SECONDARY":
                         questions = Question.objects.filter(
                             paper_type="SECONDARY",
                             is_common=True,
                             question_set=qs_activation.question_set,
-                            is_active=True
+                            is_active=True,
+                            text__icontains=candidate.trade.code.upper()  # Filter by trade code
                         )
                     else:
                         questions = Question.objects.filter(

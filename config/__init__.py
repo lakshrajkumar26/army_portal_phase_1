@@ -1,0 +1,1 @@
+# Config app for Django Exam Portal

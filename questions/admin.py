@@ -3,6 +3,8 @@ from django.contrib import admin, messages
 from django.urls import path
 from django.utils.html import format_html
 import logging
+from datetime import timedelta
+from questions.models import TradePaperActivation
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +14,7 @@ from .models import (
     GlobalPaperTypeControl,
     ActivateSets,
     QuestionSetActivation,
+    UniversalSetActivation,
 )
 from .forms import QuestionUploadForm
 
@@ -171,6 +174,25 @@ class ActivateSetsAdmin(admin.ModelAdmin):
         except GlobalPaperTypeControl.DoesNotExist:
             pass
         
+        # Get universal set activation settings
+        universal_settings = {}
+        try:
+            if active_paper_type:
+                universal_activation = UniversalSetActivation.objects.get(paper_type=active_paper_type)
+                universal_settings = {
+                    'universal_set_label': universal_activation.universal_set_label,
+                    'universal_duration_minutes': universal_activation.universal_duration_minutes,
+                    'is_universal_set_active': universal_activation.is_universal_set_active,
+                    'is_universal_duration_active': universal_activation.is_universal_duration_active,
+                }
+        except UniversalSetActivation.DoesNotExist:
+            universal_settings = {
+                'universal_set_label': None,
+                'universal_duration_minutes': None,
+                'is_universal_set_active': False,
+                'is_universal_duration_active': False,
+            }
+        
         # Get all trades and their question set data
         trade_data = []
         for trade in Trade.objects.all().order_by('name'):
@@ -211,6 +233,7 @@ class ActivateSetsAdmin(admin.ModelAdmin):
             'active_paper_type': active_paper_type,
             'controls': controls,
             'available_question_sets': available_question_sets,
+            'universal_settings': universal_settings,
             'title': 'Unified Question Set Management',
         })
         
@@ -259,12 +282,21 @@ class ActivateSetsAdmin(admin.ModelAdmin):
         elif action == 'activate_universal_set':
             # Handle universal question set activation
             return self._handle_universal_activation(request)
+        
+        elif action == 'activate_universal_duration':
+            # Handle universal duration activation
+            return self._handle_universal_duration_activation(request)
             
         elif 'trade_id' in request.POST and 'question_set' in request.POST:
             # Handle individual trade question set activation
             trade_id = request.POST.get('trade_id')
             question_set = request.POST.get('question_set')
             paper_type = request.POST.get('paper_type')
+            
+            # Handle duration from new format (hours, minutes, seconds)
+            duration_hours = request.POST.get('duration_hours')
+            duration_minutes = request.POST.get('duration_minutes')
+            duration_seconds = request.POST.get('duration_seconds')
             
             if trade_id and question_set and paper_type:
                 try:
@@ -280,6 +312,46 @@ class ActivateSetsAdmin(admin.ModelAdmin):
                     
                     activate_sets.updated_by = request.user
                     activate_sets.save()
+
+                    # -----------------------------
+                    # SAVE EXAM DURATION (UPDATED)
+                    # -----------------------------
+
+                    exam_duration = None
+                    if duration_hours or duration_minutes or duration_seconds:
+                        try:
+                            hours = int(duration_hours) if duration_hours else 0
+                            minutes = int(duration_minutes) if duration_minutes else 0
+                            seconds = int(duration_seconds) if duration_seconds else 0
+                            
+                            # Validate ranges
+                            if hours < 0 or hours > 8:
+                                messages.error(request, "❌ Hours must be between 0 and 8.")
+                                return HttpResponseRedirect(request.get_full_path())
+                            if minutes < 0 or minutes > 59:
+                                messages.error(request, "❌ Minutes must be between 0 and 59.")
+                                return HttpResponseRedirect(request.get_full_path())
+                            if seconds < 0 or seconds > 59:
+                                messages.error(request, "❌ Seconds must be between 0 and 59.")
+                                return HttpResponseRedirect(request.get_full_path())
+                            
+                            exam_duration = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+                            
+                        except ValueError:
+                            messages.error(
+                                request,
+                                "❌ Invalid duration format. Please enter valid numbers."
+                            )
+                            return HttpResponseRedirect(request.get_full_path())
+
+                    TradePaperActivation.objects.update_or_create(
+                        trade=trade,
+                        paper_type=paper_type,
+                        defaults={
+                            "is_active": True,
+                            "exam_duration": exam_duration,
+                        }
+                    )
                     
                     messages.success(
                         request, 
@@ -319,6 +391,22 @@ class ActivateSetsAdmin(admin.ModelAdmin):
         
         try:
             with transaction.atomic():
+                # Create or update universal set activation setting
+                universal_activation, created = UniversalSetActivation.objects.get_or_create(
+                    paper_type=active_paper_type,
+                    defaults={
+                        'universal_set_label': question_set,
+                        'is_universal_set_active': True,
+                        'activated_by': request.user
+                    }
+                )
+                
+                if not created:
+                    universal_activation.universal_set_label = question_set
+                    universal_activation.is_universal_set_active = True
+                    universal_activation.activated_by = request.user
+                    universal_activation.save()  # This will trigger the universal application
+                
                 # Get all trades in one query for better performance
                 trades = list(Trade.objects.all())
                 
@@ -364,6 +452,126 @@ class ActivateSetsAdmin(admin.ModelAdmin):
         except Exception as e:
             messages.error(request, f"❌ Error during smart universal activation: {str(e)}")
             logger.error(f"Smart universal activation failed: {str(e)}", exc_info=True)
+        
+        return HttpResponseRedirect(request.get_full_path())
+    
+    def _handle_universal_duration_activation(self, request):
+        """Handle universal duration activation for all trades"""
+        from django.contrib import messages
+        from django.http import HttpResponseRedirect
+        from django.db import transaction
+        from reference.models import Trade
+        from datetime import timedelta
+        
+        # Get duration from either the new format (hours, minutes, seconds) or old format (total minutes)
+        duration_minutes = request.POST.get('universal_duration_minutes')
+        duration_hours = request.POST.get('duration_hours')
+        duration_mins = request.POST.get('duration_minutes') 
+        duration_secs = request.POST.get('duration_seconds')
+        
+        # Calculate total minutes
+        total_minutes = 0
+        
+        if duration_minutes:
+            # Old format - direct minutes input
+            try:
+                total_minutes = int(duration_minutes)
+            except ValueError:
+                messages.error(request, "❌ Please enter a valid duration.")
+                return HttpResponseRedirect(request.get_full_path())
+        elif duration_hours is not None or duration_mins is not None or duration_secs is not None:
+            # New format - hours:minutes:seconds
+            try:
+                hours = int(duration_hours) if duration_hours else 0
+                minutes = int(duration_mins) if duration_mins else 0
+                seconds = int(duration_secs) if duration_secs else 0
+                
+                # Validate ranges
+                if hours < 0 or hours > 8:
+                    messages.error(request, "❌ Hours must be between 0 and 8.")
+                    return HttpResponseRedirect(request.get_full_path())
+                if minutes < 0 or minutes > 59:
+                    messages.error(request, "❌ Minutes must be between 0 and 59.")
+                    return HttpResponseRedirect(request.get_full_path())
+                if seconds < 0 or seconds > 59:
+                    messages.error(request, "❌ Seconds must be between 0 and 59.")
+                    return HttpResponseRedirect(request.get_full_path())
+                
+                # Convert to total minutes (with fractional seconds)
+                total_minutes = (hours * 60) + minutes + (seconds / 60.0)
+                
+            except ValueError:
+                messages.error(request, "❌ Please enter valid numbers for hours, minutes, and seconds.")
+                return HttpResponseRedirect(request.get_full_path())
+        else:
+            messages.error(request, "❌ Please enter a valid duration.")
+            return HttpResponseRedirect(request.get_full_path())
+        
+        if total_minutes <= 0:
+            messages.error(request, "❌ Please enter a duration greater than 0.")
+            return HttpResponseRedirect(request.get_full_path())
+        
+        # Get active paper type
+        active_paper_type = self._get_active_paper_type()
+        if not active_paper_type:
+            messages.error(request, "❌ Please activate a paper type first.")
+            return HttpResponseRedirect(request.get_full_path())
+        
+        try:
+            with transaction.atomic():
+                # Create or update universal duration setting
+                universal_activation, created = UniversalSetActivation.objects.get_or_create(
+                    paper_type=active_paper_type,
+                    defaults={
+                        'universal_duration_minutes': int(total_minutes),
+                        'is_universal_duration_active': True,
+                        'activated_by': request.user
+                    }
+                )
+                
+                if not created:
+                    universal_activation.universal_duration_minutes = int(total_minutes)
+                    universal_activation.is_universal_duration_active = True
+                    universal_activation.activated_by = request.user
+                    universal_activation.save()
+                
+                # Apply to all trades
+                duration = timedelta(minutes=total_minutes)
+                updated_count = 0
+                
+                for trade in Trade.objects.all():
+                    TradePaperActivation.objects.update_or_create(
+                        trade=trade,
+                        paper_type=active_paper_type,
+                        defaults={
+                            'is_active': True,
+                            'exam_duration': duration,
+                        }
+                    )
+                    updated_count += 1
+                
+                # Format duration for display
+                display_hours = int(total_minutes // 60)
+                display_minutes = int(total_minutes % 60)
+                display_seconds = int((total_minutes % 1) * 60)
+                
+                if display_hours > 0:
+                    duration_display = f"{display_hours}h {display_minutes}m"
+                    if display_seconds > 0:
+                        duration_display += f" {display_seconds}s"
+                else:
+                    duration_display = f"{display_minutes}m"
+                    if display_seconds > 0:
+                        duration_display += f" {display_seconds}s"
+                
+                messages.success(
+                    request, 
+                    f"✅ Set exam duration to {duration_display} for all {updated_count} trades ({active_paper_type} papers)."
+                )
+                
+        except Exception as e:
+            messages.error(request, f"❌ Error setting universal duration: {str(e)}")
+            logger.error(f"Universal duration activation failed: {str(e)}", exc_info=True)
         
         return HttpResponseRedirect(request.get_full_path())
     

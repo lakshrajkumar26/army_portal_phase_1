@@ -1,0 +1,189 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='registration' %}">Registration</a>
+    &rsaquo; <a href="{% url 'admin:registration_candidateprofile_changelist' %}">Candidate profiles</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module aligned">
+    <h1>🚀 {{ title }}</h1>
+    
+    <!-- Overall Statistics -->
+    <div class="form-row" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #2c3e50; margin-bottom: 15px;">📊 Overall Statistics</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #007bff;">
+                <div style="font-size: 24px; font-weight: bold; color: #007bff;">{{ total_candidates }}</div>
+                <div style="color: #6c757d; font-size: 14px;">Total Candidates</div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #28a745;">
+                <div style="font-size: 24px; font-weight: bold; color: #28a745;">{{ available_slots }}</div>
+                <div style="color: #6c757d; font-size: 14px;">Available Slots</div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #dc3545;">
+                <div style="font-size: 24px; font-weight: bold; color: #dc3545;">{{ candidates_without_slots }}</div>
+                <div style="color: #6c757d; font-size: 14px;">Without Slots</div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #fd7e14;">
+                <div style="font-size: 24px; font-weight: bold; color: #fd7e14;">{{ consumed_slots }}</div>
+                <div style="color: #6c757d; font-size: 14px;">Consumed Slots</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Form -->
+    <div class="form-row" style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 20px;">
+        <h2 style="color: #2c3e50; margin-bottom: 15px;">⚡ Quick Actions</h2>
+        
+        <form method="post" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: end;">
+            {% csrf_token %}
+            
+            <div style="flex: 1; min-width: 200px;">
+                <label for="trade_id" style="display: block; margin-bottom: 5px; font-weight: bold; color: #495057;">Select Trade:</label>
+                <select name="trade_id" id="trade_id" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px;">
+                    <option value="all">All Trades</option>
+                    {% for trade in trades %}
+                        <option value="{{ trade.id }}">{{ trade.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="submit" name="action" value="create_slots" 
+                        style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;"
+                        onmouseover="this.style.background='#218838'" 
+                        onmouseout="this.style.background='#28a745'"
+                        onclick="return confirm('Create exam slots for selected trade? This will assign slots to all candidates without slots.')">
+                    ✅ Create Slots
+                </button>
+                
+                <button type="submit" name="action" value="reset_all_slots" 
+                        style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;"
+                        onmouseover="this.style.background='#c82333'" 
+                        onmouseout="this.style.background='#dc3545'"
+                        onclick="return confirm('Reset ALL exam slots for selected trade? This will remove all slots (including consumed ones).')">
+                    🗑️ Reset All
+                </button>
+                
+                <button type="submit" name="action" value="reassign_all_slots" 
+                        style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;"
+                        onmouseover="this.style.background='#0056b3'" 
+                        onmouseout="this.style.background='#007bff'"
+                        onclick="return confirm('Reassign ALL exam slots for selected trade? This will reset and create fresh slots for everyone.')">
+                    🔄 Reassign All
+                </button>
+            </div>
+        </form>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 4px; border-left: 4px solid #2196f3;">
+            <strong>💡 How it works:</strong>
+            <ul style="margin: 5px 0 0 20px; color: #1565c0;">
+                <li><strong>Create Slots:</strong> Assigns exam slots to candidates who don't have them (sets has_exam_slot=True)</li>
+                <li><strong>Reset All:</strong> Removes all exam slots for the selected trade</li>
+                <li><strong>Reassign All:</strong> Resets and creates fresh slots for all candidates in the trade</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Trade-wise Statistics -->
+    <div class="form-row">
+        <h2 style="color: #2c3e50; margin-bottom: 15px;">📈 Trade-wise Statistics</h2>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <thead style="background: #f8f9fa;">
+                    <tr>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">Trade</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">Total</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">Available Slots</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">Without Slots</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">Consumed</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #495057;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in trade_stats %}
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 12px; font-weight: bold; color: #2c3e50;">{{ stat.trade.name }}</td>
+                        <td style="padding: 12px; text-align: center; color: #007bff; font-weight: bold;">{{ stat.total }}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-weight: bold;">
+                                {{ stat.available }}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            {% if stat.without_slots > 0 %}
+                                <span style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 4px; font-weight: bold;">
+                                    {{ stat.without_slots }}
+                                </span>
+                            {% else %}
+                                <span style="color: #6c757d;">0</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            {% if stat.consumed > 0 %}
+                                <span style="background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px; font-weight: bold;">
+                                    {{ stat.consumed }}
+                                </span>
+                            {% else %}
+                                <span style="color: #6c757d;">0</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            {% if stat.without_slots == 0 %}
+                                <span style="color: #28a745; font-weight: bold;">✅ Ready</span>
+                            {% else %}
+                                <span style="color: #dc3545; font-weight: bold;">⚠️ Needs Slots</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding: 20px; text-align: center; color: #6c757d; font-style: italic;">
+                            No trades found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{% url 'admin:registration_candidateprofile_changelist' %}" 
+           style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            ← Back to Candidate List
+        </a>
+    </div>
+</div>
+
+<script>
+// Add some interactivity
+document.addEventListener('DOMContentLoaded', function() {
+    // Highlight the selected trade in the table when dropdown changes
+    const tradeSelect = document.getElementById('trade_id');
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    tradeSelect.addEventListener('change', function() {
+        const selectedTradeId = this.value;
+        
+        tableRows.forEach(row => {
+            if (selectedTradeId === 'all') {
+                row.style.background = '';
+            } else {
+                // This is a simple highlight - in a real implementation you'd need to match by trade ID
+                row.style.background = '';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
