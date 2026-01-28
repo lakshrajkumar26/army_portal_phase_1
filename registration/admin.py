@@ -862,16 +862,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 
     # ---------- changelist (top buttons/links area) ----------
     def changelist_view(self, request, extra_context=None):
-        # Turn on inline editing for both PO and OIC (restore original functionality)
-        if self._is_po(request) or self._is_oic(request):
-            self.list_editable = (
-                "primary_viva_marks",
-                "primary_practical_marks",
-                "secondary_viva_marks",
-                "secondary_practical_marks",
-            )
-        else:
-            self.list_editable = ()  # no inline editing for others
+        # Remove inline editing since marks columns are no longer displayed
+        self.list_editable = ()
 
         # IMPORTANT: do not inject export_all_* keys here (we remove top links client-side)
         return super().changelist_view(request, extra_context=extra_context)
@@ -879,29 +871,21 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     # ---------- list columns ----------
     def get_list_display(self, request):
         if self._is_po(request):
-            # PO can see and edit viva/practical marks (restore original functionality)
+            # PO view without viva/practical marks columns
             return (
                 "army_no",
                 "name",
                 "rank",
                 "trade_questions_display",
-                "primary_viva_marks",
-                "primary_practical_marks",
-                "secondary_viva_marks",
-                "secondary_practical_marks",
                 "slot_status_display",
             )
         elif self._is_oic(request):
-            # OIC can see and edit viva/practical marks
+            # OIC view without viva/practical marks columns
             return (
                 "army_no",
                 "name",
                 "rank",
                 "trade_questions_display",
-                "primary_viva_marks",
-                "primary_practical_marks",
-                "secondary_viva_marks",
-                "secondary_practical_marks",
                 "slot_status_display",
             )
         # Default view for other users
