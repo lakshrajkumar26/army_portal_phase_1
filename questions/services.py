@@ -149,16 +149,26 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
             col_map["marks"] = c
         elif uc in ("OPTION", "OPTIONS", "OPT"):
             col_map["options"] = c
-        elif uc in ("CORRECT", "CORRECT ANSWER", "ANSWER", "ANS"):
+        elif uc in ("OPTION_A", "OPTION A"):
+            col_map["option_a"] = c
+        elif uc in ("OPTION_B", "OPTION B"):
+            col_map["option_b"] = c
+        elif uc in ("OPTION_C", "OPTION C"):
+            col_map["option_c"] = c
+        elif uc in ("OPTION_D", "OPTION D"):
+            col_map["option_d"] = c
+        elif uc in ("CORRECT", "CORRECT ANSWER", "ANSWER", "ANS", "CORRECT_ANSWER"):
             col_map["correct_answer"] = c
         elif uc in ("TRADE", "TRADE NAME"):
             col_map["trade"] = c
-        elif uc in ("PAPER TYPE", "PAPER", "TYPE"):
+        elif uc in ("PAPER TYPE", "PAPER", "TYPE", "PAPER_TYPE"):
             col_map["paper_type"] = c
         elif uc in ("QUESTION SET", "QUESTION_SET", "SET", "QS"):
             col_map["question_set"] = c
         elif uc in ("IS COMMON", "IS_COMMON", "COMMON"):
             col_map["is_common"] = c
+        elif uc in ("IS ACTIVE", "IS_ACTIVE", "ACTIVE"):
+            col_map["is_active"] = c
 
     if "text" not in col_map:
         raise ValidationError("Excel must contain a Question column (e.g., 'Question').")
@@ -201,6 +211,13 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
             is_common = is_common_val.lower() in ('true', '1', 'yes', 'y')
         else:
             is_common = bool(is_common_val)
+        
+        # Extract is_active
+        is_active_val = r.get(col_map.get("is_active", ""), True) if col_map.get("is_active") else True
+        if isinstance(is_active_val, str):
+            is_active = is_active_val.lower() in ('true', '1', 'yes', 'y')
+        else:
+            is_active = bool(is_active_val)
 
         # Enhanced logic with text-based SECONDARY detection:
         # 1. If paper_type column exists: use it
@@ -222,11 +239,30 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
         else:
             paper_type = "SECONDARY" if trade_norm == "ALL" else "PRIMARY"
 
-        # Options/correct answer: accept JSON strings OR raw text
-        options_raw = r.get(col_map.get("options", ""), None) if col_map.get("options") else None
-        correct_raw = r.get(col_map.get("correct_answer", ""), None) if col_map.get("correct_answer") else None
+        # Handle both new separate option fields and legacy options JSON
+        options = None
+        option_a = None
+        option_b = None
+        option_c = None
+        option_d = None
+        
+        # Check for new separate option fields first
+        if col_map.get("option_a"):
+            option_a = str(r.get(col_map["option_a"], "")).strip() or None
+        if col_map.get("option_b"):
+            option_b = str(r.get(col_map["option_b"], "")).strip() or None
+        if col_map.get("option_c"):
+            option_c = str(r.get(col_map["option_c"], "")).strip() or None
+        if col_map.get("option_d"):
+            option_d = str(r.get(col_map["option_d"], "")).strip() or None
+        
+        # If no separate option fields, fall back to legacy options JSON
+        if not any([option_a, option_b, option_c, option_d]):
+            options_raw = r.get(col_map.get("options", ""), None) if col_map.get("options") else None
+            options = _safe_json_or_text(options_raw)
 
-        options = _safe_json_or_text(options_raw)
+        # Handle correct answer
+        correct_raw = r.get(col_map.get("correct_answer", ""), None) if col_map.get("correct_answer") else None
         correct_answer = _safe_json_or_text(correct_raw)
 
         rows.append({
@@ -234,11 +270,16 @@ def load_questions_from_excel_data(excel_bytes: bytes) -> List[Dict]:
             "part": part,
             "marks": marks,
             "options": options,
+            "option_a": option_a,
+            "option_b": option_b,
+            "option_c": option_c,
+            "option_d": option_d,
             "correct_answer": correct_answer,
             "trade": trade_norm,         # OCC / DMV / ALL etc.
             "paper_type": paper_type,    # PRIMARY / SECONDARY
             "question_set": question_set, # A, B, C, D, E, etc.
             "is_common": is_common,      # True/False
+            "is_active": is_active,      # True/False
         })
 
     return rows
@@ -347,12 +388,19 @@ def import_questions_from_dicts(
             options = q.get("options")
             correct_answer = q.get("correct_answer")
             
-            # Extract question_set and is_common from the data
+            # Handle new separate option fields
+            option_a = q.get("option_a")
+            option_b = q.get("option_b")
+            option_c = q.get("option_c")
+            option_d = q.get("option_d")
+            
+            # Extract question_set, is_common, and is_active from the data
             question_set = (q.get("question_set") or "A").strip().upper()[:1]
             if question_set not in {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}:
                 question_set = "A"
             
             is_common_from_data = q.get("is_common", False)
+            is_active_from_data = q.get("is_active", True)
 
             # Enhanced classification logic with text-based SECONDARY detection
             trade_norm = _norm(q.get("trade", ""))
@@ -407,12 +455,16 @@ def import_questions_from_dicts(
                 part=part,
                 marks=marks,
                 options=options,
+                option_a=option_a,
+                option_b=option_b,
+                option_c=option_c,
+                option_d=option_d,
                 correct_answer=correct_answer,
                 trade=trade_obj,
                 paper_type=paper_type,
                 question_set=question_set,
                 is_common=is_common,
-                is_active=True,
+                is_active=is_active_from_data,
             )
             created_count += 1
 

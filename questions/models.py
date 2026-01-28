@@ -293,13 +293,29 @@ class QuestionPaper(models.Model):
     def generate_for_candidate(self, user, trade=None, shuffle_within_parts=True):
         """
         ✅ SAFE selection with Question Set filtering:
+        - Uses individual trade activations (not global)
         - PRIMARY => paper_type=PRIMARY AND trade matches AND active question_set
-        - SECONDARY => paper_type=SECONDARY AND is_common=True
+        - SECONDARY => paper_type=SECONDARY AND is_common=True AND active question_set
         - HARD FAIL if cannot build required questions
         """
         import random
 
-        is_secondary = (self.question_paper == "SECONDARY")
+        # Determine paper type based on trade activation (not global)
+        if trade:
+            try:
+                # Check what paper type is active for this trade
+                trade_activation = TradePaperActivation.objects.get(
+                    trade=trade,
+                    is_active=True
+                )
+                paper_type = trade_activation.paper_type
+                is_secondary = (paper_type == "SECONDARY")
+            except TradePaperActivation.DoesNotExist:
+                # Fallback: use the paper type from this QuestionPaper instance
+                is_secondary = (self.question_paper == "SECONDARY")
+        else:
+            # No trade provided, use the paper type from this QuestionPaper instance
+            is_secondary = (self.question_paper == "SECONDARY")
 
         if is_secondary:
             dist = HARD_CODED_COMMON_DISTRIBUTION.copy()
@@ -320,12 +336,14 @@ class QuestionPaper(models.Model):
             total_selected = 0
 
             # Get active question set for this trade and paper type
+            # Use the actual paper type determined above, not self.question_paper
+            actual_paper_type = "SECONDARY" if is_secondary else "PRIMARY"
             active_question_set = 'A'  # Default fallback
-            if not is_secondary and trade:
+            if trade:
                 try:
                     active_set = QuestionSetActivation.objects.get(
                         trade=trade,
-                        paper_type=self.question_paper,
+                        paper_type=actual_paper_type,
                         is_active=True
                     )
                     active_question_set = active_set.question_set
@@ -341,7 +359,11 @@ class QuestionPaper(models.Model):
                 qs = Question.objects.filter(is_active=True, part=part)
 
                 if is_secondary:
-                    qs = qs.filter(paper_type="SECONDARY", is_common=True)
+                    qs = qs.filter(
+                        paper_type="SECONDARY", 
+                        is_common=True,
+                        question_set=active_question_set
+                    )
                 else:
                     # Filter by trade, paper type, AND active question set
                     qs = qs.filter(
@@ -550,11 +572,14 @@ class ActivateSets(models.Model):
         Get available question sets with paper-type-specific filtering
         """
         if paper_type == 'SECONDARY':
-            # Secondary questions: filter by paper_type and is_common only (no trade filter)
+            # For SECONDARY questions, check if this trade actually has SECONDARY data
+            # by looking for questions that mention the trade code in their text
+            trade_code = self.trade.code.upper()
             queryset = Question.objects.filter(
                 paper_type='SECONDARY',
                 is_common=True,
-                is_active=True
+                is_active=True,
+                text__icontains=trade_code
             )
         else:
             # Primary questions: filter by trade and paper_type
@@ -572,12 +597,17 @@ class ActivateSets(models.Model):
         Get question count with paper-type-specific filtering
         """
         if paper_type == 'SECONDARY':
-            return Question.objects.filter(
+            # For SECONDARY questions, check if this trade actually has SECONDARY data
+            # by looking for questions that mention the trade code in their text
+            trade_code = self.trade.code.upper()
+            secondary_count = Question.objects.filter(
                 paper_type='SECONDARY',
                 is_common=True,
                 question_set=question_set,
-                is_active=True
+                is_active=True,
+                text__icontains=trade_code
             ).count()
+            return secondary_count
         else:
             return Question.objects.filter(
                 trade=self.trade,

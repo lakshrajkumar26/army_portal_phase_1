@@ -293,7 +293,7 @@ class ActivateSetsAdmin(admin.ModelAdmin):
         return HttpResponseRedirect(request.get_full_path())
     
     def _handle_universal_activation(self, request):
-        """Handle universal question set activation for all trades"""
+        """Handle smart universal question set activation for all trades"""
         from django.contrib import messages
         from django.http import HttpResponseRedirect
         from django.db import transaction
@@ -312,39 +312,58 @@ class ActivateSetsAdmin(admin.ModelAdmin):
             messages.error(request, "❌ Please activate a paper type first.")
             return HttpResponseRedirect(request.get_full_path())
         
-        # Activate for all trades
+        # Smart activation: only activate for trades that have the requested set
         updated_count = 0
+        skipped_count = 0
+        skipped_trades = []
+        
         try:
             with transaction.atomic():
                 # Get all trades in one query for better performance
                 trades = list(Trade.objects.all())
                 
-                # Batch process all trades
+                # Process each trade individually
                 for trade in trades:
                     # Get or create ActivateSets record for this trade
                     activate_sets = ActivateSets.get_or_create_for_trade(trade, request.user)
                     
-                    # Update the appropriate field based on paper type
-                    if active_paper_type == 'PRIMARY':
-                        activate_sets.active_primary_set = question_set
+                    # Check if this trade has the requested question set available
+                    available_sets = activate_sets.get_available_sets(active_paper_type)
+                    
+                    if question_set in available_sets:
+                        # Trade has this set available - activate it
+                        if active_paper_type == 'PRIMARY':
+                            activate_sets.active_primary_set = question_set
+                        else:
+                            activate_sets.active_secondary_set = question_set
+                        
+                        activate_sets.updated_by = request.user
+                        activate_sets.save()  # This will sync with QuestionSetActivation automatically
+                        updated_count += 1
                     else:
-                        activate_sets.active_secondary_set = question_set
-                    
-                    activate_sets.updated_by = request.user
-                    activate_sets.save()  # This will sync with QuestionSetActivation automatically
-                    
-                    updated_count += 1
+                        # Trade doesn't have this set - skip it
+                        skipped_count += 1
+                        skipped_trades.append(trade.name)
                 
-                logger.info(f"Universal activation completed: Set {question_set} activated for {updated_count} trades ({active_paper_type} papers)")
+                logger.info(f"Smart universal activation completed: Set {question_set} activated for {updated_count} trades, skipped {skipped_count} trades ({active_paper_type} papers)")
             
-            messages.success(
-                request, 
-                f"🚀 Successfully activated Set {question_set} for {updated_count} trades ({active_paper_type} papers)."
-            )
+            # Prepare success message
+            success_msg = f"🚀 Smart activation completed: Set {question_set} activated for {updated_count} trades ({active_paper_type} papers)."
+            
+            if skipped_count > 0:
+                if skipped_count <= 5:
+                    # Show specific trade names if few
+                    skipped_list = ", ".join(skipped_trades)
+                    success_msg += f" Skipped {skipped_count} trades without Set {question_set}: {skipped_list}."
+                else:
+                    # Just show count if many
+                    success_msg += f" Skipped {skipped_count} trades that don't have Set {question_set} available."
+            
+            messages.success(request, success_msg)
             
         except Exception as e:
-            messages.error(request, f"❌ Error during universal activation: {str(e)}")
-            logger.error(f"Universal activation failed: {str(e)}", exc_info=True)
+            messages.error(request, f"❌ Error during smart universal activation: {str(e)}")
+            logger.error(f"Smart universal activation failed: {str(e)}", exc_info=True)
         
         return HttpResponseRedirect(request.get_full_path())
     

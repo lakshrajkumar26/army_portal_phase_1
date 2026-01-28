@@ -70,47 +70,47 @@ class CandidateProfileAdminForm(forms.ModelForm):
 # -------------------------
 # CSV exporter (candidate answers)
 # -------------------------
-def export_candidate_answers(modeladmin, request, queryset):
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="selected_candidates_answers.csv"'
+# def export_candidate_answers(modeladmin, request, queryset):
+#     response = HttpResponse(content_type="text/csv")
+#     response["Content-Disposition"] = 'attachment; filename="selected_candidates_answers.csv"'
 
-    writer = csv.writer(response)
-    writer.writerow(
-        [
-            "Army Number",
-            "Candidate Name",
-            "Paper Title",
-            "Question ID",
-            "Question Text",
-            "Answer",
-            "Category",
-            "Submitted At",
-        ]
-    )
+#     writer = csv.writer(response)
+#     writer.writerow(
+#         [
+#             "Army Number",
+#             "Candidate Name",
+#             "Paper Title",
+#             "Question ID",
+#             "Question Text",
+#             "Answer",
+#             "Category",
+#             "Submitted At",
+#         ]
+#     )
 
-    answers = (
-        CandidateAnswer.objects.filter(candidate__in=queryset)
-        .select_related("candidate", "paper", "question")
-        .order_by("candidate__id", "paper_id", "question_id")
-    )
+#     answers = (
+#         CandidateAnswer.objects.filter(candidate__in=queryset)
+#         .select_related("candidate", "paper", "question")
+#         .order_by("candidate__id", "paper_id", "question_id")
+#     )
 
-    for ans in answers:
-        writer.writerow(
-            [
-                getattr(ans.candidate, "army_no", ""),
-                ans.candidate.name if ans.candidate else "",
-                getattr(ans.paper, "title", ""),
-                getattr(ans.question, "id", ""),
-                getattr(ans.question, "text", ""),
-                getattr(ans, "answer", ""),
-                ans.effective_category,  # computed: primary/secondary
-                getattr(ans, "submitted_at", ""),
-            ]
-        )
-    return response
+#     for ans in answers:
+#         writer.writerow(
+#             [
+#                 getattr(ans.candidate, "army_no", ""),
+#                 ans.candidate.name if ans.candidate else "",
+#                 getattr(ans.paper, "title", ""),
+#                 getattr(ans.question, "id", ""),
+#                 getattr(ans.question, "text", ""),
+#                 getattr(ans, "answer", ""),
+#                 ans.effective_category,  # computed: primary/secondary
+#                 getattr(ans, "submitted_at", ""),
+#             ]
+#         )
+#     return response
 
 
-export_candidate_answers.short_description = "Export selected candidates' answers to CSV"
+# export_candidate_answers.short_description = "Export selected candidates' answers to CSV"
 
 
 # -------------------------
@@ -612,183 +612,6 @@ def delete_selected_candidates(modeladmin, request, queryset):
 delete_selected_candidates.short_description = "Delete Selected Candidates"
 
 
-def clear_all_candidate_data(modeladmin, request):
-    """Clear all candidate data from the system"""
-    from django.contrib import messages
-    from django.shortcuts import redirect
-    from django.db import transaction
-    from results.models import CandidateAnswer
-    from questions.models import ExamSession, ExamQuestion
-    
-    if request.POST.get('confirm_clear_all'):
-        with transaction.atomic():
-            # Count before deletion
-            candidate_count = CandidateProfile.objects.count()
-            answer_count = CandidateAnswer.objects.count()
-            session_count = ExamSession.objects.count()
-            
-            # Delete in correct dependency order
-            # 1. Delete answers first (depends on candidates)
-            CandidateAnswer.objects.all().delete()
-            
-            # 2. Delete exam sessions and questions
-            ExamQuestion.objects.all().delete()
-            ExamSession.objects.all().delete()
-            
-            # 3. Finally delete candidates
-            CandidateProfile.objects.all().delete()
-            
-            messages.success(request, f"All {candidate_count} candidates, {answer_count} answers, and {session_count} sessions have been cleared successfully.")
-        return redirect(request.path)
-    
-    # Show confirmation template
-    from django.template.response import TemplateResponse
-    context = {
-        'title': 'Clear All Candidate Data',
-        'object_name': 'Candidate Data',
-        'opts': modeladmin.model._meta,
-        'action': 'clear_all_candidate_data',
-        'action_checkbox_name': '_selected_action',
-        'cancel_url': request.path,
-    }
-    return TemplateResponse(request, 'admin/cleanup_confirmation.html', context)
-
-
-def clear_exam_results(modeladmin, request):
-    """Clear all exam results and answers but keep candidates"""
-    from django.contrib import messages
-    from django.shortcuts import redirect
-    from django.db import transaction
-    from results.models import CandidateAnswer
-    from questions.models import ExamSession, ExamQuestion
-    
-    if request.POST.get('confirm_clear_results'):
-        with transaction.atomic():
-            # Count before deletion
-            answer_count = CandidateAnswer.objects.count()
-            session_count = ExamSession.objects.count()
-            exam_question_count = ExamQuestion.objects.count()
-            
-            # Delete in correct dependency order
-            # 1. Delete exam answers first
-            CandidateAnswer.objects.all().delete()
-            
-            # 2. Delete exam questions (part of sessions)
-            ExamQuestion.objects.all().delete()
-            
-            # 3. Delete exam sessions
-            ExamSession.objects.all().delete()
-            
-            # 4. Reset exam slots for all candidates
-            CandidateProfile.objects.all().update(
-                has_exam_slot=False,
-                slot_assigned_at=None,
-                slot_consumed_at=None,
-                slot_assigned_by=None
-            )
-            
-            messages.success(request, f"Cleared {answer_count} answers, {exam_question_count} exam questions, {session_count} exam sessions, and reset all exam slots.")
-        return redirect(request.path)
-    
-    # Show confirmation template
-    from django.template.response import TemplateResponse
-    context = {
-        'title': 'Clear Exam Results',
-        'object_name': 'Exam Results',
-        'opts': modeladmin.model._meta,
-        'action': 'clear_exam_results',
-        'action_checkbox_name': '_selected_action',
-        'cancel_url': request.path,
-    }
-    return TemplateResponse(request, 'admin/cleanup_confirmation.html', context)
-
-
-def clear_exam_content(modeladmin, request):
-    """Clear only exam slots, question papers and questions but keep candidates and their results"""
-    from django.contrib import messages
-    from django.shortcuts import redirect
-    from django.db import transaction
-    from results.models import CandidateAnswer
-    from questions.models import ExamSession, ExamQuestion, Question, QuestionPaper, QuestionUpload, TradePaperActivation
-    
-    if request.POST.get('confirm_clear_content'):
-        with transaction.atomic():
-            # Count before deletion
-            question_count = Question.objects.count()
-            paper_count = QuestionPaper.objects.count()
-            upload_count = QuestionUpload.objects.count()
-            activation_count = TradePaperActivation.objects.count()
-            
-            # Delete in correct dependency order
-            # 1. Delete exam sessions and questions first
-            ExamQuestion.objects.all().delete()
-            ExamSession.objects.all().delete()
-            
-            # 2. Delete questions
-            Question.objects.all().delete()
-            
-            # 3. Delete question papers
-            QuestionPaper.objects.all().delete()
-            
-            # 4. Delete question uploads
-            QuestionUpload.objects.all().delete()
-            
-            # 5. Delete trade paper activations
-            TradePaperActivation.objects.all().delete()
-            
-            # 6. Reset exam slots for all candidates
-            CandidateProfile.objects.all().update(
-                has_exam_slot=False,
-                slot_assigned_at=None,
-                slot_consumed_at=None,
-                slot_assigned_by=None
-            )
-            
-            messages.success(request, f"Cleared {question_count} questions, {paper_count} question papers, {upload_count} uploads, {activation_count} activations, and reset all exam slots. Candidate results preserved.")
-        return redirect(request.path)
-    
-    # Show confirmation template
-    from django.template.response import TemplateResponse
-    context = {
-        'title': 'Clear Exam Content',
-        'object_name': 'Exam Content',
-        'opts': modeladmin.model._meta,
-        'action': 'clear_exam_content',
-        'action_checkbox_name': '_selected_action',
-        'cancel_url': request.path,
-    }
-    return TemplateResponse(request, 'admin/cleanup_confirmation.html', context)
-
-
-def reset_all_slots(modeladmin, request):
-    """Reset all exam slots for all candidates"""
-    from django.contrib import messages
-    from django.shortcuts import redirect
-    
-    if request.POST.get('confirm_reset_slots'):
-        count = CandidateProfile.objects.all().update(
-            has_exam_slot=False,
-            slot_assigned_at=None,
-            slot_consumed_at=None,
-            slot_assigned_by=None
-        )
-        
-        messages.success(request, f"Exam slots for {count} candidates have been reset.")
-        return redirect(request.path)
-    
-    # Show confirmation template
-    from django.template.response import TemplateResponse
-    context = {
-        'title': 'Reset All Exam Slots',
-        'object_name': 'Exam Slots',
-        'opts': modeladmin.model._meta,
-        'action': 'reset_all_slots',
-        'action_checkbox_name': '_selected_action',
-        'cancel_url': request.path,
-    }
-    return TemplateResponse(request, 'admin/cleanup_confirmation.html', context)
-
-
 # -------------------------
 # Admin Registration
 # -------------------------
@@ -804,7 +627,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 
     # all actions declared; we'll filter them per user in get_actions
     actions = [
-        export_candidate_answers,
+        # export_candidate_answers,
         export_candidates_excel,
         export_candidates_dat,
         export_candidate_images,
@@ -817,11 +640,20 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 
     # ---------- helpers ----------
     def _is_po(self, request):
-        """Return True if user is PO by group or (optional) role."""
+        """Return True if user is PO by group or role."""
         u = request.user
         in_po_group = u.groups.filter(name="PO").exists()
         has_po_role = getattr(u, "role", None) == "PO_ADMIN"
         return in_po_group or has_po_role
+    
+    def _is_oic(self, request):
+        """Return True if user is OIC by group or role."""
+        u = request.user
+        in_oic_group = u.groups.filter(name="OIC").exists()
+        has_oic_role = getattr(u, "role", None) == "OIC_ADMIN"
+        # Also check for legacy CENTER_ADMIN role for backward compatibility
+        has_center_admin_role = getattr(u, "role", None) == "CENTER_ADMIN"
+        return in_oic_group or has_oic_role or has_center_admin_role
     
     def slot_status_display(self, obj):
         """Display slot status with color coding and reset button"""
@@ -883,47 +715,155 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     slot_status_display.allow_tags = True
     
     def trade_questions_display(self, obj):
-        """Display trade and available question counts"""
+        """Display trade, active question set, and exam question counts"""
         if not obj.trade:
             return format_html('<span style="color: #6c757d; font-style: italic;">No Trade</span>')
         
-        from questions.models import Question
-        
-        # Count PRIMARY questions for this trade
-        primary_count = Question.objects.filter(
-            trade=obj.trade,
-            paper_type="PRIMARY",
-            is_active=True
-        ).count()
-        
-        # Count SECONDARY (common) questions
-        secondary_count = Question.objects.filter(
-            paper_type="SECONDARY",
-            is_common=True,
-            is_active=True
-        ).count()
+        from questions.models import Question, QuestionSetActivation, TradePaperActivation, HARD_CODED_TRADE_CONFIG, HARD_CODED_COMMON_DISTRIBUTION
         
         trade_name = obj.trade.name
         
-        # Create a more compact and visually appealing display
-        return format_html(
-            '<div style="text-align: center;">'
-            '<strong style="color: #2c3e50; font-size: 14px; display: block; margin-bottom: 4px;">{}</strong>'
-            '<div style="display: flex; justify-content: space-around; font-size: 11px;">'
-            '<span style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; border: 1px solid #bbdefb;">📝 P: {}</span>'
-            '<span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 6px; border-radius: 3px; border: 1px solid #ce93d8;">📝 S: {}</span>'
-            '</div>'
-            '</div>',
-            trade_name, primary_count, secondary_count
-        )
+        try:
+            # Get active paper type for this trade
+            trade_activation = TradePaperActivation.objects.get(
+                trade=obj.trade,
+                is_active=True
+            )
+            paper_type = trade_activation.paper_type
+            
+            # Get active question set
+            try:
+                qs_activation = QuestionSetActivation.objects.get(
+                    trade=obj.trade,
+                    paper_type=paper_type,
+                    is_active=True
+                )
+                active_set = qs_activation.question_set
+            except QuestionSetActivation.DoesNotExist:
+                active_set = 'A'  # Default
+            
+            # Get expected question distribution for exam
+            if paper_type == "SECONDARY":
+                dist = HARD_CODED_COMMON_DISTRIBUTION.copy()
+                total_exam_questions = sum(int(count) for count in dist.values())
+            else:
+                # Get trade-specific distribution
+                trade_code = obj.trade.code.upper()
+                if trade_code in HARD_CODED_TRADE_CONFIG:
+                    dist = HARD_CODED_TRADE_CONFIG[trade_code]["part_distribution"]
+                    total_exam_questions = HARD_CODED_TRADE_CONFIG[trade_code]["total_questions"]
+                else:
+                    dist = HARD_CODED_COMMON_DISTRIBUTION.copy()
+                    total_exam_questions = sum(int(count) for count in dist.values())
+            
+            # Count available questions in the active set
+            if paper_type == "SECONDARY":
+                available_count = Question.objects.filter(
+                    paper_type="SECONDARY",
+                    is_common=True,
+                    question_set=active_set,
+                    is_active=True
+                ).count()
+            else:
+                available_count = Question.objects.filter(
+                    trade=obj.trade,
+                    paper_type="PRIMARY",
+                    question_set=active_set,
+                    is_active=True
+                ).count()
+            
+            # Determine colors and icons based on paper type
+            if paper_type == "PRIMARY":
+                paper_color = "#1565c0"
+                paper_bg = "#e3f2fd"
+                paper_border = "#bbdefb"
+                paper_icon = "🔵"
+            else:
+                paper_color = "#7b1fa2"
+                paper_bg = "#f3e5f5"
+                paper_border = "#ce93d8"
+                paper_icon = "🟣"
+            
+            # Check if there are enough questions
+            status_icon = "✅" if available_count >= total_exam_questions else "⚠️"
+            status_color = "#28a745" if available_count >= total_exam_questions else "#dc3545"
+            
+            # Get part-wise breakdown for detailed display
+            part_breakdown = []
+            for part, required_count in dist.items():
+                if required_count > 0:
+                    if paper_type == "SECONDARY":
+                        part_available = Question.objects.filter(
+                            paper_type="SECONDARY",
+                            is_common=True,
+                            question_set=active_set,
+                            part=part,
+                            is_active=True
+                        ).count()
+                    else:
+                        part_available = Question.objects.filter(
+                            trade=obj.trade,
+                            paper_type="PRIMARY",
+                            question_set=active_set,
+                            part=part,
+                            is_active=True
+                        ).count()
+                    
+                    part_status = "✅" if part_available >= required_count else "❌"
+                    part_breakdown.append(f"{part}:{required_count}/{part_available}{part_status}")
+            
+            breakdown_text = " | ".join(part_breakdown) if part_breakdown else "No breakdown"
+            
+            return format_html(
+                '<div style="text-align: center; min-width: 180px;">'
+                '<strong style="color: #2c3e50; font-size: 13px; display: block; margin-bottom: 6px;">{}</strong>'
+                '<div style="margin-bottom: 4px;">'
+                '<span style="background: {}; color: {}; padding: 3px 8px; border-radius: 4px; border: 1px solid {}; font-size: 11px; font-weight: bold;">'
+                '{} {} Set {}'
+                '</span>'
+                '</div>'
+                '<div style="font-size: 10px; color: {}; font-weight: bold; margin-bottom: 4px;">'
+                '{} Exam: {}/{} questions'
+                '</div>'
+                '<div style="font-size: 9px; color: #666; background: #f8f9fa; padding: 2px 4px; border-radius: 3px; border: 1px solid #dee2e6;">'
+                'Parts: {}'
+                '</div>'
+                '</div>',
+                trade_name,
+                paper_bg, paper_color, paper_border,
+                paper_icon, paper_type, active_set,
+                status_color,
+                status_icon, total_exam_questions, available_count,
+                breakdown_text
+            )
+            
+        except TradePaperActivation.DoesNotExist:
+            # No activation found
+            return format_html(
+                '<div style="text-align: center;">'
+                '<strong style="color: #2c3e50; font-size: 13px; display: block; margin-bottom: 4px;">{}</strong>'
+                '<span style="color: #dc3545; font-size: 11px; background: #fff5f5; padding: 2px 6px; border-radius: 3px; border: 1px solid #fed7d7;">❌ No Activation</span>'
+                '</div>',
+                trade_name
+            )
+        
+        except Exception as e:
+            # Error occurred
+            return format_html(
+                '<div style="text-align: center;">'
+                '<strong style="color: #2c3e50; font-size: 13px; display: block; margin-bottom: 4px;">{}</strong>'
+                '<span style="color: #dc3545; font-size: 11px;">❌ Error</span>'
+                '</div>',
+                trade_name
+            )
     
-    trade_questions_display.short_description = "Trade & Questions"
+    trade_questions_display.short_description = "Trade & Exam Questions"
     trade_questions_display.allow_tags = True
 
     # ---------- changelist (top buttons/links area) ----------
     def changelist_view(self, request, extra_context=None):
-        # Turn on inline editing only for PO (important: set attribute here)
-        if self._is_po(request):
+        # Turn on inline editing for both PO and OIC (restore original functionality)
+        if self._is_po(request) or self._is_oic(request):
             self.list_editable = (
                 "primary_viva_marks",
                 "primary_practical_marks",
@@ -939,38 +879,56 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     # ---------- list columns ----------
     def get_list_display(self, request):
         if self._is_po(request):
-            # Minimal columns for PO with marks
+            # PO can see and edit viva/practical marks (restore original functionality)
             return (
                 "army_no",
                 "name",
+                "rank",
                 "trade_questions_display",
                 "primary_viva_marks",
                 "primary_practical_marks",
                 "secondary_viva_marks",
                 "secondary_practical_marks",
+                "slot_status_display",
             )
-        # non-PO (optimized layout with essential columns)
+        elif self._is_oic(request):
+            # OIC can see and edit viva/practical marks
+            return (
+                "army_no",
+                "name",
+                "rank",
+                "trade_questions_display",
+                "primary_viva_marks",
+                "primary_practical_marks",
+                "secondary_viva_marks",
+                "secondary_practical_marks",
+                "slot_status_display",
+            )
+        # Default view for other users
         return ("army_no", "name", "rank", "trade_questions_display", "slot_status_display", "created_at")
 
-    # Remove row links for PO
+    # Allow row links for PO (restore original functionality)
     def get_list_display_links(self, request, list_display):
-        if self._is_po(request):
-            return ()  # no links → can't open detail page
+        # PO users can now click on candidate names to open detail pages
         return super().get_list_display_links(request, list_display)
 
     # ---------- actions per role ----------
     def get_actions(self, request):
         actions = super().get_actions(request)
         if self._is_po(request):
-            # PO can export DAT, Photos and Marks; hide other actions if you prefer
+            # PO can export DAT, Photos, Marks, and CSV answers (restore original functionality)
             return {
                 k: v
                 for k, v in actions.items()
                 if k in ["export_candidates_dat", "export_candidate_images", "export_marks_excel"]
             }
+        elif self._is_oic(request):
+            # OIC can export everything EXCEPT Excel and CSV answers (only PO exports sensitive exam data)
+            blocked = {"export_candidates_excel"}
+            return {k: v for k, v in actions.items() if k not in blocked}
         else:
-            # Non-PO cannot export DAT, Photos or Marks via actions, but can manage slots
-            blocked = {"export_candidates_dat", "export_candidate_images", "export_marks_excel"}
+            # Other users cannot export sensitive data including Excel and CSV answers
+            blocked = {"export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_candidates_excel"}
             return {k: v for k, v in actions.items() if k not in blocked}
 
     # ---------- change form (add/change page) ----------
@@ -1009,31 +967,27 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             "slot_consumed_at",
             "slot_assigned_by",
         ]
-        po_only_fields = [
+        marks_fields = [
             "primary_viva_marks",
             "primary_practical_marks",
             "secondary_viva_marks",
             "secondary_practical_marks",
         ]
         if self._is_po(request):
-            # If someone hits the change URL directly, still show limited fields
-            return ["army_no", "name", "trade"] + po_only_fields
-        return base_fields + ["created_at"]
+            # PO can see basic fields plus marks (restore original functionality)
+            return ["army_no", "name", "rank", "trade", "exam_center", "training_center"] + marks_fields
+        return base_fields + marks_fields + ["created_at"]
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
         if self._is_po(request):
-            # PO can edit only the four marks; everything else readonly
+            # PO can edit marks and some basic fields; restrict others
             readonly += [
                 "user",
-                "army_no",
-                "rank",
                 "unit",
                 "brigade",
                 "corps",
                 "command",
-                "trade",
-                "name",
                 "dob",
                 "doe",
                 "aadhar_number",
@@ -1042,8 +996,6 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "father_name",
                 "photograph",
                 "nsqf_level",
-                "exam_center",
-                "training_center",
                 "state",
                 "district",
                 "primary_qualification",
@@ -1059,6 +1011,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "slot_assigned_by",
                 "created_at",
             ]
+            # PO can edit: army_no, name, rank, trade, exam_center, training_center, and all marks
         else:
             # Non-PO: slot fields are readonly (managed via actions)
             readonly += [
@@ -1069,10 +1022,9 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             ]
         return readonly
 
-    # Block opening the change form UI for PO (must use list editing)
+    # Allow PO users to access change form (restore original functionality)
     def change_view(self, request, object_id, form_url="", extra_context=None):
-        if self._is_po(request):
-            return HttpResponseForbidden("PO edits marks on the list page only.")
+        # PO users can now access change forms to edit marks and basic info
         return super().change_view(request, object_id, form_url, extra_context)
 
     # prevent PO from add/delete
@@ -1114,27 +1066,6 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.export_all_marks_view),
                 name="registration_candidateprofile_export_all_marks",
             ),
-            # Clear Data URLs
-            path(
-                "clear-all-data/",
-                self.admin_site.admin_view(self.clear_all_data_view),
-                name="registration_candidateprofile_clear_all_data",
-            ),
-            path(
-                "clear-exam-results/",
-                self.admin_site.admin_view(self.clear_exam_results_view),
-                name="registration_candidateprofile_clear_exam_results",
-            ),
-            path(
-                "clear-exam-content/",
-                self.admin_site.admin_view(self.clear_exam_content_view),
-                name="registration_candidateprofile_clear_exam_content",
-            ),
-            path(
-                "reset-all-slots/",
-                self.admin_site.admin_view(self.reset_all_slots_view),
-                name="registration_candidateprofile_reset_all_slots",
-            ),
             # JS endpoint that injects the sidebar buttons (served via admin view to allow permission check)
             path(
                 "candidate-export-links.js",
@@ -1170,32 +1101,148 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         qs = self.get_queryset(request)
         return export_marks_excel(self, request, qs)
 
-    # Clear Data View Methods
-    def clear_all_data_view(self, request):
-        # Only superuser or admin can clear all data
-        if not request.user.is_superuser:
-            return HttpResponseForbidden("Only superusers can clear all candidate data.")
-        return clear_all_candidate_data(self, request)
-
-    def clear_exam_results_view(self, request):
-        # Only superuser or admin can clear exam results
-        if not request.user.is_superuser:
-            return HttpResponseForbidden("Only superusers can clear exam results.")
-        return clear_exam_results(self, request)
-
-    def clear_exam_content_view(self, request):
-        # Only superuser or admin can clear exam content
-        if not request.user.is_superuser:
-            return HttpResponseForbidden("Only superusers can clear exam content.")
-        return clear_exam_content(self, request)
-
-    def reset_all_slots_view(self, request):
-        # Only superuser or admin can reset all slots
-        if not request.user.is_superuser:
-            return HttpResponseForbidden("Only superusers can reset all exam slots.")
-        return reset_all_slots(self, request)
-
     def export_links_js(self, request):
+        """
+        Generate JavaScript that injects export buttons into the admin sidebar.
+        Only PO users see export buttons.
+        """
+        from django.urls import reverse
+        from django.http import HttpResponse
+
+        is_po = self._is_po(request)
+
+        # Export URLs (for PO users)
+        dat_url = reverse("admin:registration_candidateprofile_export_all_dat")
+        img_url = reverse("admin:registration_candidateprofile_export_all_images")
+        marks_url = reverse("admin:registration_candidateprofile_export_all_marks")
+        
+        dat_label = export_candidates_dat.short_description or "Export All Answers"
+        img_label = export_candidate_images.short_description or "Export All Photos"
+        marks_label = export_marks_excel.short_description or "Export All Marks"
+        
+        candidate_changelist = reverse("admin:registration_candidateprofile_changelist")
+
+        js_template = """
+(function() {
+    try {
+        document.addEventListener('DOMContentLoaded', function() {
+            var isPO = {IS_PO};
+            var candidateChangelistUrl = "{CANDIDATE_CHANGELIST}";
+            
+            // Only inject on candidate changelist page
+            if (!window.location.pathname.includes('/admin/registration/candidateprofile/')) {
+                return;
+            }
+
+            try {
+                // Find the sidebar navigation
+                var navSidebar = document.querySelector('#nav-sidebar');
+                if (!navSidebar) return;
+
+                // Find the Registration section
+                var registrationSection = null;
+                var navItems = navSidebar.querySelectorAll('.app-registration');
+                if (navItems.length > 0) {
+                    registrationSection = navItems[0];
+                }
+
+                if (!registrationSection) return;
+
+                // Find the Candidate profiles link
+                var candidateLink = registrationSection.querySelector('a[href*="candidateprofile"]');
+                if (!candidateLink) return;
+
+                var parentLi = candidateLink.closest('li');
+                if (!parentLi) return;
+
+                // Only show export buttons for PO users
+                if (isPO) {
+                    // Create export wrapper
+                    var exportWrapper = document.createElement('div');
+                    exportWrapper.className = 'export-section';
+                    exportWrapper.style.padding = '8px 0 6px 0';
+                    exportWrapper.style.borderTop = '1px solid #444';
+                    exportWrapper.style.marginTop = '10px';
+
+                    // Section title
+                    var sectionTitle = document.createElement('div');
+                    sectionTitle.innerText = '📤 Export Data';
+                    sectionTitle.style.color = '#28a745';
+                    sectionTitle.style.fontWeight = 'bold';
+                    sectionTitle.style.marginBottom = '6px';
+                    sectionTitle.style.marginLeft = '10px';
+                    sectionTitle.style.fontSize = '12px';
+                    sectionTitle.style.textTransform = 'uppercase';
+                    exportWrapper.appendChild(sectionTitle);
+
+                    // Helper function to create export buttons
+                    function createExportButton(url, label, bgColor) {
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.style.display = 'block';
+                        a.style.padding = '6px 12px';
+                        a.style.fontSize = '11px';
+                        a.style.marginTop = '4px';
+                        a.style.marginLeft = '18px';
+                        a.style.borderRadius = '4px';
+                        a.style.background = bgColor || '#28a745';
+                        a.style.color = '#fff';
+                        a.style.textDecoration = 'none';
+                        a.style.fontWeight = '600';
+                        a.style.transition = 'all 0.2s ease';
+                        a.innerText = label;
+                        
+                        a.addEventListener('mouseover', function() {
+                            this.style.transform = 'translateX(4px)';
+                            this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                        });
+                        
+                        a.addEventListener('mouseout', function() {
+                            this.style.transform = 'translateX(0)';
+                            this.style.boxShadow = 'none';
+                        });
+                        
+                        return a;
+                    }
+
+                    // Export buttons
+                    var eb1 = createExportButton("{DAT_URL}", "{DAT_LABEL}", '#007bff');
+                    var eb2 = createExportButton("{IMG_URL}", "{IMG_LABEL}", '#17a2b8');
+                    var eb3 = createExportButton("{MARKS_URL}", "{MARKS_LABEL}", '#28a745');
+
+                    exportWrapper.appendChild(eb1);
+                    exportWrapper.appendChild(eb2);
+                    exportWrapper.appendChild(eb3);
+
+                    // Insert after the candidate profiles link
+                    if (parentLi.nextSibling) {
+                        parentLi.parentNode.insertBefore(exportWrapper, parentLi.nextSibling);
+                    } else {
+                        parentLi.parentNode.appendChild(exportWrapper);
+                    }
+                }
+            } catch (e) {
+                console.error('export-links-injection-error', e);
+            }
+
+        }); // onReady
+    } catch (e) {
+        console.error('export_links_js top error', e);
+    }
+})();
+"""
+
+        # Safe substitutions
+        js = js_template.replace("{IS_PO}", "true" if is_po else "false")
+        js = js.replace("{DAT_URL}", dat_url)
+        js = js.replace("{IMG_URL}", img_url)
+        js = js.replace("{MARKS_URL}", marks_url)
+        js = js.replace("{DAT_LABEL}", dat_label.replace('"', '\\"'))
+        js = js.replace("{IMG_LABEL}", img_label.replace('"', '\\"'))
+        js = js.replace("{MARKS_LABEL}", marks_label.replace('"', '\\"'))
+        js = js.replace("{CANDIDATE_CHANGELIST}", candidate_changelist)
+
+        return HttpResponse(js, content_type="application/javascript")
         """
         Serve a small JS file that:
           - fixes header checkbox / row checkbox behavior (for all admin users)
@@ -1429,10 +1476,10 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                         clearWrapper.appendChild(sectionTitle);
 
                         // Clear data buttons
-                        var cb1 = createClearButton("{CLEAR_ALL_URL}", "Delete All Candidates", "Permanently delete all candidate data (IRREVERSIBLE)", '#dc3545');
-                        var cb2 = createClearButton("{CLEAR_RESULTS_URL}", "Clear Exam Results", "Clear all exam answers and sessions", '#fd7e14');
-                        var cb3 = createClearButton("{CLEAR_CONTENT_URL}", "Clear Exam Content", "Delete questions, papers, uploads (keep results)", '#e83e8c');
-                        var cb4 = createClearButton("{RESET_SLOTS_URL}", "Reset All Slots", "Reset all exam slots for candidates", '#6f42c1');
+                        # var cb1 = createClearButton("{CLEAR_ALL_URL}", "Delete All Candidates", "Permanently delete all candidate data (IRREVERSIBLE)", '#dc3545');
+                        # var cb2 = createClearButton("{CLEAR_RESULTS_URL}", "Clear Exam Results", "Clear all exam answers and sessions", '#fd7e14');
+                        # var cb3 = createClearButton("{CLEAR_CONTENT_URL}", "Clear Exam Content", "Delete questions, papers, uploads (keep results)", '#e83e8c');
+                        # var cb4 = createClearButton("{RESET_SLOTS_URL}", "Reset All Slots", "Reset all exam slots for candidates", '#6f42c1');
 
                         clearWrapper.appendChild(cb1);
                         clearWrapper.appendChild(cb2);

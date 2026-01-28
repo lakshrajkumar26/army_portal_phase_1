@@ -978,8 +978,49 @@
                     <div class="options-container">
                         {# MCQ parts A/B: Always show 4 multiple choice options #}
                         {% if question.question.part in "AB" %}
-                            {% if question.question.options and question.question.options.choices %}
-                                {# Use actual options if available #}
+                            {# Use new separate option fields first, fallback to old options JSON #}
+                            {% if question.question.option_a %}
+                                {# Use new separate option fields #}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="question_{{ question.question.id }}"
+                                           id="q{{ question.question.id }}_opt1"
+                                           value="{{ question.question.option_a }}"
+                                           onchange="markAnswered({{ question.question.id }})">
+                                    <label class="form-check-label" for="q{{ question.question.id }}_opt1">{{ question.question.option_a }}</label>
+                                </div>
+                                {% if question.question.option_b %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="question_{{ question.question.id }}"
+                                           id="q{{ question.question.id }}_opt2"
+                                           value="{{ question.question.option_b }}"
+                                           onchange="markAnswered({{ question.question.id }})">
+                                    <label class="form-check-label" for="q{{ question.question.id }}_opt2">{{ question.question.option_b }}</label>
+                                </div>
+                                {% endif %}
+                                {% if question.question.option_c %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="question_{{ question.question.id }}"
+                                           id="q{{ question.question.id }}_opt3"
+                                           value="{{ question.question.option_c }}"
+                                           onchange="markAnswered({{ question.question.id }})">
+                                    <label class="form-check-label" for="q{{ question.question.id }}_opt3">{{ question.question.option_c }}</label>
+                                </div>
+                                {% endif %}
+                                {% if question.question.option_d %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="question_{{ question.question.id }}"
+                                           id="q{{ question.question.id }}_opt4"
+                                           value="{{ question.question.option_d }}"
+                                           onchange="markAnswered({{ question.question.id }})">
+                                    <label class="form-check-label" for="q{{ question.question.id }}_opt4">{{ question.question.option_d }}</label>
+                                </div>
+                                {% endif %}
+                            {% elif question.question.options and question.question.options.choices %}
+                                {# Fallback: Use old JSON options format #}
                                 {% for choice in question.question.options.choices %}
                                     {% if choice %}
                                     <div class="form-check">
@@ -993,7 +1034,7 @@
                                     {% endif %}
                                 {% endfor %}
                             {% elif question.question.options %}
-                                {# Options might be a list/array directly #}
+                                {# Fallback: Options might be a list/array directly #}
                                 {% for choice in question.question.options %}
                                     {% if choice %}
                                     <div class="form-check">
@@ -1094,7 +1135,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let isShowingWarning = false;
   let maxViolations = Infinity; // INFINITE WARNINGS - NO TERMINATION LIMIT
   let fullscreenCheckInterval = null;
-  let pointerLocked = false;
+  // Removed pointer lock to fix mouse cursor disappearing issue
   
   // ---------------------------
   // NUCLEAR OPTION: ABSOLUTE FULLSCREEN LOCK
@@ -1304,34 +1345,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Request pointer lock to trap mouse
-  function requestPointerLock() {
-    const el = document.body;
-    const fn = el.requestPointerLock || el.mozRequestPointerLock || el.webkitRequestPointerLock;
-    
-    if (fn && !pointerLocked) {
-      try {
-        fn.call(el);
-        pointerLocked = true;
-      } catch (e) {
-        console.warn("Pointer lock failed:", e);
-      }
-    }
-  }
-
-  // Release pointer lock
-  function releasePointerLock() {
-    const fn = document.exitPointerLock || document.mozExitPointerLock || document.webkitExitPointerLock;
-    
-    if (fn && pointerLocked) {
-      try {
-        fn.call(document);
-        pointerLocked = false;
-      } catch (e) {
-        console.warn("Pointer unlock failed:", e);
-      }
-    }
-  }
+  // Removed pointer lock functions to fix mouse cursor disappearing issue
+  // Mouse cursor will remain visible and functional during exam
 
   // ---------------------------
   // Start Exam button
@@ -1351,10 +1366,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Start NUCLEAR fullscreen monitoring (every 10ms)
           fullscreenCheckInterval = setInterval(enforceFullscreen, 10);
           
-          // Request pointer lock to trap mouse
-          setTimeout(() => {
-            requestPointerLock();
-          }, 1000);
+          // Mouse cursor will remain visible and functional
           
           console.log("🔒 NUCLEAR FULLSCREEN LOCK ACTIVATED - Monitoring every 10ms");
         })
@@ -1377,10 +1389,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // IMMEDIATELY force back to fullscreen
     enterFullScreen().then(() => {
-      // Re-request pointer lock
-      setTimeout(() => {
-        requestPointerLock();
-      }, 500);
+      // Mouse cursor remains visible and functional
     }).catch(() => {
       // If fullscreen fails, terminate exam
       terminateExamImmediately("Failed to return to fullscreen mode after warning");
@@ -1396,8 +1405,7 @@ document.addEventListener("DOMContentLoaded", () => {
       clearInterval(fullscreenCheckInterval);
     }
     
-    // Release pointer lock
-    releasePointerLock();
+    // Mouse cursor remains visible and functional
     
     // Save final progress
     saveCurrentProgress();

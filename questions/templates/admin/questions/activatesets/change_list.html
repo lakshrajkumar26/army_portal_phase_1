@@ -89,8 +89,8 @@
                         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
                             <div style="font-size: 48px;">⚡</div>
                             <div>
-                                <h3 style="margin: 0 0 5px 0; color: #721c24; font-size: 20px; font-weight: 600;">Bulk Activation</h3>
-                                <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.4;">Activate the same question set for ALL trades simultaneously. This will override individual trade settings.</p>
+                                <h3 style="margin: 0 0 5px 0; color: #721c24; font-size: 20px; font-weight: 600;">Smart Bulk Activation</h3>
+                                <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.4;">Intelligently activate the same question set for all trades that have it available. Trades without the selected set will be automatically skipped.</p>
                             </div>
                         </div>
                         
@@ -106,8 +106,8 @@
                                 {% endfor %}
                             </select>
                             <button type="submit" name="action" value="activate_universal_set" style="padding: 12px 24px; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(220,53,69,0.3); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(220,53,69,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(220,53,69,0.3)'">
-                                <span style="margin-right: 8px;">🚀</span>
-                                Activate for All Trades
+                                <span style="margin-right: 8px;">🧠</span>
+                                Smart Activate for Available Trades
                             </button>
                         </form>
                         
@@ -117,10 +117,10 @@
                                 <strong style="color: #856404; font-size: 16px;">Important Notice</strong>
                             </div>
                             <ul style="margin: 0; padding-left: 20px; color: #856404; font-size: 14px; line-height: 1.5;">
-                                <li>This will activate the selected question set for <strong>ALL trades</strong> at once</li>
-                                <li>Any existing individual trade activations will be <strong>overridden</strong></li>
-                                <li>Only one question set can be active per trade at any time</li>
-                                <li>Use this feature when you want consistent question sets across all trades</li>
+                                <li>This will <strong>intelligently activate</strong> the selected question set only for trades that have it available</li>
+                                <li>Trades without the selected set will be <strong>automatically skipped</strong> (no changes made)</li>
+                                <li>You'll see a summary of which trades were activated and which were skipped</li>
+                                <li>Perfect for SECONDARY papers where only some trades (like OCC, DMV) have question sets</li>
                             </ul>
                         </div>
                     </div>
@@ -179,7 +179,7 @@
                                             <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
                                                 <div style="display: inline-flex; align-items: center; gap: 6px; background: {% if data.question_count > 0 %}linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%){% else %}linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%){% endif %}; padding: 10px 15px; border-radius: 20px; font-weight: 600; color: {% if data.question_count > 0 %}#495057{% else %}#721c24{% endif %}; border: 1px solid {% if data.question_count > 0 %}#ced4da{% else %}#f1aeb5{% endif %};">
                                                     <span style="font-size: 16px;">{% if data.question_count > 0 %}📝{% else %}❌{% endif %}</span>
-                                                    <span>{{ data.question_count }}</span>
+                                                    <span>{% if data.question_count > 0 %}{{ data.question_count }}{% else %}Not Available{% endif %}</span>
                                                 </div>
                                             </td>
                                             <td style="padding: 18px; border: 1px solid #dee2e6; text-align: center; vertical-align: middle;">
@@ -216,7 +216,7 @@
                                                 {% else %}
                                                     <div style="color: #6c757d; font-style: italic; padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
                                                         <span style="font-size: 16px; margin-right: 6px;">📭</span>
-                                                        No question sets available
+                                                        No {{ active_paper_type|lower }} sets available for this trade
                                                     </div>
                                                 {% endif %}
                                             </td>
