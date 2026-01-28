@@ -532,6 +532,97 @@ export_marks_excel.short_description = "Export Viva-Prac Marks"
 
 
 # -------------------------
+# NEW: Export evaluation results in .dat format (PO only)
+# -------------------------
+def export_evaluation_results_dat(modeladmin, request, queryset):
+    """
+    Export evaluation results (practical and viva marks) in .dat format for PO users
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Evaluation Results"
+
+    headers = [
+        "Army No",
+        "Name", 
+        "Rank",
+        "Trade",
+        "Exam Center",
+        "Training Center",
+        "Primary Practical Marks",
+        "Primary Viva Marks",
+        "Secondary Practical Marks", 
+        "Secondary Viva Marks",
+        "Total Primary Marks",
+        "Total Secondary Marks",
+        "Created At"
+    ]
+
+    for col_num, column_title in enumerate(headers, 1):
+        ws.cell(row=1, column=col_num).value = column_title
+
+    for row_num, candidate in enumerate(queryset, 2):
+        # Calculate totals
+        primary_total = (candidate.primary_practical_marks or 0) + (candidate.primary_viva_marks or 0)
+        secondary_total = (candidate.secondary_practical_marks or 0) + (candidate.secondary_viva_marks or 0)
+        
+        data = [
+            candidate.army_no,
+            candidate.name,
+            candidate.rank,
+            candidate.trade.name if candidate.trade else "",
+            candidate.exam_center,
+            candidate.training_center,
+            candidate.primary_practical_marks,
+            candidate.primary_viva_marks,
+            candidate.secondary_practical_marks,
+            candidate.secondary_viva_marks,
+            primary_total,
+            secondary_total,
+            candidate.created_at.strftime("%Y-%m-%d %H:%M") if candidate.created_at else "",
+        ]
+        for col_num, cell_value in enumerate(data, 1):
+            ws.cell(row=row_num, column=col_num, value=cell_value)
+
+    for i in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(i)].width = 15
+
+    # Convert to bytes
+    from io import BytesIO
+    stream = BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    xlsx_bytes = stream.getvalue()
+
+    # Encrypt to .dat format
+    passphrase = getattr(settings, "CONVERTER_PASSPHRASE", None)
+    if not passphrase:
+        return HttpResponseBadRequest(
+            "Server missing CONVERTER_PASSPHRASE; set it in settings or env."
+        )
+
+    dat_bytes = _encrypt_bytes_to_dat(xlsx_bytes, passphrase)
+
+    from centers.models import Center
+    center = Center.objects.first()
+
+    if center:
+        safe_exam_center = "".join(c if c.isalnum() else "_" for c in center.exam_Center)
+        safe_comd = "".join(c if c.isalnum() else "_" for c in center.comd)
+        filename = f"{safe_comd}_{safe_exam_center}_evaluation_results.dat"
+    else:
+        ts = timezone.now().strftime("%Y%m%d%H%M%S")
+        filename = f"evaluation_results_{ts}.dat"
+
+    response = HttpResponse(dat_bytes, content_type="application/octet-stream")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+export_evaluation_results_dat.short_description = "Export Evaluation Results (.dat)"
+
+
+# -------------------------
 # Slot Management Actions
 # -------------------------
 def assign_exam_slots(modeladmin, request, queryset):
@@ -632,6 +723,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         export_candidates_dat,
         export_candidate_images,
         export_marks_excel,  # include new marks export as an action
+        export_evaluation_results_dat,  # New PO-specific evaluation export
         assign_exam_slots,
         reset_exam_slots,
         reassign_exam_slots,
@@ -862,8 +954,16 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 
     # ---------- changelist (top buttons/links area) ----------
     def changelist_view(self, request, extra_context=None):
-        # Remove inline editing since marks columns are no longer displayed
-        self.list_editable = ()
+        # Enable inline editing for PO users on marks fields
+        if self._is_po(request):
+            self.list_editable = (
+                "primary_practical_marks",
+                "primary_viva_marks", 
+                "secondary_practical_marks",
+                "secondary_viva_marks",
+            )
+        else:
+            self.list_editable = ()
 
         # IMPORTANT: do not inject export_all_* keys here (we remove top links client-side)
         return super().changelist_view(request, extra_context=extra_context)
@@ -871,12 +971,16 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     # ---------- list columns ----------
     def get_list_display(self, request):
         if self._is_po(request):
-            # PO view without viva/practical marks columns
+            # PO view with viva/practical marks columns for editing
             return (
                 "army_no",
                 "name",
                 "rank",
                 "trade_questions_display",
+                "primary_practical_marks",
+                "primary_viva_marks", 
+                "secondary_practical_marks",
+                "secondary_viva_marks",
                 "slot_status_display",
             )
         elif self._is_oic(request):
@@ -900,19 +1004,19 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     def get_actions(self, request):
         actions = super().get_actions(request)
         if self._is_po(request):
-            # PO can export DAT, Photos, Marks, and CSV answers (restore original functionality)
+            # PO can export DAT, Photos, Marks, Evaluation Results, and CSV answers
             return {
                 k: v
                 for k, v in actions.items()
-                if k in ["export_candidates_dat", "export_candidate_images", "export_marks_excel"]
+                if k in ["export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_evaluation_results_dat"]
             }
         elif self._is_oic(request):
             # OIC can export everything EXCEPT Excel and CSV answers (only PO exports sensitive exam data)
-            blocked = {"export_candidates_excel"}
+            blocked = {"export_candidates_excel", "export_evaluation_results_dat"}
             return {k: v for k, v in actions.items() if k not in blocked}
         else:
             # Other users cannot export sensitive data including Excel and CSV answers
-            blocked = {"export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_candidates_excel"}
+            blocked = {"export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_candidates_excel", "export_evaluation_results_dat"}
             return {k: v for k, v in actions.items() if k not in blocked}
 
     # ---------- change form (add/change page) ----------
@@ -1050,6 +1154,12 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.export_all_marks_view),
                 name="registration_candidateprofile_export_all_marks",
             ),
+            # NEW: Export-All-Evaluation-Results (PO only)
+            path(
+                "Export-All-Evaluation-Results/",
+                self.admin_site.admin_view(self.export_all_evaluation_results_view),
+                name="registration_candidateprofile_export_all_evaluation_results",
+            ),
             # JS endpoint that injects the sidebar buttons (served via admin view to allow permission check)
             path(
                 "candidate-export-links.js",
@@ -1085,6 +1195,13 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         qs = self.get_queryset(request)
         return export_marks_excel(self, request, qs)
 
+    def export_all_evaluation_results_view(self, request):
+        # Only PO can export Evaluation Results
+        if not self._is_po(request):
+            return HttpResponseForbidden("Not allowed.")
+        qs = self.get_queryset(request)
+        return export_evaluation_results_dat(self, request, qs)
+
     def export_links_js(self, request):
         """
         Generate JavaScript that injects export buttons into the admin sidebar.
@@ -1099,10 +1216,12 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         dat_url = reverse("admin:registration_candidateprofile_export_all_dat")
         img_url = reverse("admin:registration_candidateprofile_export_all_images")
         marks_url = reverse("admin:registration_candidateprofile_export_all_marks")
+        eval_url = reverse("admin:registration_candidateprofile_export_all_evaluation_results")
         
         dat_label = export_candidates_dat.short_description or "Export All Answers"
         img_label = export_candidate_images.short_description or "Export All Photos"
         marks_label = export_marks_excel.short_description or "Export All Marks"
+        eval_label = export_evaluation_results_dat.short_description or "Export Evaluation Results"
         
         candidate_changelist = reverse("admin:registration_candidateprofile_changelist")
 
@@ -1193,10 +1312,12 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                     var eb1 = createExportButton("{DAT_URL}", "{DAT_LABEL}", '#007bff');
                     var eb2 = createExportButton("{IMG_URL}", "{IMG_LABEL}", '#17a2b8');
                     var eb3 = createExportButton("{MARKS_URL}", "{MARKS_LABEL}", '#28a745');
+                    var eb4 = createExportButton("{EVAL_URL}", "{EVAL_LABEL}", '#6f42c1');
 
                     exportWrapper.appendChild(eb1);
                     exportWrapper.appendChild(eb2);
                     exportWrapper.appendChild(eb3);
+                    exportWrapper.appendChild(eb4);
 
                     // Insert after the candidate profiles link
                     if (parentLi.nextSibling) {
@@ -1221,9 +1342,11 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         js = js.replace("{DAT_URL}", dat_url)
         js = js.replace("{IMG_URL}", img_url)
         js = js.replace("{MARKS_URL}", marks_url)
+        js = js.replace("{EVAL_URL}", eval_url)
         js = js.replace("{DAT_LABEL}", dat_label.replace('"', '\\"'))
         js = js.replace("{IMG_LABEL}", img_label.replace('"', '\\"'))
         js = js.replace("{MARKS_LABEL}", marks_label.replace('"', '\\"'))
+        js = js.replace("{EVAL_LABEL}", eval_label.replace('"', '\\"'))
         js = js.replace("{CANDIDATE_CHANGELIST}", candidate_changelist)
 
         return HttpResponse(js, content_type="application/javascript")
@@ -1383,12 +1506,14 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                         var b1 = createButton("{DAT_URL}", "{DAT_LABEL}", "Download encrypted .dat (for Converter)");
                         var b2 = createButton("{IMG_URL}", "{IMG_LABEL}", "Download ZIP of all candidate photos");
                         var b3 = createButton("{MARKS_URL}", "{MARKS_LABEL}", "Download Excel with Viva & Practical marks");
+                        var b4 = createButton("{EVAL_URL}", "{EVAL_LABEL}", "Download evaluation results in .dat format");
 
-                        b1.style.fontWeight = '600'; b2.style.fontWeight = '600'; b3.style.fontWeight = '600';
+                        b1.style.fontWeight = '600'; b2.style.fontWeight = '600'; b3.style.fontWeight = '600'; b4.style.fontWeight = '600';
 
                         exportWrapper.appendChild(b1);
                         exportWrapper.appendChild(b2);
                         exportWrapper.appendChild(b3);
+                        exportWrapper.appendChild(b4);
 
                         if (insertAfter && insertAfter.parentNode) {
                             if (insertAfter.nextSibling) {
@@ -1496,6 +1621,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         js = js.replace("{DAT_URL}", dat_url)
         js = js.replace("{IMG_URL}", img_url)
         js = js.replace("{MARKS_URL}", marks_url)
+        js = js.replace("{EVAL_URL}", eval_url)
         js = js.replace("{CLEAR_ALL_URL}", clear_all_url)
         js = js.replace("{CLEAR_RESULTS_URL}", clear_results_url)
         js = js.replace("{CLEAR_CONTENT_URL}", clear_content_url)
@@ -1503,6 +1629,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         js = js.replace("{DAT_LABEL}", dat_label.replace('"', '\\"'))
         js = js.replace("{IMG_LABEL}", img_label.replace('"', '\\"'))
         js = js.replace("{MARKS_LABEL}", marks_label.replace('"', '\\"'))
+        js = js.replace("{EVAL_LABEL}", eval_label.replace('"', '\\"'))
         js = js.replace("{CANDIDATE_CHANGELIST}", candidate_changelist)
 
         return HttpResponse(js, content_type="application/javascript")

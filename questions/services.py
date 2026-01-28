@@ -439,14 +439,21 @@ def import_questions_from_dicts(
                 else:
                     trade_obj = trade_lookup.get(trade_norm)
 
-            # Avoid duplicates by text+part+trade/is_common+question_set
-            exists_qs = Question.objects.filter(text=text, part=part, question_set=question_set)
+            # Allow same question text in different question sets
+            # Only check for duplicates within the same question_set, trade, and part combination
+            exists_qs = Question.objects.filter(
+                text=text, 
+                part=part, 
+                question_set=question_set,
+                paper_type=paper_type
+            )
             if trade_obj:
                 exists_qs = exists_qs.filter(trade=trade_obj)
             else:
                 exists_qs = exists_qs.filter(trade__isnull=True)
 
             if exists_qs.exists():
+                # Question already exists in this specific set/trade/part combination
                 skipped_count += 1
                 continue
 
