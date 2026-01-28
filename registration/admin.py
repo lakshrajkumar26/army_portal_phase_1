@@ -489,6 +489,8 @@ def export_marks_excel(modeladmin, request, queryset):
         "Army No",
         "Name",
         "Trade",
+        "Mobile Number (Linked to Aadhaar Card)",
+        "APAAR ID",
         "Primary Viva Marks",
         "Primary Practical Marks",
         "Secondary Viva Marks",
@@ -506,6 +508,8 @@ def export_marks_excel(modeladmin, request, queryset):
             candidate.army_no,
             candidate.name,
             candidate.trade.name if getattr(candidate, "trade", None) else str(candidate.trade) if candidate.trade else "",
+            candidate.mobile_no,
+            candidate.apaar_id,
             candidate.primary_viva_marks,
             candidate.primary_practical_marks,
             candidate.secondary_viva_marks,
@@ -547,6 +551,8 @@ def export_evaluation_results_dat(modeladmin, request, queryset):
         "Name", 
         "Rank",
         "Trade",
+        "Mobile Number (Linked to Aadhaar Card)",
+        "APAAR ID",
         "Exam Center",
         "Training Center",
         "Primary Practical Marks",
@@ -571,6 +577,8 @@ def export_evaluation_results_dat(modeladmin, request, queryset):
             candidate.name,
             candidate.rank,
             candidate.trade.name if candidate.trade else "",
+            candidate.mobile_no,
+            candidate.apaar_id,
             candidate.exam_center,
             candidate.training_center,
             candidate.primary_practical_marks,
@@ -877,24 +885,22 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     ]
 
     # ---------- helpers ----------
-    def _is_po(self, request):
-        """Return True if user is PO by group or role."""
+    def _is_po_admin(self, request):
+        """Return True if user is PO_ADMIN by role."""
         u = request.user
-        in_po_group = u.groups.filter(name="PO").exists()
-        has_po_role = getattr(u, "role", None) == "PO_ADMIN"
-        return in_po_group or has_po_role
+        return getattr(u, "role", None) == "PO_ADMIN"
     
-    def _is_oic(self, request):
-        """Return True if user is OIC by group or role."""
+    def _is_center_admin(self, request):
+        """Return True if user is CENTER_ADMIN by role."""
         u = request.user
-        in_oic_group = u.groups.filter(name="OIC").exists()
-        has_oic_role = getattr(u, "role", None) == "OIC_ADMIN"
-        # Also check for legacy CENTER_ADMIN role for backward compatibility
-        has_center_admin_role = getattr(u, "role", None) == "CENTER_ADMIN"
-        return in_oic_group or has_oic_role or has_center_admin_role
+        return getattr(u, "role", None) == "CENTER_ADMIN"
+    
+    def _is_superuser_admin(self, request):
+        """Return True if user is superuser."""
+        return request.user.is_superuser
     
     def slot_status_display(self, obj):
-        """Display slot status with color coding and reset button"""
+        """Display slot status with color coding (no reset button for PO_ADMIN)"""
         try:
             status = obj.slot_status
             
@@ -944,7 +950,67 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             else:
                 status_html = format_html('<span style="color: #6c757d;">{}</span>', status)
             
-            # Add reset button if slot exists
+            return status_html
+            
+        except Exception as e:
+            # Fallback display for any errors
+            return format_html('<span style="color: red;">Error: {}</span>', str(e))
+    
+    slot_status_display.short_description = "Slot Status"
+    slot_status_display.allow_tags = True
+    
+    def slot_status_with_reset(self, obj):
+        """Display slot status with reset button for CENTER_ADMIN"""
+        try:
+            status = obj.slot_status
+            
+            # Create a more compact display
+            if "No Slot" in status:
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #dc3545; font-weight: bold; background: #fff5f5; padding: 4px 8px; border-radius: 4px; border: 1px solid #fed7d7; display: inline-block; margin-bottom: 4px;">❌ No Slot</span>'
+                    '</div>'
+                )
+            elif "Consumed" in status:
+                # Extract date from status
+                import re
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2})', status)
+                date_str = date_match.group(1) if date_match else "Unknown"
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #fd7e14; font-weight: bold; background: #fffaf0; padding: 4px 8px; border-radius: 4px; border: 1px solid #fbd38d; display: inline-block; margin-bottom: 4px;">🔒 Consumed</span>'
+                    '<br><small style="color: #6c757d;">{}</small>'
+                    '</div>',
+                    date_str
+                )
+            elif "Attempting" in status:
+                # Extract date from status
+                import re
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2})', status)
+                date_str = date_match.group(1) if date_match else "Unknown"
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #007bff; font-weight: bold; background: #e7f3ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #b3d7ff; display: inline-block; margin-bottom: 4px;">📝 Attempting</span>'
+                    '<br><small style="color: #6c757d;">{}</small>'
+                    '</div>',
+                    date_str
+                )
+            elif "Available" in status:
+                # Extract date from status
+                import re
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2})', status)
+                date_str = date_match.group(1) if date_match else "Unknown"
+                status_html = format_html(
+                    '<div style="text-align: center;">'
+                    '<span style="color: #28a745; font-weight: bold; background: #f0fff4; padding: 4px 8px; border-radius: 4px; border: 1px solid #9ae6b4; display: inline-block; margin-bottom: 4px;">✅ Available</span>'
+                    '<br><small style="color: #6c757d;">{}</small>'
+                    '</div>',
+                    date_str
+                )
+            else:
+                status_html = format_html('<span style="color: #6c757d;">{}</span>', status)
+            
+            # Add reset button if slot exists (only for CENTER_ADMIN)
             if obj.has_exam_slot:
                 reset_url = f"/admin/registration/candidateprofile/{obj.id}/reset-slot/"
                 reset_button = format_html(
@@ -961,8 +1027,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             # Fallback display for any errors
             return format_html('<span style="color: red;">Error: {}</span>', str(e))
     
-    slot_status_display.short_description = "Slot Status"
-    slot_status_display.allow_tags = True
+    slot_status_with_reset.short_description = "Slot Status"
+    slot_status_with_reset.allow_tags = True
     
     def trade_questions_display(self, obj):
         """Display trade, active question set, and exam question counts"""
@@ -1112,8 +1178,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 
     # ---------- changelist (top buttons/links area) ----------
     def changelist_view(self, request, extra_context=None):
-        # Enable inline editing for PO users on marks fields
-        if self._is_po(request):
+        # Enable inline editing for PO_ADMIN users on marks fields
+        if self._is_po_admin(request):
             self.list_editable = (
                 "primary_practical_marks",
                 "primary_viva_marks", 
@@ -1128,29 +1194,28 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 
     # ---------- list columns ----------
     def get_list_display(self, request):
-        if self._is_po(request):
-            # PO view with viva/practical marks columns for editing
+        if self._is_po_admin(request):
+            # PO_ADMIN view: Only marks editing, no slot management, no trade/question info, no slot status
             return (
                 "army_no",
                 "name",
                 "rank",
-                "trade_questions_display",
                 "primary_practical_marks",
                 "primary_viva_marks", 
                 "secondary_practical_marks",
                 "secondary_viva_marks",
-                "slot_status_display",
             )
-        elif self._is_oic(request):
-            # OIC view without viva/practical marks columns
+        elif self._is_center_admin(request):
+            # CENTER_ADMIN view: Slot management and trade info, no marks editing
             return (
                 "army_no",
                 "name",
                 "rank",
                 "trade_questions_display",
-                "slot_status_display",
+                "slot_status_with_reset",  # Show status with reset button
             )
-        # Default view for other users
+        # Default view for superusers and other roles
+        return ("army_no", "name", "rank", "trade_questions_display", "slot_status_with_reset", "created_at")
         return ("army_no", "name", "rank", "trade_questions_display", "slot_status_display", "created_at")
 
     # Allow row links for PO (restore original functionality)
@@ -1161,37 +1226,22 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     # ---------- actions per role ----------
     def get_actions(self, request):
         actions = super().get_actions(request)
-        if self._is_po(request):
-            # PO can export DAT, Photos, Marks, Evaluation Results, and CSV answers
+        if self._is_po_admin(request):
+            # PO_ADMIN can ONLY export data - NO slot management
             return {
                 k: v
                 for k, v in actions.items()
                 if k in ["export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_evaluation_results_dat"]
             }
-        elif self._is_oic(request):
-            # OIC can export everything EXCEPT Excel and CSV answers (only PO exports sensitive exam data)
-            # OIC can also manage exam slots
-            blocked = {"export_candidates_excel", "export_evaluation_results_dat"}
-            allowed_actions = {k: v for k, v in actions.items() if k not in blocked}
-            # Add slot management actions for OIC
-            slot_actions = {
+        elif self._is_center_admin(request):
+            # CENTER_ADMIN can ONLY manage slots - NO exports of sensitive data
+            return {
                 k: v for k, v in actions.items() 
-                if k in ["assign_exam_slots", "create_exam_slots_for_all_candidates", "create_exam_slots_by_trade", "reset_exam_slots", "reassign_exam_slots", "clear_incomplete_sessions"]
+                if k in ["assign_exam_slots", "create_exam_slots_for_all_candidates", "create_exam_slots_by_trade", "reset_exam_slots", "reassign_exam_slots", "clear_incomplete_sessions", "delete_selected_candidates"]
             }
-            allowed_actions.update(slot_actions)
-            return allowed_actions
         else:
-            # Other users cannot export sensitive data including Excel and CSV answers
-            # But they can manage exam slots
-            blocked = {"export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_candidates_excel", "export_evaluation_results_dat"}
-            allowed_actions = {k: v for k, v in actions.items() if k not in blocked}
-            # Add slot management actions for other users
-            slot_actions = {
-                k: v for k, v in actions.items() 
-                if k in ["assign_exam_slots", "create_exam_slots_for_all_candidates", "create_exam_slots_by_trade", "reset_exam_slots", "reassign_exam_slots", "clear_incomplete_sessions"]
-            }
-            allowed_actions.update(slot_actions)
-            return allowed_actions
+            # Superusers get all actions
+            return actions
 
     # ---------- change form (add/change page) ----------
     def get_fields(self, request, obj=None):
@@ -1235,15 +1285,18 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             "secondary_viva_marks",
             "secondary_practical_marks",
         ]
-        if self._is_po(request):
-            # PO can see basic fields plus marks (restore original functionality)
+        if self._is_po_admin(request):
+            # PO_ADMIN can see basic fields plus marks
             return ["army_no", "name", "rank", "trade", "exam_center", "training_center"] + marks_fields
+        elif self._is_center_admin(request):
+            # CENTER_ADMIN can see all fields except marks
+            return base_fields + ["created_at"]
         return base_fields + marks_fields + ["created_at"]
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
-        if self._is_po(request):
-            # PO can edit marks and some basic fields; restrict others
+        if self._is_po_admin(request):
+            # PO_ADMIN can edit marks and some basic fields; restrict others
             readonly += [
                 "user",
                 "unit",
@@ -1270,15 +1323,30 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "has_exam_slot",
                 "slot_assigned_at",
                 "slot_consumed_at",
+                "slot_attempting_at",
                 "slot_assigned_by",
                 "created_at",
             ]
-            # PO can edit: army_no, name, rank, trade, exam_center, training_center, and all marks
+            # PO_ADMIN can edit: army_no, name, rank, trade, exam_center, training_center, and all marks
+        elif self._is_center_admin(request):
+            # CENTER_ADMIN cannot edit marks - marks are readonly
+            readonly += [
+                "primary_practical_marks",
+                "primary_viva_marks",
+                "secondary_practical_marks",
+                "secondary_viva_marks",
+                "slot_assigned_at",
+                "slot_consumed_at", 
+                "slot_attempting_at",
+                "slot_assigned_by",
+                "created_at"
+            ]
         else:
-            # Non-PO: slot fields are readonly (managed via actions)
+            # Superusers: slot fields are readonly (managed via actions)
             readonly += [
                 "slot_assigned_at",
                 "slot_consumed_at", 
+                "slot_attempting_at",
                 "slot_assigned_by",
                 "created_at"
             ]
@@ -1289,14 +1357,14 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         # PO users can now access change forms to edit marks and basic info
         return super().change_view(request, object_id, form_url, extra_context)
 
-    # prevent PO from add/delete
+    # prevent PO_ADMIN from add/delete
     def has_add_permission(self, request):
-        if self._is_po(request):
+        if self._is_po_admin(request):
             return False
         return super().has_add_permission(request)
 
     def has_delete_permission(self, request, obj=None):
-        if self._is_po(request):
+        if self._is_po_admin(request):
             return False
         return super().has_delete_permission(request, obj)
 
@@ -1356,28 +1424,28 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def export_all_dat_view(self, request):
-        # Only PO can export DAT
-        if not self._is_po(request):
+        # Only PO_ADMIN can export DAT
+        if not self._is_po_admin(request):
             return HttpResponseForbidden("Not allowed.")
         qs = self.get_queryset(request)
         return export_candidates_dat(self, request, qs)
 
     def export_all_images_view(self, request):
-        # Only PO can export photos ZIP
-        if not self._is_po(request):
+        # Only PO_ADMIN can export photos ZIP
+        if not self._is_po_admin(request):
             return HttpResponseForbidden("Not allowed.")
         return export_all_candidate_images(self, request)
 
     def export_all_marks_view(self, request):
-        # Only PO can export Marks
-        if not self._is_po(request):
+        # Only PO_ADMIN can export Marks
+        if not self._is_po_admin(request):
             return HttpResponseForbidden("Not allowed.")
         qs = self.get_queryset(request)
         return export_marks_excel(self, request, qs)
 
     def export_all_evaluation_results_view(self, request):
-        # Only PO can export Evaluation Results
-        if not self._is_po(request):
+        # Only PO_ADMIN can export Evaluation Results
+        if not self._is_po_admin(request):
             return HttpResponseForbidden("Not allowed.")
         qs = self.get_queryset(request)
         return export_evaluation_results_dat(self, request, qs)
@@ -1385,18 +1453,22 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     def export_links_js(self, request):
         """
         Generate JavaScript that injects export buttons into the admin sidebar.
-        Only PO users see export buttons.
+        PO_ADMIN users see export buttons. CENTER_ADMIN users see slot management only.
         """
         from django.urls import reverse
         from django.http import HttpResponse
 
-        is_po = self._is_po(request)
+        is_po_admin = self._is_po_admin(request)
+        is_center_admin = self._is_center_admin(request)
 
-        # Export URLs (for PO users)
+        # Export URLs (for PO_ADMIN users)
         dat_url = reverse("admin:registration_candidateprofile_export_all_dat")
         img_url = reverse("admin:registration_candidateprofile_export_all_images")
         marks_url = reverse("admin:registration_candidateprofile_export_all_marks")
         eval_url = reverse("admin:registration_candidateprofile_export_all_evaluation_results")
+        
+        # Bulk Slot Management URL (for CENTER_ADMIN and above)
+        bulk_slot_url = reverse("admin:registration_candidateprofile_bulk_slot_management")
         
         dat_label = export_candidates_dat.short_description or "Export All Answers"
         img_label = export_candidate_images.short_description or "Export All Photos"
@@ -1409,7 +1481,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 (function() {
     try {
         document.addEventListener('DOMContentLoaded', function() {
-            var isPO = {IS_PO};
+            var isPOAdmin = {IS_PO_ADMIN};
+            var isCenterAdmin = {IS_CENTER_ADMIN};
             var candidateChangelistUrl = "{CANDIDATE_CHANGELIST}";
             
             // Only inject on candidate changelist page
@@ -1438,8 +1511,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 var parentLi = candidateLink.closest('li');
                 if (!parentLi) return;
 
-                // Only show export buttons for PO users
-                if (isPO) {
+                // Only show export buttons for PO_ADMIN users
+                if (isPOAdmin) {
                     // Create export wrapper
                     var exportWrapper = document.createElement('div');
                     exportWrapper.className = 'export-section';
@@ -1507,8 +1580,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                     }
                 }
                 
-                // Add Slot Management section for OIC and above (always show)
-                if (isPO || true) { // Show for all users for now, can be restricted later
+                // Add Slot Management section for CENTER_ADMIN only (not for PO_ADMIN)
+                if (isCenterAdmin && !isPOAdmin) {
                     // Create slot management wrapper
                     var slotWrapper = document.createElement('div');
                     slotWrapper.className = 'slot-management-section';
@@ -1557,12 +1630,11 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                     
                     slotWrapper.appendChild(slotButton);
 
-                    // Insert slot management section
-                    var insertAfter = isPO ? exportWrapper : parentLi;
-                    if (insertAfter.nextSibling) {
-                        insertAfter.parentNode.insertBefore(slotWrapper, insertAfter.nextSibling);
+                    // Insert slot management section after candidate link
+                    if (parentLi.nextSibling) {
+                        parentLi.parentNode.insertBefore(slotWrapper, parentLi.nextSibling);
                     } else {
-                        insertAfter.parentNode.appendChild(slotWrapper);
+                        parentLi.parentNode.appendChild(slotWrapper);
                     }
                 }
             } catch (e) {
@@ -1577,7 +1649,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 """
 
         # Safe substitutions
-        js = js_template.replace("{IS_PO}", "true" if is_po else "false")
+        js = js_template.replace("{IS_PO_ADMIN}", "true" if is_po_admin else "false")
+        js = js.replace("{IS_CENTER_ADMIN}", "true" if is_center_admin else "false")
         js = js.replace("{DAT_URL}", dat_url)
         js = js.replace("{IMG_URL}", img_url)
         js = js.replace("{MARKS_URL}", marks_url)
