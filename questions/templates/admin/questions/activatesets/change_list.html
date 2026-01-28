@@ -223,13 +223,20 @@
                                             {% csrf_token %}
                                             <input type="hidden" name="trade_id" value="{{ trade_info.trade.id }}">
                                             <input type="hidden" name="paper_type" value="{{ active_paper_type }}">
-                                            <div class="duration-input-mini">
-                                                <input type="number" name="duration_hours" placeholder="H" min="0" max="8" class="mini-input">
-                                                <span>:</span>
-                                                <input type="number" name="duration_minutes" placeholder="M" min="0" max="59" class="mini-input">
-                                                <span>:</span>
-                                                <input type="number" name="duration_seconds" placeholder="S" min="0" max="59" class="mini-input">
-                                            </div>
+                                            <input type="hidden" name="action" value="set_trade_duration">
+                                            
+                                            <select name="duration_preset" class="duration-select">
+                                                <option value="">⏱️ Set Duration</option>
+                                                <option value="30">30 min</option>
+                                                <option value="60">1 hr</option>
+                                                <option value="90">1:30 hr</option>
+                                                <option value="120">2 hr</option>
+                                                <option value="150">2:30 hr</option>
+                                                <option value="180">3 hr</option>
+                                                <option value="210">3:30 hr</option>
+                                                <option value="240">4 hr</option>
+                                            </select>
+                                            
                                             <button type="submit" class="mini-button">Set</button>
                                         </form>
                                     </td>
@@ -726,19 +733,24 @@
             gap: 8px;
         }
         
-        .duration-input-mini {
-            display: flex;
-            align-items: center;
-            gap: 4px;
+        .duration-cell {
+            color: #212529 !important;
         }
         
-        .mini-input {
-            width: 35px;
-            padding: 4px;
+        .duration-select {
+            padding: 6px 8px;
             border: 1px solid #dee2e6;
             border-radius: 4px;
-            text-align: center;
             font-size: 12px;
+            color: #212529 !important;
+            background: white !important;
+            min-width: 100px;
+        }
+        
+        .duration-select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
         }
         
         .mini-select {
