@@ -217,7 +217,7 @@ def _build_export_workbook(queryset):
         "Center",
         "Photo",
         "Fathers_Name",
-        "Date of Birth",
+        "dob",
         "Rank",
         "Trade",
         "Army_No",
