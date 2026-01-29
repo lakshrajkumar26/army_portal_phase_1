@@ -41,6 +41,9 @@ class QuestionAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 50
     
+    # Fix for template variable errors
+    filter_input_length = 10  # Add missing attribute
+    
     fieldsets = (
         ('Question Details', {
             'fields': ('text', 'part', 'marks', 'trade', 'paper_type', 'question_set')
@@ -155,6 +158,9 @@ class ActivateSetsAdmin(admin.ModelAdmin):
     list_filter = ['active_primary_set', 'active_secondary_set', 'last_updated']
     search_fields = ['trade__name', 'trade__code']
     readonly_fields = ['last_updated']
+    
+    # Fix for template variable errors
+    filter_input_length = 10  # Add missing attribute
     
     def changelist_view(self, request, extra_context=None):
         """
