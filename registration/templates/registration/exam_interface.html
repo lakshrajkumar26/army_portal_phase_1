@@ -1135,15 +1135,46 @@ document.addEventListener("DOMContentLoaded", () => {
   let isShowingWarning = false;
   let maxViolations = Infinity; // INFINITE WARNINGS - NO TERMINATION LIMIT
   let fullscreenCheckInterval = null;
+  
+  // ENHANCED BROWSER COMPATIBILITY DETECTION
+  const browserInfo = {
+    userAgent: navigator.userAgent,
+    isChrome: /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor),
+    isFirefox: /Firefox/.test(navigator.userAgent),
+    isSafari: /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor),
+    isEdge: /Edge/.test(navigator.userAgent),
+    isIE: /Trident/.test(navigator.userAgent),
+    isMobile: /Mobi|Android/i.test(navigator.userAgent),
+    supportsFullscreen: !!(document.documentElement.requestFullscreen || 
+                          document.documentElement.mozRequestFullScreen || 
+                          document.documentElement.webkitRequestFullscreen || 
+                          document.documentElement.msRequestFullscreen),
+    supportsKeyboardEvents: typeof KeyboardEvent !== 'undefined'
+  };
+  
+  // Log browser compatibility info for debugging
+  console.log('🔍 Browser Compatibility Check:', browserInfo);
+  
+  // Store browser info for violation logging
+  window.examBrowserInfo = browserInfo;
+  
   // Removed pointer lock to fix mouse cursor disappearing issue
   
   // ---------------------------
   // NUCLEAR OPTION: ABSOLUTE FULLSCREEN LOCK
   // ---------------------------
   
+  // ENHANCED CROSS-BROWSER FULLSCREEN DETECTION
   function isInFullscreen() {
-    return !!(document.fullscreenElement || document.webkitFullscreenElement || 
-             document.mozFullScreenElement || document.msFullscreenElement);
+    return !!(
+      document.fullscreenElement || 
+      document.webkitFullscreenElement || 
+      document.webkitCurrentFullScreenElement ||
+      document.mozFullScreenElement || 
+      document.msFullscreenElement ||
+      // Additional checks for older browsers
+      (window.innerHeight === screen.height && window.innerWidth === screen.width)
+    );
   }
   
   function showSecurityWarning(reason) {
@@ -1273,9 +1304,20 @@ document.addEventListener("DOMContentLoaded", () => {
       timestamp,
       reason,
       userAgent: navigator.userAgent,
-      url: window.location.href
+      browserInfo: window.examBrowserInfo || {},
+      url: window.location.href,
+      fullscreenSupported: browserInfo?.supportsFullscreen || false,
+      keyboardEventsSupported: browserInfo?.supportsKeyboardEvents || false
     });
     localStorage.setItem('examSecurityViolations', JSON.stringify(violations));
+    
+    // Also log to console for immediate debugging
+    console.log('🚨 Security Violation Details:', {
+      reason,
+      browserInfo: window.examBrowserInfo,
+      violationCount,
+      timestamp
+    });
   }
 
   function saveCurrentProgress() {
@@ -1298,32 +1340,57 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log('Progress saved:', Object.keys(answers).length, 'answers');
   }
 
-  // ---------------------------
-  // NUCLEAR FULLSCREEN CONTROL
-  // ---------------------------
+  // ENHANCED CROSS-BROWSER FULLSCREEN CONTROL
   function enterFullScreen() {
     const el = document.documentElement;
-    const fn = el.requestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-
-    if (!fn) return Promise.reject(new Error("Fullscreen API not supported"));
-    try {
-      const maybe = fn.call(el);
-      return (maybe && typeof maybe.then === "function") ? maybe : Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
+    
+    // Try all possible fullscreen methods for maximum compatibility
+    const methods = [
+      'requestFullscreen',
+      'mozRequestFullScreen', 
+      'webkitRequestFullscreen',
+      'webkitRequestFullScreen',
+      'msRequestFullscreen'
+    ];
+    
+    for (const method of methods) {
+      if (el[method]) {
+        try {
+          const result = el[method]();
+          return result && typeof result.then === "function" ? result : Promise.resolve();
+        } catch (e) {
+          console.warn(`Fullscreen method ${method} failed:`, e);
+          continue;
+        }
+      }
     }
+    
+    return Promise.reject(new Error("No fullscreen API supported"));
   }
 
   function exitFullScreen() {
-    const fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-
-    if (!fn) return Promise.resolve();
-    try {
-      const maybe = fn.call(document);
-      return (maybe && typeof maybe.then === "function") ? maybe : Promise.resolve();
-    } catch {
-      return Promise.resolve();
+    // Try all possible exit methods for maximum compatibility
+    const methods = [
+      'exitFullscreen',
+      'webkitExitFullscreen',
+      'webkitCancelFullScreen',
+      'mozCancelFullScreen',
+      'msExitFullscreen'
+    ];
+    
+    for (const method of methods) {
+      if (document[method]) {
+        try {
+          const result = document[method]();
+          return result && typeof result.then === "function" ? result : Promise.resolve();
+        } catch (e) {
+          console.warn(`Exit fullscreen method ${method} failed:`, e);
+          continue;
+        }
+      }
     }
+    
+    return Promise.resolve();
   }
 
   // NUCLEAR OPTION: Aggressive fullscreen enforcement
@@ -1348,14 +1415,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // Removed pointer lock functions to fix mouse cursor disappearing issue
   // Mouse cursor will remain visible and functional during exam
 
-  // ---------------------------
-  // Start Exam button
-  // ---------------------------
+  // Start Exam button with enhanced compatibility
   const startBtn = document.getElementById("enterFullscreenBtn");
   if (startBtn) {
     console.log("Start button found, adding event listener");
+    console.log("🔍 Fullscreen support:", browserInfo.supportsFullscreen);
+    
     startBtn.addEventListener("click", () => {
       console.log("Start button clicked, attempting to enter fullscreen");
+      
+      if (!browserInfo.supportsFullscreen) {
+        console.warn("⚠️ Fullscreen not supported, starting exam in windowed mode");
+        alert("⚠️ Your browser doesn't support fullscreen mode. The exam will start in windowed mode, but please do not minimize or switch windows during the exam.");
+        
+        // Start exam without fullscreen
+        document.getElementById("fullscreenOverlay").style.display = "none";
+        document.getElementById("examContent").style.display = "block";
+        examStarted = true;
+        
+        // Start monitoring without fullscreen enforcement
+        fullscreenCheckInterval = setInterval(() => {
+          // Only monitor window focus and visibility for non-fullscreen browsers
+          if (!document.hasFocus() && !isShowingWarning && !examSubmitted && !isExamTerminated) {
+            showSecurityWarning("Please keep the exam window focused - Do not switch to other applications");
+          }
+        }, 1000);
+        
+        console.log("🔒 WINDOWED MODE SECURITY ACTIVATED - Focus monitoring enabled");
+        return;
+      }
+      
       enterFullScreen()
         .then(() => {
           console.log("Fullscreen entered successfully, showing exam content");
@@ -1372,7 +1461,30 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(err => {
           console.error("Fullscreen failed:", err);
-          alert("Fullscreen is required to start the exam. Please allow fullscreen and try again.");
+          
+          // Fallback: Start in windowed mode with warning
+          const fallbackConfirm = confirm(
+            "Fullscreen mode failed to activate. This could be due to browser restrictions.\n\n" +
+            "Would you like to start the exam in windowed mode?\n\n" +
+            "⚠️ WARNING: You must not minimize, switch windows, or use keyboard shortcuts during the exam."
+          );
+          
+          if (fallbackConfirm) {
+            document.getElementById("fullscreenOverlay").style.display = "none";
+            document.getElementById("examContent").style.display = "block";
+            examStarted = true;
+            
+            // Start basic monitoring for windowed mode
+            fullscreenCheckInterval = setInterval(() => {
+              if (!document.hasFocus() && !isShowingWarning && !examSubmitted && !isExamTerminated) {
+                showSecurityWarning("Please keep the exam window focused - Do not switch to other applications");
+              }
+            }, 1000);
+            
+            console.log("🔒 FALLBACK WINDOWED MODE ACTIVATED");
+          } else {
+            alert("Exam cannot start without proper security measures. Please try refreshing the page or use a different browser.");
+          }
         });
     });
   } else {
@@ -1427,39 +1539,59 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ---------------------------
-  // NUCLEAR FULLSCREEN CHANGE DETECTION
-  // ---------------------------
+  // ENHANCED CROSS-BROWSER FULLSCREEN CHANGE DETECTION
   
-  // Multiple redundant fullscreen change listeners
+  // Multiple redundant fullscreen change listeners with enhanced compatibility
   function onFullscreenChange() {
     if (!examStarted || examSubmitted || isExamTerminated) return;
     
-    if (!isInFullscreen()) {
-      // IMMEDIATELY try to re-enter fullscreen (no delays)
-      enterFullScreen().catch(() => {
-        // If immediate re-entry fails, show warning
-        if (!isShowingWarning) {
-          if (violationCount >= maxViolations) {
-            terminateExamImmediately("Maximum violations reached - Cannot maintain fullscreen");
-          } else {
-            showSecurityWarning("Fullscreen mode was exited - Please stay in fullscreen during exam");
+    // Add small delay to allow fullscreen state to stabilize
+    setTimeout(() => {
+      if (!isInFullscreen() && examStarted && !examSubmitted && !isExamTerminated) {
+        // IMMEDIATELY try to re-enter fullscreen (no delays)
+        enterFullScreen().catch(() => {
+          // If immediate re-entry fails, show warning
+          if (!isShowingWarning) {
+            if (violationCount >= maxViolations) {
+              terminateExamImmediately("Maximum violations reached - Cannot maintain fullscreen");
+            } else {
+              showSecurityWarning("Fullscreen mode was exited - Please stay in fullscreen during exam");
+            }
           }
-        }
-      });
-    }
+        });
+      }
+    }, 50); // Small delay for browser compatibility
   }
   
-  // Attach to all possible fullscreen change events
-  document.addEventListener("fullscreenchange", onFullscreenChange, true);
-  document.addEventListener("webkitfullscreenchange", onFullscreenChange, true);
-  document.addEventListener("mozfullscreenchange", onFullscreenChange, true);
-  document.addEventListener("MSFullscreenChange", onFullscreenChange, true);
+  // Attach to all possible fullscreen change events for maximum compatibility
+  const fullscreenEvents = [
+    'fullscreenchange',
+    'webkitfullscreenchange', 
+    'webkitfullscreenchange',
+    'mozfullscreenchange',
+    'MSFullscreenChange',
+    'msfullscreenchange'
+  ];
+  
+  fullscreenEvents.forEach(eventName => {
+    document.addEventListener(eventName, onFullscreenChange, true);
+  });
 
-  // Additional redundant monitoring
+  // Additional redundant monitoring for browsers with poor event support
   document.addEventListener("fullscreenerror", () => {
     if (examStarted && !examSubmitted && !isExamTerminated) {
       logSecurityViolation("Fullscreen error detected");
+    }
+  });
+  
+  // Backup fullscreen monitoring using resize events
+  window.addEventListener('resize', () => {
+    if (examStarted && !examSubmitted && !isExamTerminated && !isShowingWarning) {
+      setTimeout(() => {
+        if (!isInFullscreen()) {
+          onFullscreenChange();
+        }
+      }, 100);
     }
   });
 
@@ -1467,12 +1599,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // NUCLEAR KEYBOARD BLOCKING
   // ---------------------------
   
-  // Block at capture phase (earliest possible)
+  // ENHANCED CROSS-BROWSER KEYBOARD BLOCKING
+  // Block at capture phase (earliest possible) with multiple compatibility layers
   document.addEventListener('keydown', (e) => {
     if (!examStarted || isShowingWarning) return;
     
-    // COMPLETELY BLOCK Escape key - INFINITE WARNINGS
-    if (e.key === 'Escape' || e.keyCode === 27 || e.which === 27) {
+    // Get key information with cross-browser compatibility
+    const keyCode = e.keyCode || e.which || 0;
+    const keyName = e.key || e.code || '';
+    const keyNameLower = keyName.toLowerCase();
+    
+    // COMPLETELY BLOCK Escape key - INFINITE WARNINGS (Multiple detection methods)
+    if (keyNameLower === 'escape' || keyCode === 27 || keyName === 'Escape') {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
@@ -1482,8 +1620,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
-    // COMPLETELY BLOCK F11 - INFINITE WARNINGS
-    if (e.key === 'F11' || e.keyCode === 122 || e.which === 122) {
+    // COMPLETELY BLOCK F11 - INFINITE WARNINGS (Multiple detection methods)
+    if (keyNameLower === 'f11' || keyCode === 122 || keyName === 'F11') {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
@@ -1493,8 +1631,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
-    // Block Alt+Tab - INFINITE WARNINGS
-    if ((e.altKey && e.key === 'Tab') || (e.metaKey && e.key === 'Tab')) {
+    // Block Alt+Tab - INFINITE WARNINGS (Enhanced detection)
+    if ((e.altKey && (keyNameLower === 'tab' || keyCode === 9)) || 
+        (e.metaKey && (keyNameLower === 'tab' || keyCode === 9))) {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
@@ -1504,29 +1643,36 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
-    // Block all function keys - INFINITE WARNINGS
-    const functionKeys = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F12"];
-    if (functionKeys.includes(e.key)) {
+    // Block all function keys - INFINITE WARNINGS (Enhanced cross-browser detection)
+    const functionKeyCodes = [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 123]; // F1-F12 (excluding F11=122)
+    const functionKeyNames = ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f12"];
+    
+    if (functionKeyCodes.includes(keyCode) || functionKeyNames.includes(keyNameLower) || 
+        (keyName && keyName.match(/^F(1[0-2]|[1-9])$/))) {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
       
+      // Determine which function key for the message
+      let functionKeyName = keyName || `F${functionKeyCodes.indexOf(keyCode) + 1}` || 'Function Key';
+      if (keyCode === 123) functionKeyName = 'F12';
+      
       // INFINITE WARNINGS - NO TERMINATION
-      showSecurityWarning(`${e.key} key is not allowed during examination`);
+      showSecurityWarning(`${functionKeyName} key is not allowed during examination`);
       return false;
     }
 
-    // Block dangerous combinations - INFINITE WARNINGS
+    // Block dangerous combinations - INFINITE WARNINGS (Enhanced detection)
     const dangerousCombos = [
-      { ctrl: true, shift: true, key: "I", desc: "Developer Tools access" },
-      { ctrl: true, shift: true, key: "J", desc: "Console access" },
-      { ctrl: true, shift: true, key: "C", desc: "Inspector access" },
-      { ctrl: true, key: "W", desc: "Close Tab attempt" },
-      { ctrl: true, key: "T", desc: "New Tab attempt" },
-      { ctrl: true, key: "N", desc: "New Window attempt" },
-      { ctrl: true, key: "R", desc: "Page Refresh attempt" },
-      { alt: true, key: "F4", desc: "Close Window attempt" },
-      { meta: true, key: "q", desc: "Quit Application attempt" },
+      { ctrl: true, shift: true, keys: ["i", "I"], keyCodes: [73], desc: "Developer Tools access" },
+      { ctrl: true, shift: true, keys: ["j", "J"], keyCodes: [74], desc: "Console access" },
+      { ctrl: true, shift: true, keys: ["c", "C"], keyCodes: [67], desc: "Inspector access" },
+      { ctrl: true, keys: ["w", "W"], keyCodes: [87], desc: "Close Tab attempt" },
+      { ctrl: true, keys: ["t", "T"], keyCodes: [84], desc: "New Tab attempt" },
+      { ctrl: true, keys: ["n", "N"], keyCodes: [78], desc: "New Window attempt" },
+      { ctrl: true, keys: ["r", "R"], keyCodes: [82], desc: "Page Refresh attempt" },
+      { alt: true, keys: ["f4", "F4"], keyCodes: [115], desc: "Close Window attempt" },
+      { meta: true, keys: ["q", "Q"], keyCodes: [81], desc: "Quit Application attempt" },
     ];
 
     for (const combo of dangerousCombos) {
@@ -1535,9 +1681,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (combo.shift && !e.shiftKey) matches = false;
       if (combo.alt && !e.altKey) matches = false;
       if (combo.meta && !e.metaKey) matches = false;
-      if (combo.key && e.key !== combo.key) matches = false;
-
-      if (matches) {
+      
+      // Enhanced key matching with multiple methods
+      let keyMatches = false;
+      if (combo.keys && (combo.keys.includes(keyName) || combo.keys.includes(keyNameLower))) {
+        keyMatches = true;
+      }
+      if (combo.keyCodes && combo.keyCodes.includes(keyCode)) {
+        keyMatches = true;
+      }
+      
+      if (matches && keyMatches) {
         e.preventDefault();
         e.stopImmediatePropagation();
         e.stopPropagation();
@@ -1549,16 +1703,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, true); // Capture phase
 
-  // Additional keyup blocking for Escape
+  // Additional keyup blocking for Escape with enhanced compatibility
   document.addEventListener('keyup', (e) => {
     if (examStarted && !isShowingWarning) {
-      if (e.key === 'Escape' || e.keyCode === 27 || e.which === 27) {
+      const keyCode = e.keyCode || e.which || 0;
+      const keyName = e.key || e.code || '';
+      const keyNameLower = keyName.toLowerCase();
+      
+      if (keyNameLower === 'escape' || keyCode === 27 || keyName === 'Escape') {
         e.preventDefault();
         e.stopImmediatePropagation();
         e.stopPropagation();
         return false;
       }
-      if (e.key === 'F11' || e.keyCode === 122 || e.which === 122) {
+      if (keyNameLower === 'f11' || keyCode === 122 || keyName === 'F11') {
         e.preventDefault();
         e.stopImmediatePropagation();
         e.stopPropagation();
@@ -1567,16 +1725,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, true);
 
-  // Additional keypress blocking for Escape
+  // Additional keypress blocking for Escape with enhanced compatibility
   document.addEventListener('keypress', (e) => {
     if (examStarted && !isShowingWarning) {
-      if (e.key === 'Escape' || e.keyCode === 27 || e.which === 27) {
+      const keyCode = e.keyCode || e.which || 0;
+      const keyName = e.key || e.code || '';
+      const keyNameLower = keyName.toLowerCase();
+      
+      if (keyNameLower === 'escape' || keyCode === 27 || keyName === 'Escape') {
         e.preventDefault();
         e.stopImmediatePropagation();
         e.stopPropagation();
         return false;
       }
-      if (e.key === 'F11' || e.keyCode === 122 || e.which === 122) {
+      if (keyNameLower === 'f11' || keyCode === 122 || keyName === 'F11') {
         e.preventDefault();
         e.stopImmediatePropagation();
         e.stopPropagation();
@@ -1929,11 +2091,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  console.log("🔒 NUCLEAR FULLSCREEN LOCK ACTIVATED");
-  console.log("🚨 Monitoring every 10ms - Escape is IMPOSSIBLE");
-  console.log("⚠️ INFINITE WARNINGS - No termination limit");
+  console.log("🔒 ENHANCED CROSS-BROWSER SECURITY SYSTEM ACTIVATED");
+  console.log("🚨 Monitoring with multiple compatibility layers");
+  console.log("⚠️ INFINITE WARNINGS - No termination limit for key violations");
   console.log("🔐 MOUSE LOCK - Modal traps all interactions");
   console.log("🚫 Tab switching = IMMEDIATE TERMINATION");
+  console.log("🔍 Browser Info:", browserInfo);
+  
+  // Add keyboard event testing for debugging
+  window.testKeyboardSecurity = function() {
+    console.log("🧪 Testing keyboard security...");
+    console.log("Try pressing F1-F12, Escape, Alt+Tab, Ctrl+Shift+I, etc.");
+    console.log("Check console for violation logs.");
+  };
+  
+  // Add fullscreen testing for debugging
+  window.testFullscreenSecurity = function() {
+    console.log("🧪 Testing fullscreen security...");
+    console.log("Fullscreen supported:", browserInfo.supportsFullscreen);
+    console.log("Currently in fullscreen:", isInFullscreen());
+    if (examStarted) {
+      console.log("Try pressing F11 or Escape to test fullscreen enforcement.");
+    }
+  };
+  
+  // Make debugging functions available globally
+  window.examSecurityDebug = {
+    browserInfo,
+    isInFullscreen,
+    examStarted: () => examStarted,
+    violationCount: () => violationCount,
+    testKeyboard: window.testKeyboardSecurity,
+    testFullscreen: window.testFullscreenSecurity,
+    getViolations: () => JSON.parse(localStorage.getItem('examSecurityViolations') || '[]')
+  };
 });
 
 // Prevent back/forward navigation

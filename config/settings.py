@@ -342,7 +342,22 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': LOG_LEVEL,
+            'level': 'INFO',  # Suppress DEBUG logs from Django
+            'propagate': False,
+        },
+        'django.utils.autoreload': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Suppress file monitoring DEBUG logs
+            'propagate': False,
+        },
+        'django.template': {
+            'handlers': ['console'],
+            'level': 'INFO',  # Suppress template DEBUG logs
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Suppress SQL query DEBUG logs
             'propagate': False,
         },
         'questions': {
