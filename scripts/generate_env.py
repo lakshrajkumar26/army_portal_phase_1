@@ -42,7 +42,6 @@ def create_env_file(environment, output_path=None):
         secure_cookies = 'True'
         log_level = 'WARNING'
         db_name = 'exam_portal_prod'
-        mongo_db = 'examportal_prod'
     elif environment == 'staging':
         debug = 'False'
         allowed_hosts = 'staging.yourdomain.com'
@@ -50,7 +49,6 @@ def create_env_file(environment, output_path=None):
         secure_cookies = 'True'
         log_level = 'INFO'
         db_name = 'exam_portal_staging'
-        mongo_db = 'examportal_staging'
     else:  # development
         debug = 'True'
         allowed_hosts = 'localhost,127.0.0.1'
@@ -58,7 +56,6 @@ def create_env_file(environment, output_path=None):
         secure_cookies = 'False'
         log_level = 'DEBUG'
         db_name = 'exam_portal'
-        mongo_db = 'examportal'
     
     # Create environment file content
     env_content = f"""# Django Exam Portal Environment Configuration - {environment.upper()}
@@ -84,14 +81,6 @@ DB_USER=exam_portal_user
 DB_PASSWORD={db_password}
 DB_HOST=localhost
 DB_PORT=3306
-
-# =============================================================================
-# MONGODB CONFIGURATION
-# =============================================================================
-MONGO_DB_NAME={mongo_db}
-MONGO_HOST=localhost
-MONGO_PORT=27017
-MONGO_URI=mongodb://localhost:27017/{mongo_db}
 
 # =============================================================================
 # SECURITY HEADERS AND HTTPS

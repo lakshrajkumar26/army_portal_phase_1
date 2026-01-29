@@ -188,22 +188,6 @@ LOGIN_URL = "login"
 
 
 
-# =============================================================================
-# MONGODB CONFIGURATION - Using Environment Variables
-# =============================================================================
-
-from mongoengine import connect
-
-# MongoDB configuration from environment variables
-MONGO_DB_NAME = EnvironmentLoader.get_env_var('MONGO_DB_NAME', 'examportal')
-MONGO_URI = EnvironmentLoader.get_env_var('MONGO_URI', f'mongodb://localhost:27017/{MONGO_DB_NAME}')
-
-connect(
-    db=MONGO_DB_NAME,
-    host=MONGO_URI
-)
-
-
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [
     BASE_DIR / "config" / "static",   # since your static is inside config/
