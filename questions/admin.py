@@ -22,83 +22,83 @@ from .forms import QuestionUploadForm
 # --------------------------------
 # Question Bank (QP Delete)
 # --------------------------------
-@admin.register(Question)
-class QuestionAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "part",
-        "short_text",
-        "formatted_options",
-        "correct_answer_display",
-        "trade",
-        "paper_type",
-        "question_set",
-        "is_active",
-        "created_at",
-    )
-    list_filter = ("paper_type", "is_active", "trade", "part", "question_set")
-    search_fields = ("text", "option_a", "option_b", "option_c", "option_d")
-    ordering = ("-created_at",)
-    list_per_page = 50
+# @admin.register(Question)
+# class QuestionAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "part",
+#         "short_text",
+#         "formatted_options",
+#         "correct_answer_display",
+#         "trade",
+#         "paper_type",
+#         "question_set",
+#         "is_active",
+#         "created_at",
+#     )
+#     list_filter = ("paper_type", "is_active", "trade", "part", "question_set")
+#     search_fields = ("text", "option_a", "option_b", "option_c", "option_d")
+#     ordering = ("-created_at",)
+#     list_per_page = 50
     
-    # Fix for template variable errors
-    filter_input_length = 10  # Add missing attribute
+#     # Fix for template variable errors
+#     filter_input_length = 10  # Add missing attribute
     
-    fieldsets = (
-        ('Question Details', {
-            'fields': ('text', 'part', 'marks', 'trade', 'paper_type', 'question_set')
-        }),
-        ('Options (New Format)', {
-            'fields': ('option_a', 'option_b', 'option_c', 'option_d'),
-            'classes': ('collapse',)
-        }),
-        ('Legacy Options', {
-            'fields': ('options', 'correct_answer'),
-            'classes': ('collapse',)
-        }),
-        ('Status', {
-            'fields': ('is_common', 'is_active')
-        }),
-    )
+#     fieldsets = (
+#         ('Question Details', {
+#             'fields': ('text', 'part', 'marks', 'trade', 'paper_type', 'question_set')
+#         }),
+#         ('Options (New Format)', {
+#             'fields': ('option_a', 'option_b', 'option_c', 'option_d'),
+#             'classes': ('collapse',)
+#         }),
+#         ('Legacy Options', {
+#             'fields': ('options', 'correct_answer'),
+#             'classes': ('collapse',)
+#         }),
+#         ('Status', {
+#             'fields': ('is_common', 'is_active')
+#         }),
+#     )
 
-    def short_text(self, obj):
-        return obj.text[:80] + "..." if len(obj.text) > 80 else obj.text
-    short_text.short_description = "Question Text"
+#     def short_text(self, obj):
+#         return obj.text[:80] + "..." if len(obj.text) > 80 else obj.text
+#     short_text.short_description = "Question Text"
 
-    def formatted_options(self, obj):
-        """Display options in a clean format"""
-        if obj.part not in ['A', 'B']:  # Only show options for MCQ questions
-            return "-"
+#     def formatted_options(self, obj):
+#         """Display options in a clean format"""
+#         if obj.part not in ['A', 'B']:  # Only show options for MCQ questions
+#             return "-"
         
-        options = []
-        if obj.option_a:
-            options.append(f"A: {obj.option_a[:30]}...")
-        if obj.option_b:
-            options.append(f"B: {obj.option_b[:30]}...")
-        if obj.option_c:
-            options.append(f"C: {obj.option_c[:30]}...")
-        if obj.option_d:
-            options.append(f"D: {obj.option_d[:30]}...")
+#         options = []
+#         if obj.option_a:
+#             options.append(f"A: {obj.option_a[:30]}...")
+#         if obj.option_b:
+#             options.append(f"B: {obj.option_b[:30]}...")
+#         if obj.option_c:
+#             options.append(f"C: {obj.option_c[:30]}...")
+#         if obj.option_d:
+#             options.append(f"D: {obj.option_d[:30]}...")
         
-        if options:
-            return " | ".join(options)
-        elif obj.options:
-            return f"Legacy: {str(obj.options)[:50]}..."
-        else:
-            return "No options"
-    formatted_options.short_description = "Options"
+#         if options:
+#             return " | ".join(options)
+#         elif obj.options:
+#             return f"Legacy: {str(obj.options)[:50]}..."
+#         else:
+#             return "No options"
+#     formatted_options.short_description = "Options"
 
-    def correct_answer_display(self, obj):
-        """Display correct answer in a clean format"""
-        if obj.correct_answer:
-            if isinstance(obj.correct_answer, str):
-                return obj.correct_answer
-            elif isinstance(obj.correct_answer, dict):
-                return str(obj.correct_answer)
-            else:
-                return str(obj.correct_answer)
-        return "-"
-    correct_answer_display.short_description = "Correct Answer"
+#     def correct_answer_display(self, obj):
+#         """Display correct answer in a clean format"""
+#         if obj.correct_answer:
+#             if isinstance(obj.correct_answer, str):
+#                 return obj.correct_answer
+#             elif isinstance(obj.correct_answer, dict):
+#                 return str(obj.correct_answer)
+#             else:
+#                 return str(obj.correct_answer)
+#         return "-"
+#     correct_answer_display.short_description = "Correct Answer"
 
 
 # --------------------------------
