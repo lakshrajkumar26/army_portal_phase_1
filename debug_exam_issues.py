@@ -28,7 +28,7 @@ def debug_exam_issues():
         print(f"Trade: {candidate.trade}")
         print(f"Has exam slot: {candidate.has_exam_slot}")
         print(f"Slot assigned at: {candidate.slot_assigned_at}")
-        print(f"Slot consumed at: {candidate.slot_consumed_at}")
+        print(f"Submitted at: {candidate.slot_consumed_at}")
         print(f"Slot status: {candidate.slot_status}")
         print()
         

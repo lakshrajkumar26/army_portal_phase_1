@@ -83,7 +83,7 @@ class CandidateProfile(models.Model):
     # Exam slot management
     has_exam_slot = models.BooleanField(default=False, verbose_name="Has Exam Slot")
     slot_assigned_at = models.DateTimeField(null=True, blank=True, verbose_name="Slot Assigned At")
-    slot_consumed_at = models.DateTimeField(null=True, blank=True, verbose_name="Slot Consumed At")
+    slot_consumed_at = models.DateTimeField(null=True, blank=True, verbose_name="Submitted At")
     slot_attempting_at = models.DateTimeField(null=True, blank=True, verbose_name="Exam Attempt Started At")
     slot_assigned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, 

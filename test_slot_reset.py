@@ -21,7 +21,7 @@ def test_slot_reset():
         print("=== BEFORE RESET ===")
         print(f"Has exam slot: {candidate.has_exam_slot}")
         print(f"Slot assigned at: {candidate.slot_assigned_at}")
-        print(f"Slot consumed at: {candidate.slot_consumed_at}")
+        print(f"Submitted at: {candidate.slot_consumed_at}")
         print(f"Can start exam: {candidate.can_start_exam}")
         print(f"Slot status: {candidate.slot_status}")
         
@@ -32,7 +32,7 @@ def test_slot_reset():
         
         print(f"Has exam slot: {candidate.has_exam_slot}")
         print(f"Slot assigned at: {candidate.slot_assigned_at}")
-        print(f"Slot consumed at: {candidate.slot_consumed_at}")
+        print(f"Submitted at: {candidate.slot_consumed_at}")
         print(f"Can start exam: {candidate.can_start_exam}")
         print(f"Slot status: {candidate.slot_status}")
         
@@ -43,7 +43,7 @@ def test_slot_reset():
         
         print(f"Has exam slot: {candidate.has_exam_slot}")
         print(f"Slot assigned at: {candidate.slot_assigned_at}")
-        print(f"Slot consumed at: {candidate.slot_consumed_at}")
+        print(f"Submitted at: {candidate.slot_consumed_at}")
         print(f"Can start exam: {candidate.can_start_exam}")
         print(f"Slot status: {candidate.slot_status}")
         

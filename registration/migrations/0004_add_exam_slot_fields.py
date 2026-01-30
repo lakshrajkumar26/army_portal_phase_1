@@ -31,6 +31,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='candidateprofile',
             name='slot_consumed_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Slot Consumed At'),
+            field=models.DateTimeField(blank=True, null=True, verbose_name='Submitted At'),
         ),
     ]
