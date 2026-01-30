@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from .models import CandidateProfile
+from .models import CandidateProfile    
 from results.models import CandidateAnswer
 from questions.models import QuestionPaper
 
