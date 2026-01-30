@@ -15,5 +15,13 @@ a {
     font-size: 20px !important;   /* Increase link size */
     text-decoration: none !important; /* remove underline */
 }
+#content-related,
+#recent-actions-module {
+    display: none !important;
+}
 
+/* reclaim full width */
+.dashboard #content {
+    width: 100% !important;
+}
 

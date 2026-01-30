@@ -206,7 +206,11 @@ JAZZMIN_SETTINGS = {
     "site_logo": "img/logo.png",
     "login_logo": "img/logo.png",
     "login_logo_dark": "img/logo.png",
-    
+    "show_recent_actions": False,
+    "recent_actions_limit": 0,
+
+    "show_ui_builder": False,
+
     # Icons configuration
     "icons": {
         "auth": "fas fa-users-cog",
