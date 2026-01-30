@@ -651,8 +651,16 @@ def assign_exam_slots(modeladmin, request, queryset):
             incomplete_sessions.delete()
             sessions_cleared += cleared_count
         
-        if candidate.assign_exam_slot(assigned_by_user=request.user):
+        try:
+            candidate.assign_exam_slot(assigned_by_user=request.user)
             count += 1
+        except ValidationError as e:
+            modeladmin.message_user(
+                request,
+                f"❌ {candidate.army_no}: {str(e)}",
+                level=messages.WARNING
+            )
+
     
     if count == 1:
         message = "1 exam slot was assigned."
@@ -853,6 +861,23 @@ def delete_selected_candidates(modeladmin, request, queryset):
 
 delete_selected_candidates.short_description = "Delete Selected Candidates"
 
+class PrimaryDoneFilter(admin.SimpleListFilter):
+    title = "Primary Exam Status"
+    parameter_name = "primary_done"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Primary Done"),
+            ("no", "Primary Not Done"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(is_primary_completed=True)
+        if self.value() == "no":
+            return queryset.filter(is_primary_completed=False)
+        return queryset
+
 
 # -------------------------
 # Admin Registration
@@ -865,7 +890,13 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     list_display = ("army_no", "name", "user", "rank", "trade", "shift", "slot_status_display", "created_at")
     # base declaration; we will set this per-request in changelist_view
     list_editable = ()
-    list_filter = ("trade", "training_center", "has_exam_slot")
+    list_filter = (
+    "trade",
+    "training_center",
+    "has_exam_slot",
+    PrimaryDoneFilter,   # ✅ NEW
+)
+
 
     # all actions declared; we'll filter them per user in get_actions
     actions = [
@@ -898,7 +929,17 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     def _is_superuser_admin(self, request):
         """Return True if user is superuser."""
         return request.user.is_superuser
-    
+    def primary_status_display(self, obj):
+        if obj.is_primary_completed:
+            return format_html(
+                '<span style="color:#28a745;font-weight:bold;">✅ Done</span>'
+            )
+        return format_html(
+            '<span style="color:#dc3545;font-weight:bold;">❌ Pending</span>'
+        )
+
+    primary_status_display.short_description = "Primary Exam"
+
     def slot_status_display(self, obj):
         """Display slot status with color coding (no reset button for PO_ADMIN)"""
         try:
@@ -1206,14 +1247,15 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "secondary_viva_marks",
             )
         elif self._is_center_admin(request):
-            # CENTER_ADMIN view: Slot management and trade info, no marks editing
             return (
                 "army_no",
                 "name",
                 "rank",
+                "primary_status_display",  # ✅ NEW
                 "trade_questions_display",
-                "slot_status_with_reset",  # Show status with reset button
+                "slot_status_with_reset",
             )
+
         # Default view for superusers and other roles
         return ("army_no", "name", "rank", "trade_questions_display", "slot_status_with_reset", "created_at")
         return ("army_no", "name", "rank", "trade_questions_display", "slot_status_display", "created_at")

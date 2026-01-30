@@ -2,10 +2,11 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.core.exceptions import ValidationError
 from datetime import datetime
 from exams.models import Shift
 from django.core.validators import RegexValidator
+from questions.models import TradePaperActivation
+from django.core.exceptions import ValidationError
 
 class CandidateProfile(models.Model):
     user = models.OneToOneField(
@@ -95,7 +96,8 @@ class CandidateProfile(models.Model):
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    is_primary_completed = models.BooleanField(default=False)
+    is_secondary_completed = models.BooleanField(default=False)
     # Marks validation rules
     TRADE_MARKS = {
         "TTC": {"primary": {"prac": 30, "viva": 10}, "secondary": {"prac": 30, "viva": 10}},
@@ -215,6 +217,17 @@ class CandidateProfile(models.Model):
         
         if self.secondary_viva_marks is not None and self.secondary_viva_marks < 0:
             raise ValidationError({"secondary_viva_marks": "Marks cannot be negative."})
+        # PRIMARY completion
+        # PRIMARY completion (do not unset if already completed via exam)
+        if self.primary_practical_marks is not None and self.primary_viva_marks is not None:
+            self.is_primary_completed = True
+
+
+        # SECONDARY completion
+        if self.secondary_practical_marks is not None and self.secondary_viva_marks is not None:
+            self.is_secondary_completed = True
+        else:
+            self.is_secondary_completed = False
 
     @property
     def can_start_exam(self):
@@ -237,8 +250,16 @@ class CandidateProfile(models.Model):
         # Check if there's an active exam for this candidate's trade
         if not self.trade:
             return False
+        # ✅ BLOCK SECONDARY EXAM IF PRIMARY NOT COMPLETED
+        activation = TradePaperActivation.objects.filter(
+            trade=self.trade,
+            is_active=True
+        ).first()
+
+        if activation and activation.paper_type == "SECONDARY" and not self.is_primary_completed:
+            return False
+
         
-        from questions.models import TradePaperActivation
         active_exam = TradePaperActivation.objects.filter(
             trade=self.trade,
             is_active=True
@@ -247,44 +268,81 @@ class CandidateProfile(models.Model):
         return active_exam
     
     def start_exam_attempt(self):
-        """Mark that the candidate has started attempting the exam (entered exam interface)"""
+        activation = TradePaperActivation.objects.filter(
+            trade=self.trade,
+            is_active=True
+        ).first()
+
+        if activation and activation.paper_type == "SECONDARY":
+            if not self.is_primary_completed:
+                raise ValidationError(
+                    "Primary exam not completed. Cannot start secondary exam."
+                )
+
         if self.has_exam_slot and self.slot_attempting_at is None:
             self.slot_attempting_at = timezone.now()
             self.save(update_fields=['slot_attempting_at'])
             return True
         return False
+
     
     def consume_exam_slot(self):
-        """Mark the exam slot as consumed when exam is actually submitted/completed"""
         if self.has_exam_slot and self.slot_consumed_at is None:
+            active_paper = TradePaperActivation.objects.filter(
+                trade=self.trade,
+                is_active=True
+            ).order_by("paper_type").first()
+
+            if active_paper:
+                if active_paper.paper_type == "PRIMARY":
+                    self.is_primary_completed = True
+                elif active_paper.paper_type == "SECONDARY":
+                    self.is_secondary_completed = True
+
             self.slot_consumed_at = timezone.now()
-            self.save(update_fields=['slot_consumed_at'])
+            self.slot_attempting_at = None
+
+            self.save(update_fields=[
+                'slot_consumed_at',
+                'slot_attempting_at',
+                'is_primary_completed',
+                'is_secondary_completed'
+            ])
+
             return True
         return False
+
+
     
     def assign_exam_slot(self, assigned_by_user=None):
         """
-        Assign a new exam slot to the candidate
-        CRITICAL FIX: Clear incomplete exam sessions to prevent old question set persistence
+        Assign exam slot safely.
+        SECONDARY slot is allowed ONLY if PRIMARY is completed.
         """
-        from questions.models import ExamSession
-        
-        # Clear any incomplete exam sessions to prevent old question set binding
-        incomplete_sessions = ExamSession.objects.filter(
-            user=self.user,
-            completed_at__isnull=True
-        )
-        cleared_count = incomplete_sessions.count()
-        if cleared_count > 0:
-            incomplete_sessions.delete()
-            print(f"✅ Cleared {cleared_count} incomplete sessions for {self.army_no} during slot assignment")
-        
+        # ❌ Prevent overwriting an active slot
+        if self.has_exam_slot and self.slot_consumed_at is None:
+            raise ValidationError("Candidate already has an active exam slot.")
+
+        # Check active paper
+        activation = TradePaperActivation.objects.filter(
+            trade=self.trade,
+            is_active=True
+        ).order_by("paper_type").first()
+
+        if activation and activation.paper_type == "SECONDARY":
+            if not self.is_primary_completed:
+                raise ValidationError(
+                    f"Cannot assign SECONDARY exam slot to {self.name} "
+                    f"(Army No: {self.army_no}) because PRIMARY exam is not completed."
+                )
+
+        # Existing logic (unchanged)
         self.has_exam_slot = True
         self.slot_assigned_at = timezone.now()
-        self.slot_consumed_at = None  # Clear any previous consumption
-        self.slot_attempting_at = None  # Clear any previous attempt
+        self.slot_consumed_at = None
+        self.slot_attempting_at = None
         self.slot_assigned_by = assigned_by_user
-        self.save(update_fields=['has_exam_slot', 'slot_assigned_at', 'slot_consumed_at', 'slot_attempting_at', 'slot_assigned_by'])
+        self.save()
         return True
     
     def reset_exam_slot(self):
