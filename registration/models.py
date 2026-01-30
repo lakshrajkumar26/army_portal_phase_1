@@ -118,6 +118,12 @@ class CandidateProfile(models.Model):
         "HAIR DRESSER": {"secondary": {"prac": 30, "viva": 10}},  
         "SP STAFF": {"secondary": {"prac": 30, "viva": 10}},      
     }
+    # Trades that do NOT have a PRIMARY exam
+    TRADES_WITHOUT_PRIMARY = {
+        "HAIR DRESSER",
+        "MUSICIAN",
+    }
+
     
     def _normalized_trade(self):
         """Normalize trade name for consistent comparison"""
@@ -144,7 +150,13 @@ class CandidateProfile(models.Model):
             # For exact matches like TTC, OCC, DMV, etc.
             return trade
 
-    
+    def has_primary_exam(self):
+        """
+        Returns False for trades that do not have a PRIMARY exam.
+        """
+        normalized_trade = self._normalized_trade()
+        return normalized_trade not in self.TRADES_WITHOUT_PRIMARY
+
     def get_marks_limits(self):
         """Get practical and viva marks limits for this trade"""
         normalized_trade = self._normalized_trade()
@@ -256,8 +268,14 @@ class CandidateProfile(models.Model):
             is_active=True
         ).first()
 
-        if activation and activation.paper_type == "SECONDARY" and not self.is_primary_completed:
+        if (
+            activation
+            and activation.paper_type == "SECONDARY"
+            and self.has_primary_exam()
+            and not self.is_primary_completed
+        ):
             return False
+
 
         
         active_exam = TradePaperActivation.objects.filter(
@@ -274,10 +292,11 @@ class CandidateProfile(models.Model):
         ).first()
 
         if activation and activation.paper_type == "SECONDARY":
-            if not self.is_primary_completed:
+            if self.has_primary_exam() and not self.is_primary_completed:
                 raise ValidationError(
                     "Primary exam not completed. Cannot start secondary exam."
                 )
+
 
         if self.has_exam_slot and self.slot_attempting_at is None:
             self.slot_attempting_at = timezone.now()
@@ -330,11 +349,12 @@ class CandidateProfile(models.Model):
         ).order_by("paper_type").first()
 
         if activation and activation.paper_type == "SECONDARY":
-            if not self.is_primary_completed:
+            if self.has_primary_exam() and not self.is_primary_completed:
                 raise ValidationError(
                     f"Cannot assign SECONDARY exam slot to {self.name} "
                     f"(Army No: {self.army_no}) because PRIMARY exam is not completed."
                 )
+
 
         # Existing logic (unchanged)
         self.has_exam_slot = True
