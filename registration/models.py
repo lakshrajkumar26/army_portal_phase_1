@@ -70,6 +70,9 @@ class CandidateProfile(models.Model):
     secondary_qualification = models.CharField(max_length=150, blank=True, null=True)
     secondary_duration = models.CharField(max_length=50, blank=True, null=True)
     secondary_credits = models.CharField(max_length=50, blank=True, null=True)
+    # Exam slot consumption (SEPARATE)
+    primary_slot_consumed_at = models.DateTimeField(null=True, blank=True)
+    secondary_slot_consumed_at = models.DateTimeField(null=True, blank=True)
 
     # duration = models.CharField(max_length=50, blank=True)
     # credits = models.CharField(max_length=50, blank=True)
@@ -84,7 +87,6 @@ class CandidateProfile(models.Model):
     # Exam slot management
     has_exam_slot = models.BooleanField(default=False, verbose_name="Has Exam Slot")
     slot_assigned_at = models.DateTimeField(null=True, blank=True, verbose_name="Slot Assigned At")
-    slot_consumed_at = models.DateTimeField(null=True, blank=True, verbose_name="Submitted At")
     slot_attempting_at = models.DateTimeField(null=True, blank=True, verbose_name="Exam Attempt Started At")
     slot_assigned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
@@ -98,6 +100,10 @@ class CandidateProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_primary_completed = models.BooleanField(default=False)
     is_secondary_completed = models.BooleanField(default=False)
+    primary_bypass_allowed = models.BooleanField(
+    default=False,
+    help_text="Allow candidate to give SECONDARY without completing PRIMARY (legacy / failed earlier)"
+)
     # Marks validation rules
     TRADE_MARKS = {
         "TTC": {"primary": {"prac": 30, "viva": 10}, "secondary": {"prac": 30, "viva": 10}},
@@ -156,6 +162,13 @@ class CandidateProfile(models.Model):
         """
         normalized_trade = self._normalized_trade()
         return normalized_trade not in self.TRADES_WITHOUT_PRIMARY
+    def can_skip_primary(self):
+        """
+        Returns True if candidate is allowed to bypass PRIMARY exam
+        (legacy / failed earlier candidates).
+        """
+        return self.primary_bypass_allowed
+
 
     def get_marks_limits(self):
         """Get practical and viva marks limits for this trade"""
@@ -241,61 +254,72 @@ class CandidateProfile(models.Model):
         else:
             self.is_secondary_completed = False
 
+    
     @property
     def can_start_exam(self):
-        # First check if candidate has an available exam slot
         if not self.has_exam_slot:
             return False
-            
-        # Check if slot is fully consumed (exam completed)
-        if self.slot_consumed_at:
-            if self.slot_assigned_at and self.slot_assigned_at > self.slot_consumed_at:
-                # Fresh slot assigned after consumption - allow exam
-                pass
-            else:
-                # Slot consumed and no fresh assignment
-                return False
-        
-        # Allow access if slot is available or currently being attempted
-        # (slot_attempting_at is set but slot_consumed_at is not)
-            
-        # Check if there's an active exam for this candidate's trade
+
         if not self.trade:
             return False
-        # ✅ BLOCK SECONDARY EXAM IF PRIMARY NOT COMPLETED
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
             is_active=True
         ).first()
 
+        if not activation:
+            return False
+
+        # ❌ Prevent reattempts
+        if activation.paper_type == "PRIMARY" and self.is_primary_completed:
+            return False
+
+        if activation.paper_type == "SECONDARY" and self.is_secondary_completed:
+            return False
+
+        # ❌ Block SECONDARY without PRIMARY
         if (
-            activation
-            and activation.paper_type == "SECONDARY"
+            activation.paper_type == "SECONDARY"
             and self.has_primary_exam()
             and not self.is_primary_completed
+            and not self.can_skip_primary()
         ):
             return False
 
+        return True
 
-        
-        active_exam = TradePaperActivation.objects.filter(
-            trade=self.trade,
-            is_active=True
-        ).exists()
-        
-        return active_exam
     
     def start_exam_attempt(self):
+        # ❌ Prevent any attempt if already submitted
+        activation = TradePaperActivation.objects.filter(
+            trade=self.trade,
+            is_active=True
+        ).first()
+
+        if activation:
+            if activation.paper_type == "PRIMARY" and self.is_primary_completed:
+                raise ValidationError("Primary exam already completed.")
+            if activation.paper_type == "SECONDARY" and self.is_secondary_completed:
+                raise ValidationError("Secondary exam already completed.")
+
+    
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
             is_active=True
         ).first()
 
         if activation and activation.paper_type == "SECONDARY":
-            if self.has_primary_exam() and not self.is_primary_completed:
+            if (
+                self.has_primary_exam()
+                and not self.is_primary_completed
+                and not self.can_skip_primary()
+            ):
                 raise ValidationError(
                     "Primary exam not completed. Cannot start secondary exam."
                 )
+
 
 
         if self.has_exam_slot and self.slot_attempting_at is None:
@@ -306,116 +330,121 @@ class CandidateProfile(models.Model):
 
     
     def consume_exam_slot(self):
-        if self.has_exam_slot and self.slot_consumed_at is None:
-            active_paper = TradePaperActivation.objects.filter(
-                trade=self.trade,
-                is_active=True
-            ).order_by("paper_type").first()
+        if not self.has_exam_slot:
+            return False
 
-            if active_paper:
-                if active_paper.paper_type == "PRIMARY":
-                    self.is_primary_completed = True
-                elif active_paper.paper_type == "SECONDARY":
-                    self.is_secondary_completed = True
-
-            self.slot_consumed_at = timezone.now()
-            self.slot_attempting_at = None
-
-            self.save(update_fields=[
-                'slot_consumed_at',
-                'slot_attempting_at',
-                'is_primary_completed',
-                'is_secondary_completed'
-            ])
-
-            return True
-        return False
-
-
-    
-    def assign_exam_slot(self, assigned_by_user=None):
-        """
-        Assign exam slot safely.
-        SECONDARY slot is allowed ONLY if PRIMARY is completed.
-        """
-        # ❌ Prevent overwriting an active slot
-        if self.has_exam_slot and self.slot_consumed_at is None:
-            raise ValidationError("Candidate already has an active exam slot.")
-
-        # Check active paper
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
             is_active=True
-        ).order_by("paper_type").first()
+        ).first()
 
-        if activation and activation.paper_type == "SECONDARY":
-            if self.has_primary_exam() and not self.is_primary_completed:
-                raise ValidationError(
-                    f"Cannot assign SECONDARY exam slot to {self.name} "
-                    f"(Army No: {self.army_no}) because PRIMARY exam is not completed."
-                )
+        if not activation:
+            return False
+
+        now = timezone.now()
+
+        if activation.paper_type == "PRIMARY":
+            self.is_primary_completed = True
+            self.primary_slot_consumed_at = now
+
+        elif activation.paper_type == "SECONDARY":
+            self.is_secondary_completed = True
+            self.secondary_slot_consumed_at = now
+
+        self.has_exam_slot = False
+        self.slot_attempting_at = None
+        self.save()
+        return True
 
 
-        # Existing logic (unchanged)
+
+        
+    def assign_exam_slot(self, assigned_by_user=None):
+        if self.has_exam_slot:
+            raise ValidationError("Candidate already has an active exam slot.")
+
+        activation = TradePaperActivation.objects.filter(
+            trade=self.trade,
+            is_active=True
+        ).first()
+
+        if not activation:
+            raise ValidationError("No active exam available for this trade.")
+
+        # ❌ Block PRIMARY reattempt
+        if activation.paper_type == "PRIMARY" and self.is_primary_completed:
+            raise ValidationError("Primary exam already completed.")
+
+        # ❌ Block SECONDARY reattempt
+        if activation.paper_type == "SECONDARY" and self.is_secondary_completed:
+            raise ValidationError("Secondary exam already completed.")
+
+        # ❌ Block SECONDARY if PRIMARY not completed
+        if (
+            activation.paper_type == "SECONDARY"
+            and self.has_primary_exam()
+            and not self.is_primary_completed
+            and not self.can_skip_primary()
+        ):
+            raise ValidationError(
+                "Primary exam not completed. Cannot assign secondary slot."
+            )
+
+        # ✅ ASSIGN SLOT (no slot_consumed_at logic here)
         self.has_exam_slot = True
         self.slot_assigned_at = timezone.now()
-        self.slot_consumed_at = None
         self.slot_attempting_at = None
         self.slot_assigned_by = assigned_by_user
         self.save()
+
         return True
+
     
     def reset_exam_slot(self):
-        """
-        Reset/clear the exam slot
-        CRITICAL FIX: Clear incomplete exam sessions to prevent old question set persistence
-        """
+        activation = TradePaperActivation.objects.filter(
+            trade=self.trade,
+            is_active=True
+        ).first()
+
+        if activation:
+            if activation.paper_type == "PRIMARY" and self.primary_slot_consumed_at:
+                raise ValidationError("Primary exam already submitted. Reset not allowed.")
+
+            if activation.paper_type == "SECONDARY" and self.secondary_slot_consumed_at:
+                raise ValidationError("Secondary exam already submitted. Reset not allowed.")
+
         from questions.models import ExamSession
-        
-        # Clear any incomplete exam sessions to prevent old question set binding
-        incomplete_sessions = ExamSession.objects.filter(
+        ExamSession.objects.filter(
             user=self.user,
             completed_at__isnull=True
-        )
-        cleared_count = incomplete_sessions.count()
-        if cleared_count > 0:
-            incomplete_sessions.delete()
-            print(f"✅ Cleared {cleared_count} incomplete sessions for {self.army_no} during slot reset")
-        
+        ).delete()
+
         self.has_exam_slot = False
         self.slot_assigned_at = None
-        self.slot_consumed_at = None
         self.slot_attempting_at = None
         self.slot_assigned_by = None
-        self.save(update_fields=['has_exam_slot', 'slot_assigned_at', 'slot_consumed_at', 'slot_attempting_at', 'slot_assigned_by'])
+        self.save()
         return True
     
     @property
     def slot_status(self):
-        """Get human-readable slot status"""
-        try:
-            if not self.has_exam_slot:
-                return "No Slot"
-            elif self.slot_consumed_at:
-                try:
-                    return f"Consumed on {self.slot_consumed_at.strftime('%Y-%m-%d %H:%M')}"
-                except (AttributeError, TypeError):
-                    return "Consumed (date unknown)"
-            elif self.slot_attempting_at:
-                try:
-                    return f"Attempting since {self.slot_attempting_at.strftime('%Y-%m-%d %H:%M')}"
-                except (AttributeError, TypeError):
-                    return "Currently Attempting"
-            elif self.slot_assigned_at:
-                try:
-                    return f"Available (assigned {self.slot_assigned_at.strftime('%Y-%m-%d %H:%M')})"
-                except (AttributeError, TypeError):
-                    return "Available (assignment date unknown)"
-            else:
-                return "Available (no assignment date)"
-        except Exception as e:
-            # Fallback for any unexpected errors
-            return f"Status Error: {str(e)}"
+        if self.primary_slot_consumed_at:
+            return f"Primary consumed on {self.primary_slot_consumed_at:%Y-%m-%d %H:%M}"
+
+        if self.secondary_slot_consumed_at:
+            return f"Secondary consumed on {self.secondary_slot_consumed_at:%Y-%m-%d %H:%M}"
+
+        if not self.has_exam_slot:
+            return "No Slot"
+
+        if self.slot_attempting_at:
+            return f"Attempting since {self.slot_attempting_at:%Y-%m-%d %H:%M}"
+
+        if self.slot_assigned_at:
+            return f"Available (assigned {self.slot_assigned_at:%Y-%m-%d %H:%M})"
+
+        return "Available"
+
 
     def __str__(self):
         return f"{self.army_no} - {self.name}"

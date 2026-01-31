@@ -2,6 +2,7 @@
 import csv
 import json
 from datetime import timedelta
+from urllib import request
 import zipfile
 import os as _os  # for urandom
 
@@ -17,7 +18,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 import openpyxl
 from openpyxl.utils import get_column_letter
-
+from django.contrib.admin import actions
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -251,6 +252,7 @@ def _build_export_workbook(queryset):
     serial = 1
 
     for candidate in queryset:
+                # ❌ Skip permanently consumed slots
         # For each candidate, find their exam sessions (these contain the assigned questions)
         sessions = (
             ExamSession.objects
@@ -634,67 +636,83 @@ export_evaluation_results_dat.short_description = "Export Evaluation Results (.d
 # Slot Management Actions
 # -------------------------
 def assign_exam_slots(modeladmin, request, queryset):
-    """Assign exam slots to selected candidates with session cleanup"""
     from questions.models import ExamSession
-    
+
     count = 0
     sessions_cleared = 0
-    
+
     for candidate in queryset:
-        # Clear incomplete sessions before assigning new slot
+        # 🔥 DO NOT CHECK slot_consumed_at
+
+        # Clear incomplete sessions
         incomplete_sessions = ExamSession.objects.filter(
             user=candidate.user,
             completed_at__isnull=True
         )
-        cleared_count = incomplete_sessions.count()
-        if cleared_count > 0:
+        cleared = incomplete_sessions.count()
+        if cleared:
             incomplete_sessions.delete()
-            sessions_cleared += cleared_count
-        
+            sessions_cleared += cleared
+
         try:
             candidate.assign_exam_slot(assigned_by_user=request.user)
             count += 1
-        except ValidationError as e:
-            modeladmin.message_user(
-                request,
-                f"❌ {candidate.army_no}: {str(e)}",
-                level=messages.WARNING
-            )
+        except ValidationError:
+            continue
 
-    
     if count == 1:
-        message = "1 exam slot was assigned."
+        msg = "1 exam slot was assigned."
     else:
-        message = f"{count} exam slots were assigned."
-    
-    if sessions_cleared > 0:
-        message += f" Cleared {sessions_cleared} incomplete sessions to prevent question set conflicts."
-    
-    modeladmin.message_user(request, message)
+        msg = f"{count} exam slots were assigned."
 
-assign_exam_slots.short_description = "🔄 Assign Exam Slots (with cleanup)"
+    if sessions_cleared:
+        msg += f" Cleared {sessions_cleared} incomplete sessions."
+
+    modeladmin.message_user(request, msg)
+
 
 
 def create_exam_slots_for_all_candidates(modeladmin, request, queryset):
     """Create exam slots for ALL candidates (regardless of selection)"""
     from django.contrib import messages
-    
-    # Get all candidates without slots
-    all_candidates = CandidateProfile.objects.filter(has_exam_slot=False)
-    count = 0
-    
-    for candidate in all_candidates:
-        if candidate.assign_exam_slot(assigned_by_user=request.user):
-            count += 1
-    
-    if count == 0:
-        messages.info(request, "All candidates already have exam slots assigned.")
-    elif count == 1:
-        messages.success(request, "1 exam slot was created and assigned.")
-    else:
-        messages.success(request, f"{count} exam slots were created and assigned to all candidates.")
+    from questions.models import TradePaperActivation
 
-create_exam_slots_for_all_candidates.short_description = "🚀 Create Exam Slots for ALL Candidates"
+    all_candidates = CandidateProfile.objects.all()
+    candidates = all_candidates
+
+    activation = TradePaperActivation.objects.filter(
+        is_active=True
+    ).first()
+
+    if not activation:
+        messages.error(request, "No active paper found.")
+        return redirect(request.path)
+
+    if activation.paper_type == "PRIMARY":
+        candidates_without_slots = candidates.filter(
+            has_exam_slot=False,
+            is_primary_completed=False
+        )
+
+    elif activation.paper_type == "SECONDARY":
+        candidates_without_slots = candidates.filter(
+            has_exam_slot=False,
+            is_secondary_completed=False,
+            is_primary_completed=True
+        )
+
+    count = 0
+    for candidate in candidates_without_slots:
+        try:
+            candidate.assign_exam_slot(assigned_by_user=request.user)
+            count += 1
+        except ValidationError:
+            continue
+
+    if count == 0:
+        messages.info(request, "All eligible candidates already have exam slots.")
+    else:
+        messages.success(request, f"{count} exam slots were created and assigned.")
 
 
 def create_exam_slots_by_trade(modeladmin, request, queryset):
@@ -723,8 +741,12 @@ def create_exam_slots_by_trade(modeladmin, request, queryset):
         
         count = 0
         for candidate in trade_candidates:
-            if candidate.assign_exam_slot(assigned_by_user=request.user):
+            try:
+                candidate.assign_exam_slot(assigned_by_user=request.user)
                 count += 1
+            except ValidationError:
+                continue
+
         
         total_count += count
         if count > 0:
@@ -747,6 +769,9 @@ def reset_exam_slots(modeladmin, request, queryset):
     sessions_cleared = 0
     
     for candidate in queryset:
+                # ❌ Skip permanently consumed slots
+        
+
         # Clear incomplete sessions before resetting slot
         incomplete_sessions = ExamSession.objects.filter(
             user=candidate.user,
@@ -781,6 +806,9 @@ def reassign_exam_slots(modeladmin, request, queryset):
     sessions_cleared = 0
     
     for candidate in queryset:
+                # ❌ Skip permanently consumed slots
+        
+
         # Clear incomplete sessions before reassigning
         incomplete_sessions = ExamSession.objects.filter(
             user=candidate.user,
@@ -791,9 +819,17 @@ def reassign_exam_slots(modeladmin, request, queryset):
             incomplete_sessions.delete()
             sessions_cleared += cleared_count
         
-        candidate.reset_exam_slot()
-        if candidate.assign_exam_slot(assigned_by_user=request.user):
+        try:
+            candidate.reset_exam_slot()
+        except ValidationError:
+            continue
+
+        try:
+            candidate.assign_exam_slot(assigned_by_user=request.user)
             count += 1
+        except ValidationError:
+            continue
+
     
     if count == 1:
         message = "1 exam slot was reassigned."
@@ -839,27 +875,7 @@ clear_incomplete_sessions.short_description = "🧹 Clear Incomplete Exam Sessio
 # -------------------------
 # Clear Data Actions
 # -------------------------
-def delete_selected_candidates(modeladmin, request, queryset):
-    """Delete selected candidates with confirmation"""
-    from django.contrib import messages
-    from django.shortcuts import redirect
-    
-    if request.POST.get('confirm_delete'):
-        count = 0
-        for candidate in queryset:
-            candidate.delete()
-            count += 1
-        
-        if count == 1:
-            messages.success(request, "1 candidate was deleted successfully.")
-        else:
-            messages.success(request, f"{count} candidates were deleted successfully.")
-        return redirect(request.path)
-    
-    # Show confirmation page
-    return modeladmin.render_delete_confirmation(request, queryset)
 
-delete_selected_candidates.short_description = "Delete Selected Candidates"
 
 class PrimaryDoneFilter(admin.SimpleListFilter):
     title = "Primary Exam Status"
@@ -878,7 +894,22 @@ class PrimaryDoneFilter(admin.SimpleListFilter):
             return queryset.filter(is_primary_completed=False)
         return queryset
 
+class PrimaryBypassFilter(admin.SimpleListFilter):
+    title = "Primary Bypass"
+    parameter_name = "primary_bypass"
 
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Bypass Enabled"),
+            ("no", "Bypass Disabled"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(primary_bypass_allowed=True)
+        if self.value() == "no":
+            return queryset.filter(primary_bypass_allowed=False)
+        return queryset
 # -------------------------
 # Admin Registration
 # -------------------------
@@ -894,7 +925,8 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     "trade",
     "training_center",
     "has_exam_slot",
-    PrimaryDoneFilter,   # ✅ NEW
+    PrimaryDoneFilter, 
+    PrimaryBypassFilter,  # ✅ NEW
 )
 
 
@@ -912,8 +944,18 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         reset_exam_slots,
         reassign_exam_slots,
         clear_incomplete_sessions,  # New session cleanup action
-        delete_selected_candidates,  # New delete action
+         # New delete action
     ]
+    def primary_bypass_display(self, obj):
+        if obj.primary_bypass_allowed:
+            return format_html(
+                '<span style="color:#fd7e14;font-weight:bold;">⚠️ Bypassed</span>'
+            )
+        return format_html(
+            '<span style="color:#6c757d;">—</span>'
+        )
+
+    primary_bypass_display.short_description = "Primary Bypass"
 
     # ---------- helpers ----------
     def _is_po_admin(self, request):
@@ -925,7 +967,10 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         """Return True if user is CENTER_ADMIN by role."""
         u = request.user
         return getattr(u, "role", None) == "CENTER_ADMIN"
-    
+    def _is_oic(self, request):
+        """Return True if user is OIC by role."""
+        return getattr(request.user, "role", None) == "OIC"
+
     def _is_superuser_admin(self, request):
         """Return True if user is superuser."""
         return request.user.is_superuser
@@ -1052,8 +1097,24 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 status_html = format_html('<span style="color: #6c757d;">{}</span>', status)
             
             # Add reset button if slot exists (only for CENTER_ADMIN)
-            if obj.has_exam_slot:
-                reset_url = f"/admin/registration/candidateprofile/{obj.id}/reset-slot/"
+            from questions.models import TradePaperActivation
+
+            activation = TradePaperActivation.objects.filter(
+                trade=obj.trade,
+                is_active=True
+            ).first()
+
+            if obj.has_exam_slot and activation:
+                if activation.paper_type == "PRIMARY" and obj.primary_slot_consumed_at:
+                    return status_html
+                if activation.paper_type == "SECONDARY" and obj.secondary_slot_consumed_at:
+                    return status_html
+
+                reset_url = reverse(
+                    "admin:registration_candidateprofile_reset_slot",
+                    args=[obj.id]
+                )
+
                 reset_button = format_html(
                     '<div style="text-align: center; margin-top: 6px;">'
                     '<a href="{}" style="background:#dc3545; color:white; padding:3px 8px; text-decoration:none; border-radius:3px; font-size:11px; display:inline-block; transition: all 0.2s ease;" onclick="return confirm(\'Reset exam slot for {}?\')" title="Reset exam slot">🔄 Reset</a>'
@@ -1253,12 +1314,13 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "rank",
                 "primary_status_display",  # ✅ NEW
                 "trade_questions_display",
+                "primary_bypass_display", 
                 "slot_status_with_reset",
             )
 
         # Default view for superusers and other roles
         return ("army_no", "name", "rank", "trade_questions_display", "slot_status_with_reset", "created_at")
-        return ("army_no", "name", "rank", "trade_questions_display", "slot_status_display", "created_at")
+        
 
     # Allow row links for PO (restore original functionality)
     def get_list_display_links(self, request, list_display):
@@ -1276,11 +1338,19 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 if k in ["export_candidates_dat", "export_candidate_images", "export_marks_excel", "export_evaluation_results_dat"]
             }
         elif self._is_center_admin(request):
-            # CENTER_ADMIN can ONLY manage slots - NO exports of sensitive data
             return {
-                k: v for k, v in actions.items() 
-                if k in ["assign_exam_slots", "create_exam_slots_for_all_candidates", "create_exam_slots_by_trade", "reset_exam_slots", "reassign_exam_slots", "clear_incomplete_sessions", "delete_selected_candidates"]
+                k: v for k, v in actions.items()
+                if k in [
+                    "assign_exam_slots",
+                    "create_exam_slots_for_all_candidates",
+                    "create_exam_slots_by_trade",
+                    "reset_exam_slots",
+                    "reassign_exam_slots",
+                    "clear_incomplete_sessions",
+                    "delete_selected",   # ✅ USE DJANGO DEFAULT
+                ]
             }
+
         else:
             # Superusers get all actions
             return actions
@@ -1318,8 +1388,9 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             "shift",
             "has_exam_slot",
             "slot_assigned_at",
-            "slot_consumed_at",
             "slot_assigned_by",
+            "primary_bypass_allowed",
+
         ]
         marks_fields = [
             "primary_viva_marks",
@@ -1364,10 +1435,10 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "shift",
                 "has_exam_slot",
                 "slot_assigned_at",
-                "slot_consumed_at",
                 "slot_attempting_at",
                 "slot_assigned_by",
                 "created_at",
+                "primary_bypass_allowed",
             ]
             # PO_ADMIN can edit: army_no, name, rank, trade, exam_center, training_center, and all marks
         elif self._is_center_admin(request):
@@ -1378,7 +1449,6 @@ class CandidateProfileAdmin(admin.ModelAdmin):
                 "secondary_practical_marks",
                 "secondary_viva_marks",
                 "slot_assigned_at",
-                "slot_consumed_at", 
                 "slot_attempting_at",
                 "slot_assigned_by",
                 "created_at"
@@ -1387,7 +1457,6 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             # Superusers: slot fields are readonly (managed via actions)
             readonly += [
                 "slot_assigned_at",
-                "slot_consumed_at", 
                 "slot_attempting_at",
                 "slot_assigned_by",
                 "created_at"
@@ -1723,9 +1792,32 @@ try {
         return HttpResponse(js, content_type="application/javascript")
 
     def reset_individual_slot(self, request, candidate_id):
-        """Reset exam slot for individual candidate"""
         try:
             candidate = CandidateProfile.objects.get(id=candidate_id)
+        except CandidateProfile.DoesNotExist:
+            messages.error(request, "Candidate not found.")
+            return redirect('admin:registration_candidateprofile_changelist')
+
+        # ❌ Hard lock: never reset after submission
+        from questions.models import TradePaperActivation
+
+        activation = TradePaperActivation.objects.filter(
+            trade=candidate.trade,
+            is_active=True
+        ).first()
+
+        if activation:
+            if activation.paper_type == "PRIMARY" and candidate.primary_slot_consumed_at:
+                messages.error(request, "❌ Primary already submitted. Reset not allowed.")
+                return redirect('admin:registration_candidateprofile_changelist')
+
+            if activation.paper_type == "SECONDARY" and candidate.secondary_slot_consumed_at:
+                messages.error(request, "❌ Secondary already submitted. Reset not allowed.")
+                return redirect('admin:registration_candidateprofile_changelist')
+
+
+        """Reset exam slot for individual candidate"""
+        try:
             old_status = candidate.slot_status
             
             if candidate.reset_exam_slot():
@@ -1743,6 +1835,7 @@ try {
             messages.error(request, f'Error resetting slot: {str(e)}')
         
         return redirect('admin:registration_candidateprofile_changelist')
+    
 
     def bulk_slot_management_view(self, request):
         """Bulk exam slot management interface"""
@@ -1772,38 +1865,89 @@ try {
                 trade_name = "All Trades"
             
             if action == 'create_slots':
-                # Create slots for candidates without them
-                candidates_without_slots = candidates.filter(has_exam_slot=False)
+                from questions.models import TradePaperActivation
+
+                activation = TradePaperActivation.objects.filter(is_active=True).first()
+                if not activation:
+                    messages.error(request, "No active paper found.")
+                    return redirect(request.path)
+
+                if activation.paper_type == "PRIMARY":
+                    candidates_without_slots = candidates.filter(
+                        has_exam_slot=False,
+                        is_primary_completed=False
+                    )
+                else:  # SECONDARY
+                    candidates_without_slots = candidates.filter(
+                        has_exam_slot=False,
+                        is_secondary_completed=False,
+                        is_primary_completed=True
+                    )
+
                 count = 0
                 for candidate in candidates_without_slots:
-                    if candidate.assign_exam_slot(assigned_by_user=request.user):
+                    try:
+                        candidate.assign_exam_slot(assigned_by_user=request.user)
                         count += 1
-                
+                    except ValidationError:
+                        continue
+
+
                 if count == 0:
                     messages.info(request, f'All candidates in {trade_name} already have exam slots.')
                 else:
-                    messages.success(request, f'✅ Created {count} exam slots for {trade_name}. Candidates can now take exams!')
+                    messages.success(
+                        request,
+                        f'✅ Created {count} exam slots for {trade_name}.'
+                    )
+
             
             elif action == 'reset_all_slots':
-                # Reset all slots for selected candidates
+                from questions.models import TradePaperActivation
+
                 candidates_with_slots = candidates.filter(has_exam_slot=True)
                 count = 0
+
                 for candidate in candidates_with_slots:
+                    activation = TradePaperActivation.objects.filter(
+                        trade=candidate.trade,
+                        is_active=True
+                    ).first()
+
+                    # 🔒 Respect paper-specific consumption lock
+                    if activation:
+                        if activation.paper_type == "PRIMARY" and candidate.primary_slot_consumed_at:
+                            continue
+                        if activation.paper_type == "SECONDARY" and candidate.secondary_slot_consumed_at:
+                            continue
+
                     if candidate.reset_exam_slot():
                         count += 1
-                
+
                 if count == 0:
-                    messages.info(request, f'No exam slots to reset for {trade_name}.')
+                    messages.info(request, f'No exam slots eligible for reset for {trade_name}.')
                 else:
-                    messages.warning(request, f'⚠️ Reset {count} exam slots for {trade_name}.')
-            
+                    messages.warning(
+                        request,
+                        f'⚠️ Reset {count} exam slots for {trade_name}.'
+                    )
+
             elif action == 'reassign_all_slots':
                 # Reset and reassign all slots
                 count = 0
                 for candidate in candidates:
-                    candidate.reset_exam_slot()
-                    if candidate.assign_exam_slot(assigned_by_user=request.user):
+                    
+                    try:
+                        candidate.reset_exam_slot()
+                    except ValidationError:
+                        continue
+
+                    try:
+                        candidate.assign_exam_slot(assigned_by_user=request.user)
                         count += 1
+                    except ValidationError:
+                        continue
+
                 
                 messages.success(request, f'🔄 Reassigned {count} exam slots for {trade_name}.')
             
@@ -1816,11 +1960,22 @@ try {
         total_candidates = CandidateProfile.objects.count()
         candidates_with_slots = CandidateProfile.objects.filter(has_exam_slot=True).count()
         candidates_without_slots = total_candidates - candidates_with_slots
-        consumed_slots = CandidateProfile.objects.filter(
-            has_exam_slot=True, 
-            slot_consumed_at__isnull=False
+        consumed_primary = CandidateProfile.objects.filter(
+            primary_slot_consumed_at__isnull=False
         ).count()
-        available_slots = candidates_with_slots - consumed_slots
+
+        consumed_secondary = CandidateProfile.objects.filter(
+            secondary_slot_consumed_at__isnull=False
+        ).count()
+
+
+        active_slots = CandidateProfile.objects.filter(
+            has_exam_slot=True
+        ).count()
+
+        available_slots = active_slots
+
+
         
         # Trade-wise statistics
         trade_stats = []
@@ -1828,19 +1983,30 @@ try {
             trade_total = CandidateProfile.objects.filter(trade=trade).count()
             trade_with_slots = CandidateProfile.objects.filter(trade=trade, has_exam_slot=True).count()
             trade_without_slots = trade_total - trade_with_slots
-            trade_consumed = CandidateProfile.objects.filter(
-                trade=trade, 
-                has_exam_slot=True, 
-                slot_consumed_at__isnull=False
+            trade_primary_consumed = CandidateProfile.objects.filter(
+                trade=trade,
+                primary_slot_consumed_at__isnull=False
             ).count()
-            trade_available = trade_with_slots - trade_consumed
+
+            trade_secondary_consumed = CandidateProfile.objects.filter(
+                trade=trade,
+                secondary_slot_consumed_at__isnull=False
+            ).count()
+
+
+            trade_available = CandidateProfile.objects.filter(
+                trade=trade,
+                has_exam_slot=True
+            ).count()
+
             
             trade_stats.append({
                 'trade': trade,
                 'total': trade_total,
                 'with_slots': trade_with_slots,
                 'without_slots': trade_without_slots,
-                'consumed': trade_consumed,
+                'consumed_primary': trade_primary_consumed,
+                'consumed_secondary': trade_secondary_consumed,
                 'available': trade_available,
             })
         
@@ -1851,10 +2017,12 @@ try {
             'total_candidates': total_candidates,
             'candidates_with_slots': candidates_with_slots,
             'candidates_without_slots': candidates_without_slots,
-            'consumed_slots': consumed_slots,
             'available_slots': available_slots,
             'opts': self.model._meta,
             'has_view_permission': True,
+            'consumed_primary': consumed_primary,
+            'consumed_secondary': consumed_secondary,
+
         }
         
         return render(request, 'admin/registration/bulk_slot_management.html', context)
