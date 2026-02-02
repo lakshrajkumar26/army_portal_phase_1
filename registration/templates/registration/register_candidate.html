@@ -294,11 +294,14 @@
             <input
               type="text"
               name="apaar_id"
-              inputmode="numeric"
-              pattern="[0-9]{12}"
               maxlength="12"
-              {% if form.apaar_id.errors %}class="invalid"{% endif %}
+              minlength="12"
+              pattern="\d{12}"
+              inputmode="numeric"
+              required
+              placeholder="Enter 12-digit APAAR ID"
             />
+
             <div class="field-error" id="error-apaar_id">
               {% for error in form.apaar_id.errors %}
                 {{ error }}<br>

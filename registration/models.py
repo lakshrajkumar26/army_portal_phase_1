@@ -25,7 +25,16 @@ class CandidateProfile(models.Model):
     name = models.CharField(max_length=150)
     dob = models.CharField(max_length=10, verbose_name="Date of Birth")
     doe = models.DateField(verbose_name="Date of Enrolment")
-    aadhar_number = models.CharField(max_length=12, blank=True)
+    aadhar_number = models.CharField(
+        max_length=12,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{12}$',
+                message="Aadhaar number must be exactly 12 digits."
+            )
+        ]
+    )
+
     mobile_no = models.CharField(
         max_length=10,
         verbose_name="Mobile No (Linked to Aadhaar Card)",
@@ -44,12 +53,12 @@ class CandidateProfile(models.Model):
         validators=[
             RegexValidator(
                 regex=r'^\d{12}$',
-                message="Enter a valid 12-digit APAAR ID."
+                message="APAAR ID must be exactly 12 digits."
             )
-        ],
-        null=True,
-        blank=True
+        ]
     )
+
+
 
     father_name = models.CharField(max_length=150)
     photograph = models.ImageField(upload_to="photos/", blank=True, null=True)
@@ -168,6 +177,21 @@ class CandidateProfile(models.Model):
         (legacy / failed earlier candidates).
         """
         return self.primary_bypass_allowed
+    def get_next_exam_type(self):
+        """
+        Decide which exam should be taken next,
+        respecting PRIMARY bypass.
+        """
+        if self.has_primary_exam():
+            if self.is_primary_completed:
+                return "SECONDARY"
+
+            if self.can_skip_primary():
+                return "SECONDARY"
+
+            return "PRIMARY"
+
+        return "SECONDARY"
 
 
     def get_marks_limits(self):
@@ -263,10 +287,15 @@ class CandidateProfile(models.Model):
         if not self.trade:
             return False
 
+        exam_type = self.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
+            paper_type=exam_type,
             is_active=True
         ).first()
+
 
         if not activation:
             return False
@@ -292,10 +321,15 @@ class CandidateProfile(models.Model):
     
     def start_exam_attempt(self):
         # ❌ Prevent any attempt if already submitted
+        exam_type = self.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
+            paper_type=exam_type,
             is_active=True
         ).first()
+
 
         if activation:
             if activation.paper_type == "PRIMARY" and self.is_primary_completed:
@@ -305,10 +339,15 @@ class CandidateProfile(models.Model):
 
     
 
+        exam_type = self.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
+            paper_type=exam_type,
             is_active=True
         ).first()
+
 
         if activation and activation.paper_type == "SECONDARY":
             if (
@@ -333,10 +372,15 @@ class CandidateProfile(models.Model):
         if not self.has_exam_slot:
             return False
 
+        exam_type = self.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
+            paper_type=exam_type,
             is_active=True
         ).first()
+
 
         if not activation:
             return False
@@ -363,10 +407,15 @@ class CandidateProfile(models.Model):
         if self.has_exam_slot:
             raise ValidationError("Candidate already has an active exam slot.")
 
+        exam_type = self.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
+            paper_type=exam_type,
             is_active=True
         ).first()
+
 
         if not activation:
             raise ValidationError("No active exam available for this trade.")
@@ -401,10 +450,15 @@ class CandidateProfile(models.Model):
 
     
     def reset_exam_slot(self):
+        exam_type = self.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=self.trade,
+            paper_type=exam_type,
             is_active=True
         ).first()
+
 
         if activation:
             if activation.paper_type == "PRIMARY" and self.primary_slot_consumed_at:
@@ -429,10 +483,10 @@ class CandidateProfile(models.Model):
     @property
     def slot_status(self):
         if self.primary_slot_consumed_at:
-            return f"Primary consumed on {self.primary_slot_consumed_at:%Y-%m-%d %H:%M}"
+            return f"Primary submitted on {self.primary_slot_consumed_at:%Y-%m-%d %H:%M}"
 
         if self.secondary_slot_consumed_at:
-            return f"Secondary consumed on {self.secondary_slot_consumed_at:%Y-%m-%d %H:%M}"
+            return f"Secondary submitted on {self.secondary_slot_consumed_at:%Y-%m-%d %H:%M}"
 
         if not self.has_exam_slot:
             return "No Slot"

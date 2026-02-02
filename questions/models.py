@@ -39,7 +39,7 @@ HARD_CODED_TRADE_CONFIG = {
     "SP STAFF": {"total_questions": 43, "part_distribution": {"A": 15, "B": 0, "C": 5, "D": 10, "E": 3, "F": 10}},
 }
 
-HARD_CODED_COMMON_DISTRIBUTION = {"A": 20, "B": 0, "C": 5, "D": 15, "E": 4, "F": 10}
+HARD_CODED_COMMON_DISTRIBUTION = {"A": 15, "B": 0, "C": 5, "D": 10, "E": 3, "F": 10}
 
 
 def _normalize_trade_name(name: str) -> str:
@@ -323,6 +323,7 @@ class QuestionPaper(models.Model):
                 paper=self,
                 user=user,
                 trade=None if is_secondary else trade,
+                exam_type=paper_type, 
                 started_at=timezone.now(),
                 duration=self.exam_duration,
             )
@@ -369,7 +370,7 @@ class QuestionPaper(models.Model):
                         paper_type="SECONDARY", 
                         is_common=True,
                         question_set=active_question_set,
-                        text__icontains=trade.code.upper() if trade else ""
+                        
                     )
                 else:
                     # ✅ CRITICAL: Filter by trade, paper type, AND active question set
@@ -381,22 +382,22 @@ class QuestionPaper(models.Model):
 
                 selected = list(qs.order_by("?")[:count])
 
-                if len(selected) < count:
-                    # Enhanced error message with debugging info
-                    available_sets = Question.objects.filter(
-                        is_active=True, 
-                        part=part,
-                        paper_type=paper_type,
-                        trade=trade if not is_secondary else None
-                    ).values_list('question_set', flat=True).distinct()
+                # if len(selected) < count:
+                #     # Enhanced error message with debugging info
+                #     available_sets = Question.objects.filter(
+                #         is_active=True, 
+                #         part=part,
+                #         paper_type=paper_type,
+                #         trade=trade if not is_secondary else None
+                #     ).values_list('question_set', flat=True).distinct()
                     
-                    raise ValidationError(
-                        f"❌ CRITICAL: Not enough questions for {trade} {paper_type} part {part} "
-                        f"from question set {active_question_set}. "
-                        f"Required {count}, found {len(selected)}. "
-                        f"Available sets for this trade: {list(available_sets)}. "
-                        f"Check question set activation in admin."
-                    )
+                #     raise ValidationError(
+                #         f"❌ CRITICAL: Not enough questions for {trade} {paper_type} part {part} "
+                #         f"from question set {active_question_set}. "
+                #         f"Required {count}, found {len(selected)}. "
+                #         f"Available sets for this trade: {list(available_sets)}. "
+                #         f"Check question set activation in admin."
+                #     )
 
                 if shuffle_within_parts:
                     random.shuffle(selected)
@@ -453,7 +454,10 @@ class ExamSession(models.Model):
     duration = models.DurationField(null=True, blank=True)
     total_questions = models.PositiveIntegerField(default=0)
     score = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-
+    exam_type = models.CharField(
+        max_length=20,
+        choices=[("PRIMARY", "Primary"), ("SECONDARY", "Secondary")]
+    )
     class Meta:
         ordering = ["-started_at"]
 
@@ -729,12 +733,12 @@ class ActivateSets(models.Model):
         if paper_type == 'SECONDARY':
             # For SECONDARY questions, check if this trade actually has SECONDARY data
             # by looking for questions that mention the trade code in their text
-            trade_code = self.trade.code.upper()
+            
             queryset = Question.objects.filter(
                 paper_type='SECONDARY',
                 is_common=True,
                 is_active=True,
-                text__icontains=trade_code
+                
             )
         else:
             # Primary questions: filter by trade and paper_type
@@ -760,7 +764,7 @@ class ActivateSets(models.Model):
                 is_common=True,
                 question_set=question_set,
                 is_active=True,
-                text__icontains=trade_code
+                
             ).count()
             return secondary_count
         else:

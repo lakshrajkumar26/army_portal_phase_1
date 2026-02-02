@@ -111,7 +111,7 @@ def exam_interface(request):
                 messages.error(request, "No exam slot assigned. Contact admin to assign an exam slot.")
                 logout(request)
                 return redirect(f"{reverse('login')}?no_slot=1")
-            elif candidate.slot_consumed_at:
+            elif candidate.primary_slot_consumed_at or candidate.secondary_slot_consumed_at:
                 # Check if this is a fresh slot (assigned after consumption)
                 if candidate.slot_assigned_at and candidate.slot_consumed_at and candidate.slot_assigned_at > candidate.slot_consumed_at:
                     # Fresh slot assigned after consumption - allow exam
@@ -130,13 +130,16 @@ def exam_interface(request):
         # -----------------------------
         # STEP 1: Resolve activation
         # -----------------------------
+        # Decide exam type explicitly
+        exam_type = candidate.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=trade,
+            paper_type=exam_type,
             is_active=True
-        ).order_by(
-            # PRIMARY preferred over SECONDARY
-            "paper_type"
         ).first()
+
 
         if not activation:
             messages.error(request, f"No active exam found for trade {trade}. Contact admin.")
@@ -185,6 +188,7 @@ def exam_interface(request):
         session = ExamSession.objects.filter(
             user=request.user,
             paper=paper,
+            exam_type=activation.paper_type,
             completed_at__isnull=True
         ).order_by("-started_at").first()
 
@@ -197,8 +201,10 @@ def exam_interface(request):
                 
                 session = paper.generate_for_candidate(
                     user=request.user,
-                    trade=trade
+                    trade=trade,
                 )
+                session.exam_type = activation.paper_type
+                session.save(update_fields=["exam_type"])
 
                 if activation.exam_duration:
                     session.duration = activation.exam_duration
@@ -236,11 +242,15 @@ def exam_interface(request):
                         try:
                             question = Question.objects.get(id=qid)
                             CandidateAnswer.objects.update_or_create(
-                                candidate=candidate,
-                                paper=paper,
-                                question=question,
-                                defaults={"answer": value},
-                            )
+                            candidate=candidate,
+                            paper=paper,
+                            question=question,
+                            defaults={
+                                "answer": value,
+                                "exam_type": activation.paper_type,  # PRIMARY or SECONDARY
+                            },
+                        )
+
                         except Question.DoesNotExist:
                             continue
 
@@ -372,10 +382,15 @@ def debug_exam(request):
             })
 
         # Get activation
+        exam_type = candidate.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=trade,
+            paper_type=exam_type,
             is_active=True
-        ).order_by("paper_type").first()
+        ).first()
+
 
         if not activation:
             return render(request, "registration/debug_exam.html", {
@@ -397,14 +412,17 @@ def debug_exam(request):
         session = ExamSession.objects.filter(
             user=request.user,
             paper=paper,
+            exam_type=activation.paper_type,
             completed_at__isnull=True
         ).order_by("-started_at").first()
 
         if not session:
             session = paper.generate_for_candidate(
                 user=request.user,
-                trade=trade
+                trade=trade,              
             )
+            session.exam_type = activation.paper_type
+            session.save(update_fields=["exam_type"])
 
         return render(request, "registration/debug_exam.html", {
             "candidate": candidate,
@@ -432,10 +450,16 @@ def simple_exam_test(request):
             })
 
         # Get activation
+        # Decide exam type explicitly
+        exam_type = candidate.get_next_exam_type()
+
+
         activation = TradePaperActivation.objects.filter(
             trade=trade,
+            paper_type=exam_type,
             is_active=True
-        ).order_by("paper_type").first()
+        ).first()
+
 
         if not activation:
             return render(request, "registration/simple_exam_test.html", {
@@ -457,15 +481,19 @@ def simple_exam_test(request):
         session = ExamSession.objects.filter(
             user=request.user,
             paper=paper,
+            exam_type=activation.paper_type,
             completed_at__isnull=True
         ).order_by("-started_at").first()
 
         if not session:
             session = paper.generate_for_candidate(
                 user=request.user,
-                trade=trade
+                trade=trade,
             )
 
+            session.exam_type = activation.paper_type
+            session.save(update_fields=["exam_type"])
+            
         return render(request, "registration/simple_exam_test.html", {
             "candidate": candidate,
             "paper": paper,

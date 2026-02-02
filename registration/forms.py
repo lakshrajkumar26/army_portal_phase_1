@@ -35,7 +35,11 @@ class CandidateRegistrationForm(forms.ModelForm):
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("This username is already taken. Please choose another.")
         return username
-    
+    def clean_apaar_id(self):
+        apaar = self.cleaned_data.get("apaar_id")
+        if not apaar or not apaar.isdigit() or len(apaar) != 12:
+            raise forms.ValidationError("APAAR ID must be exactly 12 digits.")
+        return apaar
     def clean(self):
         cleaned_data = super().clean()
         

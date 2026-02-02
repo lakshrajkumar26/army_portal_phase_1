@@ -7,12 +7,17 @@ from django.conf import settings
 # CandidateProfile is in registration app; QuestionPaper & Question in questions app
 
 class CandidateAnswer(models.Model):
+    EXAM_TYPES = (
+        ("PRIMARY", "Primary"),
+        ("SECONDARY", "Secondary"),
+    )
+
     candidate = models.ForeignKey(
         "registration.CandidateProfile",
         on_delete=models.CASCADE,
         related_name="answers",
     )
-    # Make paper nullable and set to NULL when the QuestionPaper is deleted.
+
     paper = models.ForeignKey(
         "questions.QuestionPaper",
         on_delete=models.SET_NULL,
@@ -20,29 +25,36 @@ class CandidateAnswer(models.Model):
         blank=True,
         related_name="candidate_answers",
     )
+
     question = models.ForeignKey(
         "questions.Question",
-        on_delete=models.PROTECT,   # keep questions safe; answers remain referencing question
+        on_delete=models.PROTECT,
         related_name="candidate_answers",
     )
-    answer = models.TextField(blank=True, null=True)
-    submitted_at = models.DateTimeField(auto_now_add=True)
 
+    answer = models.TextField(blank=True, null=True)
+
+    # ✅ ADD THIS (MOST IMPORTANT)
+    exam_type = models.CharField(
+        max_length=10,
+        choices=EXAM_TYPES,
+    )
+
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = (
+            "candidate",
+            "paper",
+            "question",
+            "exam_type",
+        )
+        indexes = [
+            models.Index(fields=["candidate", "exam_type"]),
+            models.Index(fields=["paper", "exam_type"]),
+        ]
     def __str__(self):
-        # guard against paper being NULL
         paper_label = getattr(self.paper, "question_paper", "deleted-paper")
         army_no = getattr(self.candidate, "army_no", str(self.candidate)) if self.candidate else "unknown"
-        return f"{army_no} - {paper_label} - {self.question_id}"
+        return f"{army_no} - {self.exam_type} - {self.question_id}"
 
-    @property
-    def effective_category(self) -> str:
-        """
-        Computed label for downstream exports:
-        - 'secondary' if the paper was common
-        - 'primary' if the paper was trade-specific
-        If paper is NULL, try to infer from question/paper history; fallback to 'unknown'
-        """
-        if self.paper is None:
-            return "unknown"
-        is_common = getattr(self.paper, "is_common", False)
-        return "secondary" if is_common else "primary"
+

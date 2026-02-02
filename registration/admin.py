@@ -270,42 +270,49 @@ def _build_export_workbook(queryset):
             for paper in papers_with_answers:
                 questions = paper.questions.all().order_by("id")
                 for q in questions:
-                    ans = CandidateAnswer.objects.filter(candidate=candidate, paper=paper, question=q).first()
+                    ans = CandidateAnswer.objects.filter(
+                        candidate=candidate,
+                        paper=paper,
+                        question=q,
+                        exam_type=paper.question_paper,  # PRIMARY / SECONDARY
+                    ).first()
                     row = [
-                        serial,
-                        candidate.name,
-                        candidate.exam_center,
-                        candidate.photograph.url if candidate.photograph else "",
-                        candidate.father_name,
-                        candidate.dob,
-                        candidate.rank,
-                        candidate.trade.name if candidate.trade else "",
-                        candidate.army_no,
-                        candidate.aadhar_number,
-                        candidate.mobile_no,
-                        candidate.apaar_id,
-                        candidate.primary_qualification,
-                        candidate.primary_duration,
-                        candidate.primary_credits,
-                        candidate.secondary_qualification,
-                        candidate.secondary_duration,
-                        candidate.secondary_credits,
-                        candidate.nsqf_level,
-                        candidate.training_center,
-                        candidate.district,
-                        candidate.state,
-                        candidate.primary_viva_marks,
-                        candidate.secondary_viva_marks,
-                        candidate.primary_practical_marks,
-                        candidate.secondary_practical_marks,
-                        candidate.army_no,
-                        "Secondary" if getattr(paper, "is_common", False) else "Primary",
-                        q.part,
-                        q.text,
-                        ans.answer if ans and ans.answer is not None else "N/A",
-                        getattr(q, "correct_answer", None),
-                        q.marks if hasattr(q, "marks") else None,
-                    ]
+    serial,
+    candidate.name,
+    candidate.exam_center,
+    candidate.photograph.url if candidate.photograph else "",
+    candidate.father_name,
+    candidate.dob,
+    candidate.rank,
+    candidate.trade.name if candidate.trade else "",
+    candidate.army_no,
+    candidate.aadhar_number,
+    candidate.mobile_no,
+    candidate.apaar_id,
+    candidate.primary_qualification,
+    candidate.primary_duration,
+    candidate.primary_credits,
+    candidate.secondary_qualification,
+    candidate.secondary_duration,
+    candidate.secondary_credits,
+    candidate.nsqf_level,
+    candidate.training_center,
+    candidate.district,
+    candidate.state,
+    candidate.primary_viva_marks,
+    candidate.secondary_viva_marks,
+    candidate.primary_practical_marks,
+    candidate.secondary_practical_marks,
+    candidate.army_no,
+    paper.question_paper,
+
+    q.part,
+    q.text,
+    ans.answer if ans and ans.answer is not None else "N/A",
+    getattr(q, "correct_answer", None),
+    q.marks if hasattr(q, "marks") else None,
+]
+
                     ws.append(row)
                     serial += 1
             continue
@@ -320,9 +327,18 @@ def _build_export_workbook(queryset):
                 # Try to fetch CandidateAnswer by candidate + paper + question.
                 # If paper is None (deleted paper), search for any CandidateAnswer matching candidate+question.
                 if paper is not None:
-                    ans = CandidateAnswer.objects.filter(candidate=candidate, paper=paper, question=q).first()
+                    ans = CandidateAnswer.objects.filter(
+                        candidate=candidate,
+                        paper=paper,
+                        question=q,
+                        exam_type=session.exam_type,   # 🔥 REQUIRED
+                    ).first()
                 else:
-                    ans = CandidateAnswer.objects.filter(candidate=candidate, question=q).first()
+                    ans = CandidateAnswer.objects.filter(
+                        candidate=candidate,
+                        question=q,
+                        exam_type=session.exam_type,   # 🔥 REQUIRED
+                    ).first()
 
                 row = [
                     serial,
@@ -352,7 +368,8 @@ def _build_export_workbook(queryset):
                     candidate.primary_practical_marks,
                     candidate.secondary_practical_marks,
                     candidate.army_no,
-                    "Secondary" if (paper and getattr(paper, "is_common", False)) else ("Primary" if paper else "Unknown"),
+                    paper.question_paper,
+
                     q.part,
                     q.text,
                     ans.answer if ans and ans.answer is not None else "N/A",
@@ -762,17 +779,13 @@ create_exam_slots_by_trade.short_description = "🎯 Create Exam Slots by Trade 
 
 
 def reset_exam_slots(modeladmin, request, queryset):
-    """Reset/clear exam slots for selected candidates with session cleanup"""
     from questions.models import ExamSession
     
     count = 0
     sessions_cleared = 0
     
     for candidate in queryset:
-                # ❌ Skip permanently consumed slots
-        
-
-        # Clear incomplete sessions before resetting slot
+        # Clear incomplete sessions first
         incomplete_sessions = ExamSession.objects.filter(
             user=candidate.user,
             completed_at__isnull=True
@@ -782,20 +795,26 @@ def reset_exam_slots(modeladmin, request, queryset):
             incomplete_sessions.delete()
             sessions_cleared += cleared_count
         
-        if candidate.reset_exam_slot():
-            count += 1
+        try:
+            if candidate.reset_exam_slot():
+                count += 1
+        except ValidationError as e:
+            # ✅ DO NOT CRASH ADMIN
+            modeladmin.message_user(
+                request,
+                f"{candidate.army_no} – {e.messages[0]}",
+                level=messages.WARNING
+            )
+            continue
     
-    if count == 1:
-        message = "1 exam slot was reset."
-    else:
-        message = f"{count} exam slots were reset."
-    
-    if sessions_cleared > 0:
-        message += f" Cleared {sessions_cleared} incomplete sessions."
-    
-    modeladmin.message_user(request, message)
+    if count:
+        msg = f"{count} exam slot(s) were reset."
+        if sessions_cleared:
+            msg += f" Cleared {sessions_cleared} incomplete sessions."
+        modeladmin.message_user(request, msg)
 
-reset_exam_slots.short_description = "🗑️ Reset Exam Slots (with cleanup)"
+    
+
 
 
 def reassign_exam_slots(modeladmin, request, queryset):
@@ -821,8 +840,14 @@ def reassign_exam_slots(modeladmin, request, queryset):
         
         try:
             candidate.reset_exam_slot()
-        except ValidationError:
+        except ValidationError as e:
+            modeladmin.message_user(
+                request,
+                f"{candidate.army_no} – {e.messages[0]}",
+                level=messages.WARNING
+            )
             continue
+
 
         try:
             candidate.assign_exam_slot(assigned_by_user=request.user)
@@ -1234,7 +1259,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
             
             return format_html(
                 '<div style="text-align: center; min-width: 180px;">'
-                '<strong style="color: #2c3e50; font-size: 13px; display: block; margin-bottom: 6px;">{}</strong>'
+                '<strong style="color: #ffffff; font-size: 13px; display: block; margin-bottom: 6px;">{}</strong>'
                 '<div style="margin-bottom: 4px;">'
                 '<span style="background: {}; color: {}; padding: 3px 8px; border-radius: 4px; border: 1px solid {}; font-size: 11px; font-weight: bold;">'
                 '{} {} Set {}'

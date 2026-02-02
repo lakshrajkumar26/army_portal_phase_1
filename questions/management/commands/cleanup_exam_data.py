@@ -168,7 +168,9 @@ class Command(BaseCommand):
                 # Delete in proper order to handle foreign key constraints
                 # 1. Delete candidate answers first (they reference questions and candidates)
                 self.safe_delete_with_cascade(CandidateAnswer, "candidate answers", dry_run, debug)
+                # 1.5 Delete candidate-paper-slot assignments (CRITICAL)
                 
+
                 # 2. Delete exam questions (they reference questions and sessions)
                 self.safe_delete_with_cascade(ExamQuestion, "exam questions", dry_run, debug)
                 
@@ -190,15 +192,23 @@ class Command(BaseCommand):
                     candidates_with_slots = CandidateProfile.objects.filter(has_exam_slot=True).count()
                     self.stdout.write(f"Candidates with slots to reset: {candidates_with_slots}")
                     
-                    if candidates_with_slots > 0:
-                        CandidateProfile.objects.update(
-                            has_exam_slot=False,
-                            slot_assigned_at=None,
-                            slot_consumed_at=None,
-                            slot_assigned_by=None
-                        )
-                        self.stdout.write(self.style.SUCCESS(f"✅ Reset {candidates_with_slots} exam slots"))
-                        self.log_debug(f"Reset exam slots for {candidates_with_slots} candidates", debug)
+                    CandidateProfile.objects.update(
+                        has_exam_slot=False,
+
+                        slot_assigned_at=None,
+                        slot_attempting_at=None,
+                        slot_assigned_by=None,
+
+                        primary_slot_consumed_at=None,
+                        secondary_slot_consumed_at=None,
+
+                        is_primary_completed=False,
+                        is_secondary_completed=False,
+                    )
+
+
+                    self.stdout.write(self.style.SUCCESS(f"✅ Reset {candidates_with_slots} exam slots"))
+                    self.log_debug(f"Reset exam slots for {candidates_with_slots} candidates", debug)
                 except Exception as e:
                     logger.error(f"Error resetting exam slots: {str(e)}", exc_info=True)
                     self.stdout.write(self.style.WARNING(f"⚠️  Could not reset exam slots: {e}"))
@@ -210,6 +220,8 @@ class Command(BaseCommand):
         else:
             # Dry run - just count items
             self.safe_delete_with_cascade(CandidateAnswer, "candidate answers", dry_run, debug)
+            
+
             self.safe_delete_with_cascade(ExamQuestion, "exam questions", dry_run, debug)
             self.safe_delete_with_cascade(ExamSession, "exam sessions", dry_run, debug)
             self.safe_delete_with_cascade(Question, "questions", dry_run, debug)
@@ -246,7 +258,13 @@ class Command(BaseCommand):
                 
                 # 3. Delete exam sessions (they reference users and papers)
                 self.safe_delete_with_cascade(ExamSession, "exam sessions", dry_run, debug)
-                
+                self.safe_delete_with_cascade(
+                    CandidatePaperAssignment,
+                    "candidate paper assignments",
+                    dry_run,
+                    debug
+                )
+
                 # 4. Delete candidate profiles (they reference users)
                 self.safe_delete_with_cascade(CandidateProfile, "candidate profiles", dry_run, debug)
                 
